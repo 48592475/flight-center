@@ -150,8 +150,12 @@ function crearStore(opts = {}) {
     }
     return mov;
   }
+  // configuración del QR de asistencia: código impreso + ubicación de la escuela (Aeródromo de Morón)
+  const nuevoCodigo = () => { const b = new Uint8Array(12); globalThis.crypto.getRandomValues(b); return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(''); };
+  const configInicial = () => ({ qr: nuevoCodigo(), lat: -34.6761, lon: -58.6428, radio: 1500 });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
+    if (!d.config) d.config = configInicial();
     if (!d.movimientos) reconstruirCuentas(d);
     if (!d.notificaciones) { d.notificaciones = []; d.seq.nt = 0; }
     if (!d.planes) { d.planes = []; d.seq.p = 0; }
@@ -164,6 +168,7 @@ function crearStore(opts = {}) {
   let db;
   if (navegador) { try { db = JSON.parse(localStorage.getItem(KEY)); } catch { db = null; } } else db = opts.cargar();
   if (!db || db.v !== 2) db = opts.produccion ? semillaProduccion() : semilla(); else db = migrar(db);
+  if (!db.config) db.config = configInicial();
   let sesion = null;
   if (navegador) { try { sesion = Number(sessionStorage.getItem(KEY + '-s')) || null; } catch { /* sin storage */ } }
   const guardar = () => {
@@ -700,6 +705,48 @@ function crearStore(opts = {}) {
     return n;
   };
   api.enviarRecordatoriosAhora = () => { exigir('admin'); return api.recordatoriosDeuda(); };
+  // ---------- asistencia por QR ----------
+  const distancia = (a, b, c, d) => { const R = 6371000, r = Math.PI / 180; const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
+  api.qrAsistencia = () => { exigir('admin'); return { ...db.config }; };
+  api.regenerarQR = () => { exigir('admin'); db.config.qr = nuevoCodigo(); guardar(); return { ...db.config }; };
+  api.guardarUbicacionEscuela = ({ lat, lon, radio }) => {
+    exigir('admin');
+    if (!(Math.abs(lat) <= 90 && Math.abs(lon) <= 180)) fail('Ubicación inválida');
+    db.config.lat = Number(lat); db.config.lon = Number(lon); if (radio) db.config.radio = Math.max(100, Math.min(5000, Number(radio)));
+    guardar(); return { ...db.config };
+  };
+  // el alumno o piloto escanea el QR de la escuela: queda presente en lo que tenga ahora
+  api.registrarLlegada = (codigo, pos) => {
+    const u = exigir('alumno', 'ppa');
+    if (String(codigo || '') !== db.config.qr) fail('Este QR no es válido. Escaneá el QR de asistencia que está en la escuela.');
+    if (!navegador && opts.exigirUbicacion !== false) {
+      if (!pos || pos.lat == null) fail('Para registrar tu llegada necesitamos la ubicación del celular. Activala y volvé a escanear el QR.');
+      const m = distancia(db.config.lat, db.config.lon, Number(pos.lat), Number(pos.lon));
+      if (m > db.config.radio + Math.min(Number(pos.precision) || 0, 300)) fail(`Estás a ${(m / 1000).toFixed(1).replace('.', ',')} km de la escuela. La llegada se registra solo estando en el aeródromo.`);
+    }
+    const h = hoy(); const ahoraH = new Date(); const min = ahoraH.getHours() * 60 + ahoraH.getMinutes();
+    const enVentana = (b) => min >= b * 60 - 90 && min < (b + 2) * 60; // desde 1 h 30 antes hasta el final del bloque
+    const hora = `${String(ahoraH.getHours()).padStart(2, '0')}:${String(ahoraH.getMinutes()).padStart(2, '0')}`;
+    const items = [];
+    const res = db.reservas.filter((r) => r.piloto_id === u.id && r.fecha === h && r.estado === 'pendiente' && enVentana(r.bloque));
+    // si tiene varios bloques seguidos, queda presente en todos
+    const bloquesHoy = db.reservas.filter((r) => r.piloto_id === u.id && r.fecha === h && r.estado === 'pendiente');
+    const marcar = new Set(res.map((r) => r.id));
+    for (const r of res) for (const x of bloquesHoy) if (x.recurso_id === r.recurso_id && x.bloque > r.bloque && x.bloque <= r.bloque + 6) marcar.add(x.id);
+    for (const r of bloquesHoy.filter((x) => marcar.has(x.id)).sort((a, b) => a.bloque - b.bloque)) {
+      const ya = !!r.llegada; if (!ya) r.llegada = hora;
+      items.push({ tipo: r.tipo, bloque: r.bloque, recurso: recurso(r.recurso_id).nombre, instructor: nombre(usuario(r.instructor_id)) || null, llegada: r.llegada, ya });
+    }
+    for (const i of db.inscripciones.filter((x) => x.alumno_id === u.id && x.estado === 'inscripto')) {
+      const c = db.clases.find((k) => k.id === i.clase_id);
+      if (!c || c.fecha !== h || c.estado !== 'programada' || !enVentana(c.bloque)) continue;
+      const ya = !!i.llegada; if (!ya) i.llegada = hora;
+      items.push({ tipo: 'teorica', bloque: c.bloque, recurso: c.aula, instructor: nombre(usuario(c.instructor_id)), titulo: `${c.teo} · ${LECCIONES[c.teo]?.titulo || ''}`, llegada: i.llegada, ya });
+    }
+    if (!items.length) fail('No tenés ningún vuelo, simulador ni clase en este horario. Podés registrar tu llegada desde 1 h 30 min antes del turno.');
+    guardar();
+    return { hora, items, nombre: u.nombre };
+  };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };

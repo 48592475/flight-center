@@ -306,7 +306,7 @@ function paseDeReservas(reservas) {
   const r = reservas[0]; const bl = reservas.map((x) => x.bloque).sort((a, b) => a - b);
   const contiguo = bl.every((b, i) => !i || b === bl[i - 1] + 2);
   const lec = r.estado === 'pendiente' ? r.leccion_sugerida || null : r.leccion;
-  return { reservaId: r.id, tipo: r.tipo, codigo: codigoReserva(r.id, r.tipo === 'simulador' ? 'SIM' : 'FC'), destino: r.tipo === 'simulador' ? 'SIM' : (r.destino || 'MOR'), local: r.tipo === 'vuelo' && (r.destino || 'MOR') === 'MOR',
+  return { llegada: r.llegada || null, reservaId: r.id, tipo: r.tipo, codigo: codigoReserva(r.id, r.tipo === 'simulador' ? 'SIM' : 'FC'), destino: r.tipo === 'simulador' ? 'SIM' : (r.destino || 'MOR'), local: r.tipo === 'vuelo' && (r.destino || 'MOR') === 'MOR',
     salida: bl[0], regreso: bl.at(-1) + 2, horario: contiguo ? `${hh(bl[0])} – ${hh(bl.at(-1) + 2)}` : bl.map(rango).join(', '),
     piloto: r.piloto, clase: r.piloto_rol === 'ppa' ? 'PPA' : 'ALUMNO', fecha: r.fecha, recursoLbl: r.tipo === 'simulador' ? 'Simulador' : 'Aeronave', recurso: r.recurso,
     extraLbl: lec ? 'Lección' : 'Modelo', extra: lec || r.modelo, instructor: r.instructor || 'Sin instructor', bloques: `${bl.length} × 2 hs`, estado: r.estado };
@@ -407,7 +407,7 @@ function miniPass(p, i, key) {
         <div style="grid-column:span 2"><small>Instructor</small><span>${esc(p.instructor)}</span></div>
         <div style="grid-column:span 2"><button class="btn danger sm" data-cancelar>Cancelar</button></div>
       </div></div>
-    <div class="stub"><small class="muted" style="font-size:10px;font-weight:800;letter-spacing:.1em">SALIDA</small><div class="hora">${hh(p.salida)}</div><small class="muted">${p.bloques}</small>${barcode(p.codigo, 22)}</div></div>`;
+    <div class="stub">${p.llegada ? `<span class="badge ok">✓ Presente ${esc(p.llegada)}</span>` : ''}<small class="muted" style="font-size:10px;font-weight:800;letter-spacing:.1em">SALIDA</small><div class="hora">${hh(p.salida)}</div><small class="muted">${p.bloques}</small>${barcode(p.codigo, 22)}</div></div>`;
 }
 
 // =====================================================================

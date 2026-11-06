@@ -89,9 +89,3 @@ VISTAS.avisos = async function vistaAvisos(v) {
   };
 }
 
-// ---------- inicio ----------
-(async () => {
-  state.user = await Store.yo();
-  if (state.user && MODO === 'demo') await Store.recordatoriosDeuda();
-  await render();
-})();

@@ -243,11 +243,17 @@ VISTAS.agenda = async function vistaAgenda(v, mes = isoLocal(new Date()).slice(0
     if (await confirmar('Cancelar', '¿Seguro que querés cancelar? Avisale al piloto.', 'Cancelar')) { await hacer(async () => await Store.cancelarReserva(b.dataset.cancelarI), 'Reserva cancelada'); await VISTAS.agenda(v, mes); }
   });
 };
+function badgeLlegada(f) {
+  if (f.fecha !== isoLocal(new Date())) return '';
+  if (f.llegada) return `<span class="badge ok llegada">✓ Presente · ${esc(f.llegada)}</span>`;
+  const empezo = new Date().getHours() >= f.bloque;
+  return empezo ? '<span class="badge danger">No registró llegada</span>' : '<span class="badge gris">Esperando llegada</span>';
+}
 function filaPendiente(f, i) {
   const d = parseISO(f.fecha); const tel = telLimpio(f.piloto_telefono);
   return `<div class="vuelo anim" style="--i:${i}">
     <div class="vuelo-fecha"><small>${d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')}</small><strong>${d.getDate()}</strong><small>${d.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')}</small></div>
-    <div class="vuelo-info"><strong>${esc(f.piloto)}</strong> <span class="badge">${f.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</span> ${badgeTipo(f.tipo)} ${f.leccion_sugerida ? `<span class="badge warn">${esc(f.leccion_sugerida)}</span>` : ''}
+    <div class="vuelo-info"><strong>${esc(f.piloto)}</strong> <span class="badge">${f.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</span> ${badgeTipo(f.tipo)} ${f.leccion_sugerida ? `<span class="badge warn">${esc(f.leccion_sugerida)}</span>` : ''} ${badgeLlegada(f)}
       <div class="meta"><span class="mono">${rango(f.bloque)}</span><span><span class="mono">${esc(f.recurso)}</span> · ${esc(f.modelo)}</span></div>
       <div class="contacto">${tel ? `<a href="tel:${esc(tel)}">${ICON.tel} ${esc(f.piloto_telefono)}</a><a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">${ICON.wa} WhatsApp</a>` : ''}
         <a href="mailto:${esc(f.piloto_email)}">${ICON.mail} ${esc(f.piloto_email)}</a></div></div>
@@ -341,13 +347,13 @@ async function editarClase(k, despues) {
   $('#k-ok', m.el).onclick = async () => { if (await hacer(async () => await Store.guardarClase({ ...Object.fromEntries(new FormData($('#f-clase', m.el))), id: k?.id }), 'Clase guardada')) { m.cerrar(); despues(); } };
 }
 async function asistencia(k, despues) {
-  const reg = Object.fromEntries(k.alumnos.map((a) => [a.id, { estado: a.estado === 'inscripto' ? 'presente' : a.estado, nota: a.nota || 'B' }]));
+  const reg = Object.fromEntries(k.alumnos.map((a) => [a.id, { estado: a.estado === 'inscripto' ? (a.llegada || k.fecha !== isoLocal(new Date()) ? 'presente' : 'ausente') : a.estado, nota: a.nota || 'B' }]));
   const puede = state.user.rol === 'admin' || k.instructor_id === state.user.id;
   const m = modal(`<div class="modal-head"><div><h3>${esc(k.teo)} · asistencia</h3><div class="muted">${esc(fmtFecha(k.fecha))} · ${rango(k.bloque)} · ${esc(k.instructor)}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body" id="asis"></div>
     <div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button>${puede && k.alumnos.length ? '<button class="btn ok" id="a-ok">Guardar asistencia</button>' : ''}</div>`, { ancho: true });
   const pintar = () => {
-    $('#asis', m.el).innerHTML = k.alumnos.length ? `<table class="calif">${k.alumnos.map((a) => `<tr><td><strong>${esc(a.alumno)}</strong></td>
+    $('#asis', m.el).innerHTML = k.alumnos.length ? `<table class="calif">${k.alumnos.map((a) => `<tr><td><strong>${esc(a.alumno)}</strong>${a.llegada ? ` <span class="badge ok">Llegó ${esc(a.llegada)}</span>` : ''}</td>
       <td style="text-align:right"><span class="flujo" style="justify-content:flex-end"><select data-est="${a.id}" style="width:auto">${['presente', 'ausente'].map((e) => `<option ${reg[a.id].estado === e ? 'selected' : ''}>${e}</option>`).join('')}</select>
       ${reg[a.id].estado === 'presente' ? `<span class="notas" data-a="${a.id}">${['MB', 'B', 'R'].map((n) => `<button type="button" data-v="${n}" class="${reg[a.id].nota === n ? 'on' : ''}" title="${NOTA[n]}">${n}</button>`).join('')}</span>` : ''}</span></td></tr>`).join('')}</table>
       <p class="muted">Una clase en Regular queda para recursar en el syllabus del alumno.</p>` : vacio('No hay alumnos inscriptos.');
@@ -457,7 +463,7 @@ VISTAS.mantenimiento = async function vistaMantenimiento(v, sel) {
 // =====================================================================
 VISTAS.panel = async function vistaPanel(v) {
   const p = await Store.panelAdmin(); const hoy = isoLocal(new Date());
-  const items = [...p.hoyRes.map((r) => ({ b: r.bloque, t: `${TIPO_RES[r.tipo]} · <b>${esc(r.piloto)}</b> · ${esc(r.recurso)} · ${esc(r.instructor || 'sin instructor')}`, e: r.estado })),
+  const items = [...p.hoyRes.map((r) => ({ b: r.bloque, t: `${TIPO_RES[r.tipo]} · <b>${esc(r.piloto)}</b> · ${esc(r.recurso)} · ${esc(r.instructor || 'sin instructor')} ${r.estado === 'pendiente' ? badgeLlegada(r) : ''}`, e: r.estado })),
     ...p.hoyCla.map((k) => ({ b: k.bloque, t: `Clase ${esc(k.teo)} · ${esc(k.titulo)} · ${esc(k.instructor)} · ${k.inscriptos} alumnos`, e: k.estado }))].sort((a, b) => a.b - b.b);
   v.innerHTML = hero('Panel de administración', `<span class="cap">${esc(fmtFecha(hoy))}</span>. Desde acá manejás instructores, clases, reservas, usuarios y flota.`) + `
     <div class="stats">${stat('Actividades hoy', items.length, { dest: true, i: 1 })}${stat('Reservas próximos 7 días', p.semana, { i: 2 })}

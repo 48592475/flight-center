@@ -186,3 +186,8 @@
 .foro-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px) auto; gap: 10px; align-items: center; margin-bottom: 12px; }
 .foro-filtro > * { min-width: 0; width: 100%; }
 @media (max-width: 760px) { .foro-filtro { grid-template-columns: minmax(0, 1fr); } .foro-filtro .segmento { display: flex; } .foro-filtro .segmento button { flex: 1; } }
+
+/* app instalada sin conexión */
+.sin-red { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: linear-gradient(160deg, var(--navy), var(--azul)); }
+.sin-red-caja { background: #fff; border-radius: 22px; padding: 28px 24px; max-width: 380px; width: 100%; text-align: center; display: grid; gap: 10px; justify-items: center; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .5); }
+.sin-red-caja h2 { color: var(--navy); margin-top: 6px; }

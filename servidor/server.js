@@ -125,7 +125,8 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
     return res.status(500).json({ error: 'Ocurrió un error en el servidor. Probá de nuevo en un momento.' });
   });
 
-  app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: 'index.html' }));
+  app.get('/sw.js', (req, res) => { res.set('Cache-Control', 'no-cache'); res.sendFile(path.join(__dirname, 'public', 'sw.js')); });
+  app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: 'index.html', setHeaders: (res, p) => { if (p.endsWith('.webmanifest')) res.set('Content-Type', 'application/manifest+json'); } }));
   app.use('/api', (req, res) => res.status(404).json({ error: 'No encontrado' }));
   app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

@@ -130,12 +130,22 @@ function vigilar(v, vista, inicial, cada = 30000) {
 }
 
 // ---------- inicio ----------
+// pantalla cuando la app instalada se abre sin internet (o con el servidor dormido)
+function sinConexion(msg) {
+  document.getElementById('app').innerHTML = `<div class="sin-red"><div class="sin-red-caja anim">
+    ${logo('', 'claro')}
+    <h2>Sin conexión</h2><p>${esc(msg || 'No hay conexión con el servidor.')}</p>
+    <p class="muted">Apenas vuelva internet, la app se recarga sola.</p>
+    <button class="btn" id="reintentar">Reintentar</button></div></div>`;
+  document.getElementById('reintentar').onclick = () => location.reload();
+  addEventListener('online', () => location.reload(), { once: true });
+}
 (async () => {
   const q = new URLSearchParams(location.search);
   let codigo = q.get('asistencia');
   if (codigo) { try { sessionStorage.setItem('fc-asistencia', codigo); } catch { /* sin storage */ } history.replaceState(null, '', location.pathname + location.hash); }
   else { try { codigo = sessionStorage.getItem('fc-asistencia'); } catch { codigo = null; } }
-  state.user = await Store.yo();
+  try { state.user = await Store.yo(); } catch (e) { return sinConexion(e.message); }
   if (state.user && MODO === 'demo') await Store.recordatoriosDeuda();
   await render();
   const pendiente = () => { try { return sessionStorage.getItem('fc-asistencia'); } catch { return codigo; } };

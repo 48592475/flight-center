@@ -150,7 +150,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 
 /* ---------- layout app ---------- */
 .topbar {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top, 0px);
   background: linear-gradient(90deg, var(--navy), var(--navy-2) 60%, var(--azul));
   color: #fff;
   box-shadow: 0 6px 20px -10px rgba(10, 37, 64, .6);

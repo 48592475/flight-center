@@ -4,7 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flight Center Reservas</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path fill=%27%2359b2ea%27 d=%27M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z%27/></svg>">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b2545">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flight Center">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
 <style>
@@ -160,7 +167,7 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 
 /* ---------- layout app ---------- */
 .topbar {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  position: sticky; top: 0; z-index: 20; padding-top: env(safe-area-inset-top, 0px);
   background: linear-gradient(90deg, var(--navy), var(--navy-2) 60%, var(--azul));
   color: #fff;
   box-shadow: 0 6px 20px -10px rgba(10, 37, 64, .6);
@@ -892,6 +899,11 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .foro-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px) auto; gap: 10px; align-items: center; margin-bottom: 12px; }
 .foro-filtro > * { min-width: 0; width: 100%; }
 @media (max-width: 760px) { .foro-filtro { grid-template-columns: minmax(0, 1fr); } .foro-filtro .segmento { display: flex; } .foro-filtro .segmento button { flex: 1; } }
+
+/* app instalada sin conexión */
+.sin-red { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: linear-gradient(160deg, var(--navy), var(--azul)); }
+.sin-red-caja { background: #fff; border-radius: 22px; padding: 28px 24px; max-width: 380px; width: 100%; text-align: center; display: grid; gap: 10px; justify-items: center; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .5); }
+.sin-red-caja h2 { color: var(--navy); margin-top: 6px; }
 
 </style>
 </head>
@@ -5248,12 +5260,22 @@ function vigilar(v, vista, inicial, cada = 30000) {
 }
 
 // ---------- inicio ----------
+// pantalla cuando la app instalada se abre sin internet (o con el servidor dormido)
+function sinConexion(msg) {
+  document.getElementById('app').innerHTML = `<div class="sin-red"><div class="sin-red-caja anim">
+    ${logo('', 'claro')}
+    <h2>Sin conexión</h2><p>${esc(msg || 'No hay conexión con el servidor.')}</p>
+    <p class="muted">Apenas vuelva internet, la app se recarga sola.</p>
+    <button class="btn" id="reintentar">Reintentar</button></div></div>`;
+  document.getElementById('reintentar').onclick = () => location.reload();
+  addEventListener('online', () => location.reload(), { once: true });
+}
 (async () => {
   const q = new URLSearchParams(location.search);
   let codigo = q.get('asistencia');
   if (codigo) { try { sessionStorage.setItem('fc-asistencia', codigo); } catch { /* sin storage */ } history.replaceState(null, '', location.pathname + location.hash); }
   else { try { codigo = sessionStorage.getItem('fc-asistencia'); } catch { codigo = null; } }
-  state.user = await Store.yo();
+  try { state.user = await Store.yo(); } catch (e) { return sinConexion(e.message); }
   if (state.user && MODO === 'demo') await Store.recordatoriosDeuda();
   await render();
   const pendiente = () => { try { return sessionStorage.getItem('fc-asistencia'); } catch { return codigo; } };
@@ -5266,6 +5288,7 @@ function vigilar(v, vista, inicial, cada = 30000) {
   }
 })();
 
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 </script>
 </body>
 </html>

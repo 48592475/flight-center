@@ -8,7 +8,6 @@ R = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(R, 'src', f), encoding='utf-8').read()
 CSS = src('base.css') + src('extra.css') + src('extra3.css')
 APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app7.js', 'app6.js']
-ICONO = "data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path fill=%27%2359b2ea%27 d=%27M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z%27/></svg>"
 
 def pagina(cliente, store=True):
     js = '\n'.join(src(f) for f in ['logos.js', 'syllabus.js'] + (['store.js'] if store else []) + [cliente, 'avisos-contenido.js'] + APP)
@@ -18,7 +17,14 @@ def pagina(cliente, store=True):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Flight Center Reservas</title>
-<link rel="icon" href="{ICONO}">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#0b2545">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flight Center">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
 <style>
@@ -31,6 +37,7 @@ def pagina(cliente, store=True):
 <div id="toasts"></div>
 <script>
 {js}
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {{}}));
 </script>
 </body>
 </html>
@@ -47,3 +54,9 @@ nucleo = ('/* Archivo generado por build.py a partir de src/. No editar a mano. 
           + '\nmodule.exports = { crearStore, contenidoAviso, SYLLABUS };\n')
 open(os.path.join(R, 'servidor', 'nucleo.js'), 'w', encoding='utf-8').write(nucleo)
 print('ok: servidor/nucleo.js')
+
+# archivos de la app instalable (ícono, manifiesto y service worker) en las dos versiones
+import shutil
+for f in os.listdir(os.path.join(R, 'src', 'pwa')):
+    for destino in (R, os.path.join(R, 'servidor', 'public')):
+        shutil.copy(os.path.join(R, 'src', 'pwa', f), os.path.join(destino, f))

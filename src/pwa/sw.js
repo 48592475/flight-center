@@ -1,8 +1,8 @@
 // Service worker de Flight Center: permite instalar la página como app.
 // La página siempre se pide primero a la red (para tener los datos al día);
 // si no hay conexión se muestra la última versión guardada.
-const CACHE = 'flight-center-v2';
-const BASE = ['./', 'manifest.webmanifest', 'icono-192.png?v=2', 'icono-512.png?v=2', 'apple-touch-icon.png', 'favicon.png'];
+const CACHE = 'flight-center-v3';
+const BASE = ['./', 'manifest.webmanifest', 'icono-192.png?v=3', 'icono-512.png?v=3', 'apple-touch-icon.png', 'favicon.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)).then(() => self.skipWaiting()));

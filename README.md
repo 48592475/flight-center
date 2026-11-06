@@ -4,7 +4,7 @@ Sistema de reservas de la escuela de vuelo Flight Center (Aeródromo de Morón):
 
 - **Demo** (datos en el navegador): https://48592475.github.io/flight-center/
   Cuentas de prueba, contraseña `flight123`: alumno@flightcenter.com, ppa@flightcenter.com, instructor@flightcenter.com, mecanico@flightcenter.com, admin@flightcenter.com.
-- **Versión real con base de datos**: se publica en Render. Ver [DESPLIEGUE.md](DESPLIEGUE.md).
+- **Versión real con base de datos**: se publica gratis en Render (servidor) + Neon (base de datos). Ver [DESPLIEGUE.md](DESPLIEGUE.md).
 
 ## Estructura
 

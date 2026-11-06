@@ -56,6 +56,16 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
 
   app.get('/api/salud', (req, res) => res.json({ ok: true, email: avisos.emailListo(), whatsapp: avisos.whatsappListo() }));
 
+  // Tarea diaria para hostings gratuitos que apagan el servidor cuando no se usa:
+  // un servicio externo (por ejemplo cron-job.org) llama a esta dirección a las 9:00.
+  // Si hoy ya se enviaron los recordatorios, no se repiten.
+  app.get('/api/tareas/diarias', (req, res) => {
+    const token = process.env.CRON_TOKEN;
+    const dado = String(req.query.token || '');
+    if (!token || dado.length !== token.length || !crypto.timingSafeEqual(Buffer.from(dado), Buffer.from(token))) return res.status(403).json({ error: 'No autorizado' });
+    try { const n = Store.recordatoriosDeuda(); console.log('Recordatorios de deuda (tarea diaria):', n); res.json({ ok: true, recordatorios: n }); } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   app.post('/api/rpc', async (req, res) => {
     const { m, a = [] } = req.body || {};
     const args = Array.isArray(a) ? a : [];

@@ -200,7 +200,9 @@ async function reservarTurno(c, tipo) {
   const eligeRecurso = esPPA || esSim;
   const hab = u.hab || {};
   const puedeSolo = esSim ? !!hab.sim_solo : !!hab.solo;
-  const avionOk = (id) => esSim || !Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id);
+  const esBristell = (r) => /bristell/i.test(`${r?.modelo || ''} ${r?.nombre || ''}`);
+  const faltaBristell = (r) => !esSim && esPPA && esBristell(r) && !hab.bristell;
+  const avionOk = (id) => esSim || ((!Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id)) && !faltaBristell(recursos.find((x) => x.id === id)));
   c.innerHTML = await avisoLeccion(tipo) + `
     <div class="card anim" style="--i:3"><div class="card-head"><div class="paso" id="p1"><span class="paso-num">1</span><h3>Elegí el día</h3></div></div><div class="dias" id="dias"></div></div>
     <div class="card anim" style="--i:4"><div class="card-head"><div class="paso" id="p2"><span class="paso-num">2</span><h3>Bloque horario</h3></div>
@@ -254,7 +256,7 @@ async function reservarTurno(c, tipo) {
       if (s.recurso && rl && !rl.includes(s.recurso)) s.recurso = null;
       $('#recursos', c).innerHTML = recursos.map((r) => {
         const ok = r.estado === 'operativa' && avionOk(r.id) && rl && rl.includes(r.id);
-        const sub = !avionOk(r.id) ? 'No habilitado/a' : r.estado !== 'operativa' ? 'Fuera de servicio' : !rl ? 'Elegí un bloque primero' : ok ? r.modelo : 'Ocupado en ese horario';
+        const sub = faltaBristell(r) ? 'Requiere adaptación a Bristell' : !avionOk(r.id) ? 'No habilitado/a' : r.estado !== 'operativa' ? 'Fuera de servicio' : !rl ? 'Elegí un bloque primero' : ok ? r.modelo : 'Ocupado en ese horario';
         return `<button class="opcion ${s.recurso === r.id ? 'sel' : ''}" data-r="${r.id}" ${ok ? '' : 'disabled'}><span class="ico">${esSim ? ICON.sim : avionIco()}</span>
           <span><strong class="${esSim ? '' : 'mono'}">${esc(r.nombre)}</strong><small>${esc(sub)}</small></span></button>`;
       }).join('');

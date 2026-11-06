@@ -203,11 +203,18 @@ async function fichaPiloto(id) {
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">${doc('cma', 'CMA')} ${doc('licencia', 'Licencia PPA')} ${doc('autorizacion', 'Autorización de menor')}
         ${p.veSyllabus ? `<button class="btn sm" id="ver-syl">${ICON.libro} Abrir syllabus</button>` : ''}</div>
+      ${p.rol === 'ppa' ? `<div class="aviso" style="margin-top:16px"><div style="flex:1"><strong>Adaptación a Bristell</strong>${p.hab?.bristell ? `✓ Adaptado/a${p.hab.bristell_por ? ` · otorgada por ${esc(p.hab.bristell_por)}` : ''}${p.hab.bristell_fecha ? ` el ${esc(fmtCorta(p.hab.bristell_fecha))}` : ''}` : 'No adaptado/a: no puede reservar aviones Bristell.'}</div>
+        <button class="btn ${p.hab?.bristell ? 'danger' : 'ok'} sm" id="bristell">${p.hab?.bristell ? 'Quitar adaptación' : 'Marcar como adaptado/a'}</button></div>` : ''}
       <h3 style="margin:24px 0 10px;font-size:15px">Actividad</h3>
       ${p.reservas.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Horario</th><th>Equipo</th><th>Instructor</th><th>Estado</th></tr></thead><tbody>
         ${p.reservas.map((r) => `<tr><td>${esc(fmtCorta(r.fecha))}</td><td>${badgeTipo(r.tipo)}</td><td class="mono">${rango(r.bloque)}</td><td class="mono">${esc(r.recurso)}</td><td>${esc(r.instructor || 'Solo')}</td><td>${badgeEstado(r)}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('Sin actividad')}</div>`, { ancho: true });
   const b = $('#ver-syl', m.el); if (b) b.onclick = async () => await abrirLibro(p.id);
+  const br = $('#bristell', m.el);
+  if (br) br.onclick = async () => {
+    const r = await hacer(() => Store.adaptacionBristell(p.id, !p.hab?.bristell), p.hab?.bristell ? 'Adaptación a Bristell quitada' : 'Piloto adaptado a Bristell');
+    if (r) { m.cerrar(); setTimeout(() => fichaPiloto(p.id), 200); }
+  };
 }
 
 // =====================================================================
@@ -301,6 +308,7 @@ function completarReserva(f, despues) {
 }
 
 VISTAS.alumnos = async function vistaAlumnos(v) {
+  setTimeout(() => tarjetaBristell(v), 0);
   const l = await Store.misAlumnos();
   v.innerHTML = hero('Mis alumnos', 'Solo ves el syllabus de los alumnos con los que volás o tenés vuelos programados.') + `<div class="card anim" style="--i:1">
     ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Alumno</th><th>Vuelo</th><th>Simulador</th><th>Teoría</th><th>Vuelos conmigo</th><th></th></tr></thead><tbody>
@@ -580,6 +588,7 @@ async function editarUsuario(u, despues, rolElegido) {
           <label class="marca"><input type="checkbox" id="h-solo" ${u?.hab?.solo ? 'checked' : ''}> Vuelo solo (reservar sin instructor)</label>
           <label class="marca"><input type="checkbox" id="h-sim" ${u?.hab?.sim_solo ? 'checked' : ''}> Simulador sin instructor</label>
           <label class="marca"><input type="checkbox" id="h-trav" ${u?.hab?.travesia ? 'checked' : ''}> Travesías (destino distinto de MOR)</label>
+          <label class="marca" data-roles="ppa"><input type="checkbox" id="h-bristell" ${u?.hab?.bristell ? 'checked' : ''}> Adaptado a Bristell</label>
         </div>
         <small class="lbl" style="margin-top:12px">Aeronaves habilitadas</small>
         <div class="marcas" id="h-aviones">${aviones.map((a) => `<label class="marca"><input type="checkbox" value="${a.id}" ${!Array.isArray(u?.hab?.aeronaves) || u.hab.aeronaves.includes(a.id) ? 'checked' : ''}> <b>${esc(a.nombre)}</b> ${esc(a.modelo)}</label>`).join('')}</div>
@@ -603,7 +612,7 @@ async function editarUsuario(u, despues, rolElegido) {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);
       if (['alumno', 'ppa'].includes(d.rol || r.rol)) {
         const todos = $$('#h-aviones input', m.el); const marcados = todos.filter((x) => x.checked).map((x) => Number(x.value));
-        await Store.guardarHabilitaciones(r.id, { solo: $('#h-solo', m.el).checked, sim_solo: $('#h-sim', m.el).checked, travesia: $('#h-trav', m.el).checked,
+        await Store.guardarHabilitaciones(r.id, { solo: $('#h-solo', m.el).checked, sim_solo: $('#h-sim', m.el).checked, travesia: $('#h-trav', m.el).checked, ...((d.rol || r.rol) === 'ppa' ? { bristell: $('#h-bristell', m.el).checked } : {}),
           aeronaves: marcados.length === todos.length ? null : marcados });
       }
       return r;
@@ -613,3 +622,22 @@ async function editarUsuario(u, despues, rolElegido) {
 }
 
 // (el inicio está en app3.js)
+
+// pilotos PPA: el instructor puede darles o quitarles la adaptación a Bristell
+async function tarjetaBristell(v) {
+  if (!['instructor', 'admin'].includes(state.user?.rol)) return;
+  const l = await Store.pilotosPPA().catch(() => []);
+  const card = document.createElement('div'); card.className = 'card anim'; card.id = 'card-bristell';
+  card.innerHTML = `<div class="card-head"><h3>Pilotos PPA · adaptación a Bristell</h3><span class="muted">Solo los pilotos adaptados pueden reservar aviones Bristell</span></div>
+    ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Piloto</th><th>Adaptación</th><th></th></tr></thead><tbody>
+    ${l.map((p) => `<tr><td><strong>${esc(p.nombre)} ${esc(p.apellido)}</strong><div class="muted">${esc(p.licencia_nro || '')}</div></td>
+      <td>${p.hab?.bristell ? `<span class="badge ok">✓ Adaptado/a</span> <span class="muted">${esc(p.hab.bristell_por || '')}${p.hab.bristell_fecha ? ` · ${esc(fmtCorta(p.hab.bristell_fecha))}` : ''}</span>` : '<span class="badge gris">No adaptado/a</span>'}</td>
+      <td style="text-align:right"><button class="btn ${p.hab?.bristell ? 'danger' : 'ok'} sm" data-br="${p.id}" data-v="${p.hab?.bristell ? 0 : 1}">${p.hab?.bristell ? 'Quitar' : 'Marcar adaptado/a'}</button></td></tr>`).join('')}
+    </tbody></table></div>` : vacio('No hay pilotos PPA cargados.')}`;
+  const prev = $('#card-bristell', v); if (prev) prev.remove();
+  v.append(card);
+  $$('[data-br]', card).forEach((b) => b.onclick = async () => {
+    const r = await hacer(() => Store.adaptacionBristell(Number(b.dataset.br), b.dataset.v === '1'), b.dataset.v === '1' ? 'Piloto adaptado a Bristell' : 'Adaptación a Bristell quitada');
+    if (r) tarjetaBristell(v);
+  });
+}

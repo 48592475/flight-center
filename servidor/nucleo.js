@@ -52,6 +52,7 @@ function crearStore(opts = {}) {
     const R = (tipo, nombre, modelo, estado = 'operativa') => { db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado, ...(tipo === 'avion' ? datosModelo(modelo) : {}) }); return db.seq.rec; };
     const fca = R('avion', 'LV-FCA', 'Cessna 152'); const fcb = R('avion', 'LV-FCB', 'Cessna 172 Skyhawk');
     const fcc = R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); const fcd = R('avion', 'LV-FCD', 'Cessna 152', 'mantenimiento');
+    R('avion', 'LV-FCE', 'Bristell B23');
     const frasca = R('simulador', 'Frasca', 'Frasca 141'); const simu1 = R('simulador', 'Simu 1', 'Simulador de procedimientos');
     void fcc; void simu1;
 
@@ -154,7 +155,9 @@ function crearStore(opts = {}) {
   const nuevoCodigo = () => { const b = new Uint8Array(12); globalThis.crypto.getRandomValues(b); return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(''); };
   const configInicial = () => ({ qr: nuevoCodigo(), lat: -34.6761, lon: -58.6428, radio: 1500 });
   // habilitaciones que da la administración a cada alumno o piloto
-  const HAB_VACIA = () => ({ solo: false, sim_solo: false, travesia: false, aeronaves: null }); // aeronaves: null = todas
+  const HAB_VACIA = () => ({ solo: false, sim_solo: false, travesia: false, bristell: false, aeronaves: null }); // aeronaves: null = todas
+  // aviones Bristell: solo los pueden reservar los pilotos adaptados (habilitación que dan administración o instructores)
+  const esBristell = (r) => /bristell/i.test(`${r?.modelo || ''} ${r?.nombre || ''}`);
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
@@ -373,7 +376,7 @@ function crearStore(opts = {}) {
       if (!inst && tipo === 'vuelo' && !hab.solo) fail('No tenés habilitación para volar solo. Elegí un instructor o pedile la habilitación a la administración.');
       if (!inst && tipo === 'simulador' && !hab.sim_solo) fail('No tenés habilitación para usar el simulador sin instructor. Elegí un instructor o pedile la habilitación a la administración.');
       if (destino !== 'MOR' && !hab.travesia) fail('No tenés habilitación para travesías: solo podés reservar vuelos locales (MOR – MOR).');
-      const avionPermitido = (id) => tipo !== 'vuelo' || !Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id);
+      const avionPermitido = (id) => tipo !== 'vuelo' || ((!Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id)) && !(esPPA && esBristell(recurso(id)) && !hab.bristell));
       if (!esPPA) {
         if (bloques.length > 1) fail('Como alumno podés reservar un solo bloque por día');
         if (activas().some((r) => r.piloto_id === u.id && r.fecha === fecha && r.tipo === tipo)) fail(`Ya tenés ${tipo === 'vuelo' ? 'un vuelo' : 'un turno de simulador'} ese día. Los alumnos pueden reservar un bloque por día.`);
@@ -381,6 +384,7 @@ function crearStore(opts = {}) {
       if ((esPPA || tipo === 'simulador') && !recurso_id) fail(tipo === 'vuelo' ? 'Elegí una aeronave' : 'Elegí un simulador');
       const rec = recurso_id ? recurso(recurso_id) : null;
       if (rec && (rec.tipo !== tipoRec || rec.estado !== 'operativa')) fail(`${rec.nombre} no está disponible (fuera de servicio)`);
+      if (rec && tipo === 'vuelo' && esPPA && esBristell(rec) && !hab.bristell) fail(`Para volar el ${rec.nombre} (Bristell) necesitás la adaptación a Bristell. La otorga un instructor o la administración.`);
       if (rec && !avionPermitido(rec.id)) fail(`No estás habilitado/a para volar el ${rec.nombre}. Consultá con la administración.`);
       const plan = bloques.map((b) => {
         if (ocupacionPersona(u.id, fecha, b)) fail(`Ya tenés otra actividad a las ${hh(b)}`);
@@ -760,10 +764,22 @@ function crearStore(opts = {}) {
     exigir('admin'); const u = usuario(uid);
     if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Las habilitaciones son para alumnos y pilotos');
     const ids = new Set(db.recursos.filter((r) => r.tipo === 'avion').map((r) => r.id));
-    u.hab = { solo: !!h.solo, sim_solo: !!h.sim_solo, travesia: !!h.travesia,
+    const antes = habDe(u);
+    u.hab = { ...antes, solo: !!h.solo, sim_solo: !!h.sim_solo, travesia: !!h.travesia,
       aeronaves: Array.isArray(h.aeronaves) ? [...new Set(h.aeronaves.map(Number))].filter((x) => ids.has(x)) : null };
+    if (u.rol === 'ppa' && 'bristell' in h && !!h.bristell !== antes.bristell) marcarBristell(u, !!h.bristell, yo());
     guardar(); return pub(u);
   };
+  function marcarBristell(u, valor, quien) {
+    u.hab = { ...habDe(u), bristell: valor, bristell_por: valor ? nombre(quien) : null, bristell_fecha: valor ? hoy() : null };
+  }
+  // adaptación a Bristell: solo para pilotos PPA; la pueden dar o quitar la administración y los instructores
+  api.adaptacionBristell = (uid, valor) => {
+    const me = exigir('admin', 'instructor'); const u = usuario(uid);
+    if (!u || u.rol !== 'ppa') fail('La adaptación a Bristell es solo para pilotos PPA');
+    marcarBristell(u, !!valor, me); guardar(); return pub(u);
+  };
+  api.pilotosPPA = () => { exigir('admin', 'instructor'); return db.usuarios.filter((u) => u.rol === 'ppa' && u.activo).map(pub).sort((a, b) => a.apellido.localeCompare(b.apellido)); };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };

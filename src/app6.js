@@ -123,7 +123,7 @@ function vigilar(v, vista, inicial, cada = 30000) {
     const item = (ok, t) => `<span class="badge ${ok ? 'ok' : 'gris'}">${ok ? '✓' : '✗'} ${t}</span>`;
     const card = document.createElement('div'); card.className = 'card anim';
     card.innerHTML = `<div class="card-head"><h3>Mis habilitaciones</h3><span class="muted">Las otorga la administración</span></div>
-      <div class="flujo">${item(h.solo, 'Vuelo solo')}${item(h.sim_solo, 'Simulador sin instructor')}${item(h.travesia, 'Travesías')}</div>
+      <div class="flujo">${item(h.solo, 'Vuelo solo')}${item(h.sim_solo, 'Simulador sin instructor')}${item(h.travesia, 'Travesías')}${u.rol === 'ppa' ? item(h.bristell, 'Adaptado a Bristell') : ''}</div>
       <p class="muted" style="margin:10px 0 0">Aeronaves: ${Array.isArray(h.aeronaves) ? (h.aeronaves.length ? aviones.filter((a) => h.aeronaves.includes(a.id)).map((a) => esc(a.nombre)).join(', ') : 'ninguna') : 'todas las de la escuela'}.</p>`;
     $$('.card', v)[0].after(card);
   };

@@ -1,0 +1,87 @@
+/* ---------- meteorología ---------- */
+.metar-top { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; flex-wrap: wrap; }
+.metar-est { font-family: 'JetBrains Mono', ui-monospace, monospace; font-weight: 700; font-size: 22px; color: var(--navy); }
+.metar-card .cat { font-size: 13px; padding: 6px 12px; }
+.metar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 14px; }
+.metar-grid > div { background: var(--celeste-claro); border-radius: 12px; padding: 10px 12px; }
+.metar-grid small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.metar-grid span { display: block; font-weight: 700; font-size: 15px; color: var(--navy); margin-top: 2px; }
+.metar-grid em { display: block; font-style: normal; font-size: 12px; color: var(--muted); }
+.metar-raw { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: var(--navy); color: #d6ecfb; border-radius: 10px; padding: 10px 12px; margin-top: 12px; overflow-x: auto; line-height: 1.6; }
+.metar-raw.taf { background: #13355d; }
+.chip-ad { border: 1px solid var(--borde); background: #fff; border-radius: 999px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; color: var(--text); transition: background .2s, border-color .2s; }
+.chip-ad:hover { background: var(--celeste-claro); border-color: var(--celeste); }
+.chip-ad b { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--azul); }
+
+.hero select, .hero input { color: var(--text); }
+
+.buscador-of { display: grid; grid-template-columns: 180px 1fr; gap: 14px; align-items: end; }
+.buscador-of .flujo { gap: 8px; }
+@media (max-width: 640px) { .buscador-of { grid-template-columns: 1fr; } .buscador-of .btn { flex: 1 1 100%; } }
+
+.roles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.rol-op { align-items: flex-start; padding: 16px; }
+.rol-op .ico { font-size: 12px; }
+.rol-op small { display: block; margin-top: 4px; line-height: 1.4; }
+[hidden] { display: none !important; }
+
+/* logo oficial */
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand-img { height: 30px; width: auto; display: block; }
+.brand small { display: block; padding-left: 12px; border-left: 1px solid rgba(255, 255, 255, .3); color: var(--celeste-2); font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; line-height: 1.3; max-width: 130px; }
+.brand-claro .brand-img { height: 40px; }
+.brand-claro small { border-left-color: var(--borde); color: var(--muted); }
+.login-card .brand { flex-direction: column; align-items: flex-start; gap: 8px; }
+.login-card .brand small { border-left: 0; padding-left: 2px; }
+.bp-head .brand-img { height: 26px; }
+.tapa-logo { height: 34px; width: auto; align-self: flex-start; }
+@media (max-width: 640px) { .topbar .brand small { display: none; } .brand-img { height: 26px; } }
+.login-card .brand small { max-width: none; }
+
+/* estado de cuenta */
+.movs .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.movs th.num { text-align: right; }
+.movs .pago { color: var(--ok); }
+.movs small { color: var(--ok); font-weight: 700; }
+.tarifas { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.tarifas > div { background: var(--celeste-claro); border-radius: 12px; padding: 12px 14px; }
+.tarifas small { display: block; font-size: 10.5px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.tarifas b { display: block; font-size: 20px; color: var(--navy); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.tarifas em { display: block; font-style: normal; font-size: 12px; color: var(--muted); }
+.resumen-reserva { flex-wrap: wrap; }
+
+/* avisos: email y WhatsApp */
+.msj-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; align-items: start; }
+.msj-canal { font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.mail { border: 1px solid var(--borde); border-radius: 12px; overflow: hidden; background: #eef3f8; }
+.mail-meta { background: #fff; padding: 10px 14px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--borde); display: grid; gap: 2px; }
+.mail-meta b { color: var(--text); }
+.mail-cuerpo { margin: 16px; background: #fff; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(10, 37, 64, .08); }
+.mail-head { background: var(--navy); padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mail-head img { height: 26px; }
+.mail-head span { color: var(--celeste-2); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+.mail-main { padding: 24px 26px 18px; font-family: var(--serif); font-size: 15px; color: #1b2a3a; line-height: 1.55; }
+.mail-main h2 { font-family: var(--serif); font-size: 22px; font-weight: 600; margin: 0 0 14px; color: var(--navy); border-bottom: 2px solid var(--celeste); padding-bottom: 10px; }
+.mail-main p { margin: 0 0 10px; }
+.mail-tabla { width: 100%; border-collapse: collapse; margin: 14px 0; font-family: 'Barlow', system-ui, sans-serif; font-size: 14px; }
+.mail-tabla td { padding: 9px 12px; border-bottom: 1px solid #e6edf4; }
+.mail-tabla td:first-child { color: var(--muted); width: 45%; }
+.mail-tabla td:last-child { font-weight: 600; color: var(--navy); }
+.mail-tabla tr.total td { background: #fff8e6; font-size: 16px; font-weight: 800; color: #8a5a00; }
+.mail-notas { background: var(--celeste-claro); border-left: 3px solid var(--azul-2); padding: 12px 14px; margin: 16px 0; font-family: 'Barlow', system-ui, sans-serif; font-size: 13.5px; }
+.mail-notas p { margin: 0 0 4px; }
+.mail-notas p:last-child { margin: 0; }
+.mail-main .firma { font-weight: 600; }
+.mail-pie { background: #f5f8fb; padding: 12px 22px; font-size: 11.5px; color: var(--muted); }
+.wpp { border-radius: 12px; overflow: hidden; border: 1px solid var(--borde); }
+.wpp-top { background: #075e54; color: #fff; display: flex; align-items: center; gap: 10px; padding: 10px 14px; }
+.wpp-top img { width: 38px; height: 38px; object-fit: contain; background: var(--navy); border-radius: 50%; padding: 6px; }
+.wpp-top small { display: block; opacity: .8; font-size: 11.5px; }
+.wpp-chat { background: #e5ddd5; padding: 18px 14px 22px; min-height: 260px; }
+.wpp-msg { background: #fff; border-radius: 0 10px 10px 10px; padding: 9px 12px 20px; font-size: 14px; line-height: 1.45; color: #111b21; max-width: 92%; position: relative; box-shadow: 0 1px 1px rgba(0, 0, 0, .12); }
+.wpp-hora { position: absolute; right: 10px; bottom: 4px; font-size: 11px; color: #667781; }
+@media (max-width: 860px) { .msj-grid { grid-template-columns: 1fr; } }
+.modal-bg { z-index: 70; }
+
+.notam { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+.notam pre { white-space: pre-wrap; word-break: break-word; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; margin: 6px 0 0; }

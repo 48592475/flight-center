@@ -1,0 +1,111 @@
+/* Flight Center · servidor
+   Sirve la página, guarda los datos, envía los avisos y consulta METAR, TAF y NOTAM. */
+process.env.TZ = process.env.TZ || 'America/Argentina/Buenos_Aires';
+const path = require('path');
+const crypto = require('crypto');
+const express = require('express');
+const cookieSession = require('cookie-session');
+const bcrypt = require('bcryptjs');
+const cron = require('node-cron');
+const { crearStore } = require('./nucleo');
+const persistencia = require('./persistencia');
+const avisos = require('./avisos');
+const meteo = require('./meteo');
+
+const PORT = Number(process.env.PORT || 3000);
+const PRODUCCION = process.env.NODE_ENV === 'production';
+
+(async () => {
+  await persistencia.iniciar();
+  const inicial = await persistencia.cargar();
+
+  const Store = crearStore({
+    cargar: () => inicial,
+    guardar: persistencia.guardar,
+    produccion: process.env.DEMO !== '1',
+    adminInicial: { email: process.env.ADMIN_EMAIL, password: process.env.ADMIN_PASSWORD, nombre: process.env.ADMIN_NOMBRE, apellido: process.env.ADMIN_APELLIDO },
+    hashPass: (p) => bcrypt.hashSync(String(p), 10),
+    // acepta contraseñas sin cifrar de datos viejos y las de bcrypt
+    verificarPass: (p, h) => (String(h || '').startsWith('$2') ? bcrypt.compareSync(String(p), h) : String(p) === h),
+    docs: persistencia.docs,
+    alNotificar: (n) => avisos.enviar(Store, n),
+  });
+
+  // métodos que la página puede llamar
+  const NO_EXPUESTOS = new Set(['reiniciar', 'recordatoriosDeuda', 'login', 'logout', 'documento', 'BLOQUES', 'LECCIONES', 'TRACKS', 'itemKeys', 'hoy', 'dia', 'OPR']);
+  const PERMITIDOS = new Set(Object.keys(Store).filter((k) => typeof Store[k] === 'function' && !k.startsWith('_') && !NO_EXPUESTOS.has(k)));
+
+  const app = express();
+  app.set('trust proxy', 1);
+  app.disable('x-powered-by');
+  app.use((req, res, next) => {
+    res.set({ 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin', 'X-Frame-Options': 'SAMEORIGIN' });
+    if (PRODUCCION && req.headers['x-forwarded-proto'] === 'http') return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
+    next();
+  });
+  app.use(express.json({ limit: '16mb' }));
+  app.use(cookieSession({
+    name: 'fc_sesion', keys: [process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')],
+    maxAge: 12 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', secure: PRODUCCION,
+  }));
+
+  // límite de intentos de inicio de sesión por IP
+  const intentos = new Map();
+  const bloqueado = (ip) => { const x = intentos.get(ip); return x && x.n >= 10 && Date.now() - x.t < 15 * 60 * 1000; };
+  const fallo = (ip) => { const x = intentos.get(ip); intentos.set(ip, !x || Date.now() - x.t > 15 * 60 * 1000 ? { n: 1, t: Date.now() } : { n: x.n + 1, t: x.t }); };
+
+  app.get('/api/salud', (req, res) => res.json({ ok: true, email: avisos.emailListo(), whatsapp: avisos.whatsappListo() }));
+
+  app.post('/api/rpc', async (req, res) => {
+    const { m, a = [] } = req.body || {};
+    const args = Array.isArray(a) ? a : [];
+    const uid = req.session?.uid || null;
+    try {
+      if (m === 'login') {
+        if (bloqueado(req.ip)) return res.status(429).json({ error: 'Demasiados intentos. Esperá 15 minutos y probá de nuevo.' });
+        try { const u = Store.login(args[0], args[1]); req.session.uid = u.id; intentos.delete(req.ip); return res.json({ r: u }); } catch (e) { fallo(req.ip); throw e; }
+      }
+      if (m === 'logout') { req.session = null; return res.json({ r: null }); }
+      if (m !== 'yo' && !uid) return res.status(401).json({ error: 'Sesión no iniciada' });
+      if (m === 'documento') {
+        Store._como(uid); const meta = Store._metaDocumento(args[0], args[1]); Store._como(null);
+        if (!meta) return res.json({ r: null });
+        const data = await persistencia.docs.leer(Number(args[0]), String(args[1]));
+        return res.json({ r: data ? { ...meta, data } : null });
+      }
+      if (!PERMITIDOS.has(m)) return res.status(404).json({ error: 'Acción desconocida' });
+      Store._como(uid);
+      const r = Store[m](...args);
+      if (m === 'yo' && !r && uid) req.session = null;
+      return res.json({ r: r === undefined ? null : r });
+    } catch (e) {
+      const msg = e && e.message ? e.message : 'Error interno';
+      if (!(e instanceof Error) || /is not a function|undefined|null/.test(msg)) console.error(m, e);
+      return res.status(msg === 'Sesión no iniciada' ? 401 : 400).json({ error: msg });
+    } finally { Store._como(null); }
+  });
+
+  app.get('/api/meteo', async (req, res) => {
+    if (!req.session?.uid) return res.status(401).json({ error: 'Sesión no iniciada' });
+    try { res.json(await meteo.consultar(req.query.id)); } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: 'index.html' }));
+  app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+  // recordatorio de deuda: todos los días a las 9:00 (hora de Argentina)
+  cron.schedule(process.env.HORA_RECORDATORIO || '0 9 * * *', () => {
+    try { console.log('Recordatorios de deuda enviados:', Store.recordatoriosDeuda()); } catch (e) { console.error('Recordatorios:', e.message); }
+  }, { timezone: 'America/Argentina/Buenos_Aires' });
+
+  // avisos que quedaron en cola si el servidor se reinició
+  for (const n of Store._pendientes()) avisos.enviar(Store, n);
+
+  const servidor = app.listen(PORT, () => console.log(`Flight Center escuchando en el puerto ${PORT}`));
+  const cerrar = async () => {
+    servidor.close();
+    for (let i = 0; i < 50 && persistencia.sinGuardar(); i++) await new Promise((r) => setTimeout(r, 100));
+    process.exit(0);
+  };
+  process.on('SIGTERM', cerrar); process.on('SIGINT', cerrar);
+})().catch((e) => { console.error('No se pudo iniciar el servidor:', e); process.exit(1); });

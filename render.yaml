@@ -1,0 +1,51 @@
+# Despliegue en Render (render.com) con "New → Blueprint".
+# Crea el servidor web y la base de datos PostgreSQL, y los conecta entre sí.
+services:
+  - type: web
+    name: flight-center
+    runtime: node
+    rootDir: servidor
+    plan: starter
+    region: virginia
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/salud
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: America/Argentina/Buenos_Aires
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flight-center-db
+          property: connectionString
+      # Primer usuario administrador (se crea solo la primera vez)
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # Emails (Gmail de la escuela con contraseña de aplicación)
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      # WhatsApp Business (API oficial de Meta)
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+      # NOTAM (clave gratuita de la FAA)
+      - key: FAA_CLIENT_ID
+        sync: false
+      - key: FAA_CLIENT_SECRET
+        sync: false
+
+databases:
+  - name: flight-center-db
+    plan: basic-256mb
+    region: virginia
+    databaseName: flightcenter
+    user: flightcenter
+    ipAllowList: []

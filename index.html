@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path fill=%27%2359b2ea%27 d=%27M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z%27/></svg>">
 <title>Flight Center Reservas</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path fill=%27%2359b2ea%27 d=%27M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z%27/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
 <style>
@@ -534,7 +533,6 @@ tbody tr:hover { background: #f7fbff; }
   .bp, .bp * { visibility: visible; }
   .bp { position: absolute; left: 0; top: 0; width: 100%; animation: none; box-shadow: none; border: 1px solid #ccc; }
 }
-
 /* ---------- v2: tokens de libro ---------- */
 :root {
   --papel: #fbfaf6;
@@ -791,6 +789,9 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 @media (max-width: 860px) { .msj-grid { grid-template-columns: 1fr; } }
 .modal-bg { z-index: 70; }
 
+.notam { border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; margin-top: 8px; }
+.notam pre { white-space: pre-wrap; word-break: break-word; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; margin: 6px 0 0; }
+
 </style>
 </head>
 <body>
@@ -803,11 +804,12 @@ const LOGOS = { claro: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAbsAAABUCA
 const SYLLABUS = {"teorica": [{"id": "TEO 1", "track": "teorica", "titulo": "Introducción, factores humanos y cabina", "contenidos": ["Qué es ANAC", "RAAC 61 (APPA y PPA)", "Responsabilidad del PIC", "MOE", "Syllabus", "CRM", "Toma de decisiones", "Manejo de la carga de trabajo", "Conciencia situacional", "Actitudes peligrosas", "Estado psicofísico (alcohol, drogas, fármacos, enfermedad)", "En el avión: listas de chequeo (pre-vuelo, puesta en marcha, before take off, after landing, shut down)", "Maniobras: despegue, ascenso, recto y nivelado, descenso, nivelar y aterrizaje"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 2", "track": "teorica", "titulo": "Aerodinámica", "contenidos": ["Fuerzas que actúan", "Ejes y movimientos sobre los ejes", "CG y estabilidad", "W&B, plan de vuelo interno y ANAC", "Sustentación (Bernoulli, Venturi)", "Pérdida, tirabuzón", "Resistencias", "Capa límite", "Estela turbulenta", "Efecto suelo", "Factor de carga", "Aerodinámica de ascensos, descensos y virajes", "Altitud presión / altitud densidad", "Maniobras: virajes, vuelo lento y velocidades reducidas, pérdidas"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 3", "track": "teorica", "titulo": "GMP e instrumentos de vuelo", "contenidos": ["Tipos de motores (motor del C152)", "Ciclo Otto", "Sistemas de ignición, aceite, combustible y eléctrico", "Carburador (+ hielo)", "Instrumentos y controles de motor", "Hélices", "Lectura de todos los instrumentos", "Sistema pitot-estático", "Altimetría (QNH, QNE, QFE)", "Instrumentos giroscópicos", "Brújula (funcionamiento, lectura, errores)", "En el avión: chequeo del APPA solo, evaluado por el instructor", "Maniobras: espirales descendentes, maniobras con referencia al terreno, circuito de tránsito, salidas e ingresos al ATZ MOR"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 4", "track": "teorica", "titulo": "Meteorología", "contenidos": ["Atmósfera, presión, temperatura (inversiones), humedad", "Punto de rocío", "Estabilidad / inestabilidad", "Nubes / nieblas", "Coriolis", "Masas de aire y frentes", "Centros de alta y baja presión", "Tormentas y turbulencia", "Engelamiento estructural", "Informes meteorológicos y pronósticos", "Maniobras: procedimientos de emergencia (en despegue, en circuito, en vuelo, de comunicaciones, fuego), checklists y memory items"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 5", "track": "teorica", "titulo": "RAAC", "contenidos": ["RAAC 91", "Espacios aéreos", "Aeródromos (marcas, luces, control, circuito de tránsito, incursión de pista, sistemas de aproximación)", "Código aeronáutico", "Maniobras: procedimientos de aproximación 90, 180 y 360"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 6", "track": "teorica", "titulo": "Comunicaciones", "contenidos": ["Rangos y tipos de frecuencias (HF, VHF, AM, FM)", "Alfabeto aeronáutico", "Código Q", "Frecuencias VHF aeronáuticas y de emergencia", "Equipos, instalación y antenas", "Fraseología general", "Comunicaciones en MOR, en AD no controlado, en espacios aéreos controlados y de emergencia", "Maniobras: operaciones en campo blando y campo corto"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 7", "track": "teorica", "titulo": "Radioeléctrica", "contenidos": ["Instrumentos radioeléctricos: ADF, VOR, ILS, RMI, HSI, DME, marker, XPDR", "Posicionamiento alrededor de una radioayuda", "Entradas y salidas directas, opuesto y paralelo, cortes de 90°, 60° y 30°", "Inversiones de curso: gota, OACI, 90/270", "Tiempo a antena", "Esperas, IAC e ILS (conocimiento general)", "VOR, HSI y ADF: definiciones, TO/FROM, radiales, corrección de deriva"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}, {"id": "TEO 8", "track": "teorica", "titulo": "Navegación", "contenidos": ["Cartas visuales e instrumentales y proyecciones", "Latitud y longitud en carta", "Trazado de ruta y uso del plotter", "Elección de waypoints", "Corredores visuales y niveles cuadrantales", "Precomputada y uso del computador", "POH: performances, tablas de despegue, ascenso, crucero, descenso y aterrizaje", "TAS, deriva, declinación magnética, rumbos", "ETE, ETA, ATE, ATA", "MADHEL", "Meteorología para la navegación (WINTEM, PRONAREA)", "Plan de vuelo y SAR", "Procedimientos en caso de perderse", "Planilla de riesgo", "Preparación de las navegaciones de FL15 y FL16"], "secciones": [{"titulo": "EVALUACIÓN DE LA CLASE", "items": ["Asistencia y comprensión de los contenidos"]}], "objetivos": [], "estudiar": [], "horas": null}], "vuelo": [{"id": "FL 1", "track": "vuelo", "titulo": "Primer vuelo - maniobras básicas de vuelo y procedimientos básicos", "etapa": "STG I – Maniobras básicas de vuelo, circuito de tránsito, despegues y aterrizajes", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de vuelo, 1.5 de vuelo neto, sin contar los rodajes)", "objetivos": ["Familiarizarse con la operación del avión y sus sistemas en la práctica de vuelo. (Visto en las clases teóricas)", "Demuestre conocimiento sobre las certificaciones, documentos y listas de chequeo. (Visto en las clases teóricas)", "Demuestre conocimiento para realizar las actividades pre-vuelo. (Visto en las clases teóricas)", "Aprenda las funciones de los controles de vuelo y como se utilizan para mantener actitudes especificas.", "Familiarizarse con las maniobras básicas de vuelo, circuito de tránsito, despegues y aterrizajes."], "estudiar": ["Lectura de los Instrumentos del Avión.", "Reglajes altimétricos,", "Combustibles y lubricantes, tipos, cantidades que cargan y consumen nuestros aviones, autonomía.", "Velocidades del avión, Vs0, Vs1, Vr, Vx, Vy, Va, Vfe, Vno, Vne.", "Listas de chequeo.", "Maniobras a realizar en esta FL."], "secciones": [{"titulo": "PROCEDIMIENTOS BÁSICOS", "items": ["Inspección Pre-Vuelo", "Puesta en marcha", "Intercambio positivo de los controles de vuelo", "Rodaje con viento de frente y viento cruzado (correcto uso de frenos y potencia)", "Before Take off cheklist", "After Landing Checklist, estacionar y asegurar el avión"]}, {"titulo": "MANIOBRAS A REALIZAR EN VUELO", "items": ["Despegue normal", "Recto y nivelado (RyN)", "Ascensos y nivelado", "Descensos y nivelado", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Virajes Medios/Normales en ambas direcciones (con referencias visuales)", "Virajes Suaves en ambas direcciones (con referencias visuales)", "Circuito de Tránsito", "Aproximación normal", "Aterrizajes normales (uno completo al regreso a MOR)"]}], "horas": 1.5}, {"id": "FL 2", "track": "vuelo", "titulo": "Cambios de velocidad y configuración sin utilizar flaps", "etapa": "STG I – Maniobras básicas de vuelo, circuito de tránsito, despegues y aterrizajes", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.5 de vuelo neto, sin contar los rodajes)", "objetivos": ["Repasar los procedimientos y maniobras realizados en FL1, y realizarlos con mínima asistencia del Instructor.", "Realizar nuevas maniobras y procedimientos", "Se debe hacer especial énfasis en que se realicen los procedimientos pre-vuelo y las operaciones en tierra en forma correcta.", "Practique por primera vez las operaciones en pasto."], "estudiar": ["Plano del aeródromo MOR y GEZ. Señales, marcas e iluminación del aeródromo, pistas y calles de rodaje.", "Operación en tierra, incluyendo rodaje con viento cruzado", "Precaución para evitar colisiones, Incursión en Pista", "Maniobras a realizar en esta FL"], "secciones": [{"titulo": "REPASO PROCEDIMIENTOS BÁSICOS", "items": ["Inspección Pre-Vuelo", "Puesta en marcha", "Intercambio positivo de los controles de vuelo", "Rodaje con viento de frente y viento cruzado (correcto uso de frenos y potencia)", "Before Take off cheklist", "After Landing Checklist, estacionar y asegurar el avión"]}, {"titulo": "REPASO MANIOBRAS A REALIZAR EN VUELO", "items": ["Despegue normal", "Recto y nivelado (RyN)", "Ascensos y nivelado", "Descensos y nivelado", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Virajes Medios/Normales en ambas direcciones (con referencias visuales)", "Virajes Suaves en ambas direcciones (con referencias visuales)", "Circuito de Tránsito", "Aproximación normal", "Aterrizajes normales (dos completos al regreso a MOR, prever en el Plan de Vuelo)"]}, {"titulo": "MANIOBRAS NUEVAS A REALIZAR EN VUELO", "items": ["Ejercicio de Coordinación", "Corrección de deriva en trayectorias rectas", "Cambios de velocidad en vuelo RyN (Sin Flaps)", "Cambios de velocidad en Ascenso (Sin Flaps)", "Cambios de velocidad en Descenso (Sin Flaps)", "Virajes en vuelo recto a velocidades reducidas (sin Flaps)", "Virajes en Ascenso (Sin Flaps)", "Virajes en Descenso (Sin Flaps)"]}], "horas": 1.5}, {"id": "FL 3", "track": "vuelo", "titulo": "Cambios de velocidad y configuración utilizando flaps, escapes", "etapa": "STG I – Maniobras básicas de vuelo, circuito de tránsito, despegues y aterrizajes", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Repasar los procedimientos y maniobras realizados en los vuelos anteriores.", "Que incorpore definitivamente las operaciones en el circuito de tránsito. Y las realice con poca asistencia del Instructor.", "Incorpore la utilización de los Flaps", "Comprenda cuando utilizar y como hacer un Escape (Aterrizaje frustrado)", "Inicie la práctica de las comunicaciones aeronáuticas."], "estudiar": ["Que son, que producen, para qué y cómo se utilizan los Flaps.", "Cuando se realizan y como se hacen los Escapes (Aterrizajes frustrado)", "Fraseología aeronáutica, Frecuencias de comunicaciones aeronáuticas.", "Maniobras a realizar en esta FL"], "secciones": [{"titulo": "REPASO", "items": ["Despegue normal", "Recto y nivelado (RyN)", "Ascensos y nivelado", "Descensos y nivelado", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Ejercicio de Coordinación", "Corrección de deriva en trayectorias rectas", "Virajes Medios/Normales en ambas direcciones (con referencias visuales)", "Virajes Suaves en ambas direcciones (con referencias visuales)", "Cambios de velocidad en vuelo RyN (Sin Flaps)", "Cambios de velocidad en Ascenso (Sin Flaps)", "Cambios de velocidad en Descenso (Sin Flaps)", "Virajes en vuelo recto a velocidades reducidas (sin Flaps)", "Virajes en Ascenso (Sin Flaps)", "Virajes en Descenso (Sin Flaps)", "Circuito de Tránsito", "Aproximación normal", "Aterrizajes normales (dos completos al regreso a MOR, prever en el Plan de Vuelo)"]}, {"titulo": "MANIOBRAS NUEVAS A REALIZAR EN VUELO", "items": ["Radiocomunicaciones aeronáuticas (en ATZ MOR)", "Cambios de velocidad en vuelo RyN utilizando Flaps", "Cambios de velocidad en Ascenso utilizando Flaps", "Cambios de velocidad en Descenso utilizando Flaps", "Virajes en vuelo recto a velocidades reducidas (con Flaps)", "Virajes en Ascenso (con Flaps)", "Virajes en Descenso (con Flaps)"]}], "horas": 1.7}, {"id": "FL 4", "track": "vuelo", "titulo": "Stage check", "etapa": "STG I – Maniobras básicas de vuelo, circuito de tránsito, despegues y aterrizajes", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El Jefe de Instructores, su asistente o un instructor designado para realizar chequeos, evaluará todas las Maniobras y Procedimientos Básicos", "También se evaluará si la operación dentro del Circuito de Tránsito, Aproximación y Aterrizaje es acorde a la experiencia del alumno.", "Durante este chequeo se evaluaran todos los conocimientos teóricos adquiridos hasta el momento. Esto podrá ser de forma oral o escrita."], "estudiar": ["Todas las maniobras y procedimientos realizados hasta este momento.", "Todos los contenidos teóricos adquiridos hasta este momento."], "secciones": [{"titulo": "PROCEDIMIENTOS BÁSICOS", "items": ["Inspección Pre-Vuelo", "Puesta en marcha", "Intercambio positivo de los controles de vuelo", "Rodaje con viento de frente y viento cruzado (correcto uso de frenos y potencia)", "Before Take off cheklist", "After Landing Checklist, estacionar y asegurar el avión"]}, {"titulo": "MANIOBRAS A REALIZAR EN VUELO", "items": ["Radiocomunicaciones Aeronáuticas (en ATZ MOR)", "Despegue normal", "Recto y nivelado (RyN)", "Ascensos y nivelado", "Descensos y nivelado", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Ejercicio de Coordinación", "Corrección de deriva en trayectorias rectas", "Virajes Medios/Normales en ambas direcciones (con referencias visuales)", "Virajes Suaves en ambas direcciones (con referencias visuales)", "Cambios de velocidad en vuelo RyN (Sin Flaps)", "Cambios de velocidad en Ascenso (Sin Flaps)", "Cambios de velocidad en Descenso (Sin Flaps)", "Virajes en vuelo recto a velocidades reducidas (sin Flaps)", "Virajes en Ascenso (Sin Flaps)", "Virajes en Descenso (Sin Flaps)", "Circuito de Tránsito", "Aproximación normal", "Aterrizajes normales (dos completos al regreso a MOR, prever en el Plan de Vuelo)"]}], "horas": 1.7}, {"id": "FL 5", "track": "vuelo", "titulo": "Cursos rectangulares y virajes alrededor de un punto", "etapa": "STG II – Maniobras con referencia al terreno", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (2 Turnos de Vuelo, 3.4 de vuelo neto, sin contar los rodajes)", "objetivos": ["Introducir las maniobras con referencia al terreno, y comprender el objetivo de estas.", "Iniciar la práctica de Cursos Rectangulares y Virajes Alrededor de un punto.", "Perfeccionar la operación en el circuito de tránsito, aproximaciones y aterrizajes."], "estudiar": ["Como determinar la dirección del viento", "Maniobras a realizar en esta FL"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Radiocomunicaciones aeronáuticas (En ATZ MOR)", "Ejercicio de Coordinación", "Cambios de velocidad en vuelo RyN utilizando Flaps", "Cambios de velocidad en Ascenso utilizando Flaps", "Cambios de velocidad en Descenso utilizando Flaps", "Virajes en vuelo recto a velocidades reducidas (con Flaps)", "Virajes en Ascenso (con Flaps)", "Virajes en Descenso (con Flaps)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Cursos Rectangulares", "Virajes alrededor de un punto", "Radiocomunicaciones aeronáuticas (En AD No Controlado GEZ)", "Incorporación al circuito en AD (Aeródromo) No Controlado", "Circuito de Tránsito (con Flaps)", "Aproximaciones (con Flaps)", "Escape (Aterrizaje frustrado)", "Aterrizajes (con Flaps) (tres completos en GEZ)"]}], "horas": 1.7}, {"id": "FL 6", "track": "vuelo", "titulo": "S sobre caminos, 8 sobre pilones, 8 alrededor de pilones", "etapa": "STG II – Maniobras con referencia al terreno", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Iniciar la práctica de las maniobras de S sobre caminos, 8 sobre pilones y 8 alrededor de pilones.", "Perfeccionar el control general del avión.", "Perfeccionar el vuelo en el circuito de tránsito, aproximaciones y aterrizajes utilizando flaps.", "Afianzar definitivamente las comunicaciones dentro del ATZ y circuito de tránsito de MOR.", "Introducción al Toque y Motor (TyM)"], "estudiar": ["Cómo determinar la dirección del viento", "Maniobras a realizar en esta FL"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Circuitos Rectangulares", "Virajes Alrededor de un Punto", "Escape (Aterrizaje frustrado)", "Circuito de Tránsito (con Flaps)", "Aproximaciones (con Flaps)", "Aterrizajes (con Flaps) (2 completos y un Toque y Motor (TyM) en MOR)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["S sobre caminos", "8 sobre pilones", "8 alrededor de pilones"]}], "horas": 1.7}, {"id": "FL 7", "track": "vuelo", "titulo": "Aproximaciones a la pérdida y pérdida en vuelo nivelado, recto y en virajes", "etapa": "STG III – Pérdidas", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Identifique el comportamiento del avión en la proximidad de la perdida y en pérdida y comprenda como recuperarlo de ambas condiciones.", "Realice las primeras prácticas de aproximación a la pérdida y entrada en pérdida en el avión en vuelo nivelado, y la recuperación de estas condiciones."], "estudiar": ["Qué es la Pérdida (de Sustentación), como se reconoce y como se sale de esta."], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["S sobre caminos", "8 sobre pilones", "8 alrededor de pilones", "Circuito de Tránsito (con Flaps) (Opcional)", "Aproximaciones (con Flaps) (Opcional)", "Aterrizajes (con Flaps) (Opcional)", "Circuito de Tránsito (sin Flaps)", "Aproximaciones (sin Flaps)", "Aterrizajes (sin Flaps) (2 completos o TyM en MOR)", "Escapes (con o sin Flaps)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Aproximación a la Pérdida sin potencia en vuelo recto y nivelado", "Aproximación a la Pérdida con potencia en vuelo recto y nivelado", "Aproximación a la Pérdida sin potencia en viraje a nivel", "Aproximación a la Pérdida con potencia en viraje a nivel", "Pérdida sin potencia en vuelo recto y nivelado", "Pérdida con potencia en vuelo recto y nivelado", "Pérdida sin potencia en viraje a nivel", "Pérdida con potencia en viraje a nivel"]}], "horas": 1.7}, {"id": "FL 8", "track": "vuelo", "titulo": "Aproximaciones a la pérdida y pérdida sin potencia en configuración de aproximación, rectas y en virajes", "etapa": "STG III – Pérdidas", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Comprenda en que situaciones se puede entrar en pérdida en configuración de aproximación, y como recuperarse de estas situaciones.", "Practique por primera vez la entrada en pérdida en configuración de aproximación y la recuperación de esta situación."], "estudiar": ["Peligros de entrar en pérdida en las aproximaciones."], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Incorporación al Circuito de Tránsito en AD No Controlado", "Circuito de Tránsito (con Flaps)", "Aproximaciones (con Flaps)", "Aterrizajes (con Flaps) (2 completos en GEZ)", "Circuito de Tránsito (sin Flaps)", "Aproximaciones (sin Flaps)", "Aterrizajes (sin Flaps) (2 completos en GEZ)", "Escapes (con o sin Flaps)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Aproximación a la Pérdida sin potencia recta en configuración de aproximación", "Aproximación a la Pérdida sin potencia en viraje en configuración de aproximación", "Pérdida sin potencia recta en configuración de aproximación", "Pérdida sin potencia en viraje en configuración de aproximación"]}], "horas": 1.5}, {"id": "FL 9", "track": "vuelo", "titulo": "Aproximaciones a la pérdida y pérdida sin potencia en configuración de despegue y ascenso, rectas y en virajes", "etapa": "STG III – Pérdidas", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Comprenda en que situaciones se puede entrar en pérdida en configuración de despegue y ascenso, y como recuperarse de estas situaciones.", "Practique por primera vez la entrada en pérdida en configuración de despegue y ascenso y la recuperación de esta situación."], "estudiar": ["Peligros de entrar en pérdida en las aproximaciones."], "secciones": [{"titulo": "REPASO", "items": ["Aproximación a la Pérdida sin potencia recta en configuración de aproximación", "Aproximación a la Pérdida sin potencia en viraje en configuración de aproximación", "Pérdida sin potencia recta en configuración de aproximación", "Pérdida sin potencia en viraje en configuración de aproximación", "Circuito de Tránsito (con Flaps)", "Aproximaciones (con Flaps)", "Aterrizajes (con Flaps) (2 completos o TyM en MOR)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Aproximación a la Pérdida con potencia recta en configuración de despegue", "Aproximación a la Pérdida con potencia en viraje en configuración de ascenso inicial", "Pérdida con potencia recta en configuración de despegue", "Pérdida con potencia en viraje en configuración de ascenso inicial"]}], "horas": 1.5}, {"id": "FL 10", "track": "vuelo", "titulo": "Emergencias por falla de motor en despegue, en el circuito de tránsito y en vuelo", "etapa": "STG IV – Procedimientos de emergencia, vuelo con referencia a instrumentos", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Introducir la resolución de situaciones de emergencias por falla de motor en despegues, en el Circuito de Tránsito, y en Vuelo."], "estudiar": ["Listas de emergencia y MEMORY ITEMS", "Como elegir el mejor lugar para aterrizar en aterrizajes de emergencia."], "secciones": [{"titulo": "REPASO", "items": ["Circuito de Tránsito (Con Flaps)", "Aproximación normal (con Flaps)", "Escapes (desde aproximación con Full Flap)", "Aterrizajes Normales (con Flaps) (dos completos en GEZ y uno en MOR)", "Circuito de Tránsito (sin Flaps)", "Aproximación normal (sin Flaps)", "Escapes (desde aproximaciones sin Flaps)", "Aterrizajes Normales (sin Flaps) (dos completos en GEZ)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo"]}], "horas": 1.7}, {"id": "FL 11", "track": "vuelo", "titulo": "Vuelo con referencia a instrumentos, deslizamiento y fallas de equipos y sistemas", "etapa": "STG IV – Procedimientos de emergencia, vuelo con referencia a instrumentos", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Introduzca la utilización del Horizonte Artificial para el control de Actitud y el Giro Direccional para controlar el rumbo a seguir.", "Inicie la práctica del Deslizamiento para perder altura para el aterrizaje.", "Que el alumno recuerde como resolver las distintas fallas de equipos y sistemas", "Comprenda como elegir y proceder a un aeródromo de alternativa si el de destino no se encuentra disponible."], "estudiar": ["Lectura del Horizonte Artificial, Giro Direccional y Indicador de Virajes.", "Qué es, para que sirve y como se realiza el Deslizamiento para aterrizar.", "Fallas de equipos y sistemas", "Qué es el Aeródromo Alternativa, cómo elegirlo, cuás es el que utilizamos y cómo dirigirse a este."], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Perdidas sin potencia rectas (en configuración de aproximación final)", "Perdidas con potencia rectas (en configuración de despegue)", "Perdidas sin potencia en viraje (en configuración de aproximación)", "Perdidas con potencia en viraje (en configuración de ascenso)", "Circuito de Tránsito (sin Flaps)", "Aproximación normal (sin Flaps)", "Aterrizajes Normales (sin Flaps) (dos completos o TyM en MOR)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Virajes con inclinación definida utilizando el Horizonte Artificial.", "Virajes a Rumbo utilizando el Giro Direccional.", "Ascensos con Pitch definido utilizando el Horizonte Artificial.", "Descensos con Pitch definido utilizando el Horizonte Artificial.", "Deslizamiento", "Fallas de equipos y sistemas"]}], "horas": 1.7}, {"id": "FL 12", "track": "vuelo", "titulo": "Procedimientos 90, 180 y 360", "etapa": "STG V – Aproximaciones de precisión, maniobras de performance", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["Conozca los objetivos de las distintas aproximaciones de precisión.", "Realice por primera vez las aproximaciones de precisión de 90, 180 y 360 y entienda su desarrollo."], "estudiar": ["Aproximaciones de precisión 90, 180 y 360."], "secciones": [{"titulo": "REPASO", "items": ["S sobre caminos (S turns)", "8 sobre pilones", "Virajes con inclinación definida utilizando el Horizonte Artificial.", "Virajes a Rumbo utilizando el Giro Direccional.", "Ascensos con Pitch definido utilizando el Horizonte Artificial.", "Descensos con Pitch definido utilizando el Horizonte Artificial.", "Fallas de equipos y sistemas", "Aproximaciones (sin Flaps)", "Deslizamiento", "Aterrizajes sin Flaps (5 completos en GEZ y uno en MOR)"]}, {"titulo": "MANIOBRAS A REALIZAR (1.0)", "items": ["Aproximación de precisión 90", "Aproximación de precisión 180", "Aproximación de precisión 360"]}], "horas": 1.7}, {"id": "FL 13", "track": "vuelo", "titulo": "Vuelo lento a mínima velocidad de sustentación, virajes escarpados, espirales descendentes", "etapa": "STG V – Aproximaciones de precisión, maniobras de performance", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Comprenda la utilidad y practique por primera vez el vuelo lento a mínima velocidad de sustentación.", "Practique por primera vez el viraje escarpado de 45° de inclinación.", "Comprenda la utilidad y practique por primera vez los espirales descendentes.", "Repase las y perfeccione las aproximaciones de precisión."], "estudiar": [], "secciones": [{"titulo": "REPASO", "items": ["Aproximación de precisión 90", "Aproximación de precisión 180", "Aproximación de precisión 360"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Vuelo Lento a mínima velocidad de sustentación.", "Virajes Escarpados (45º bank)", "Espirales descendentes"]}], "horas": 1.7}, {"id": "FL 14", "track": "vuelo", "titulo": "Operaciones en campo corto y campo blando", "etapa": "STG V – Aproximaciones de precisión, maniobras de performance", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (1 Turno de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Introducir al alumno en los procedimientos y técnicas a utilizar durante las operaciones de despegues y aterrizajes en campos cortos y campos blandos.", "Perfeccionar las prácticas de entrada y recuperación de las distintas pérdidas."], "estudiar": ["Operaciones en campo corto y campo blando"], "secciones": [{"titulo": "REPASO", "items": ["Perdidas sin potencia rectas (en configuración de aproximación final)", "Perdidas con potencia rectas (en configuración de despegue)", "Perdidas sin potencia en viraje (en configuración de aproximación final)", "Perdidas con potencia en viraje (en configuración de despegue)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando"]}], "horas": 1.5}, {"id": "FL 15", "track": "vuelo", "titulo": "1ra navegación y entradas y salidas por radiales directas y opuesto y paralelo", "etapa": "STG VI – Navegación y procedimientos radioeléctricos", "opcional": false, "modalidad": "DOBLE COMANDO – TRAVESÍA (2 Turnos consecutivos de Vuelo, 3.5 de vuelo neto, sin", "objetivos": ["Realice su primera navegación, que fue preparada en la clase teórica, y comprenda las actividades a llevar a cabo previo, durante y después de la misma.", "Realice por primera vez en el avión los procedimientos radioeléctricos de establecer posición, ingresos y salidas por radiales, directas y opuesto y paralelo, ya practicados en el simulador, utilizando el VOR. Esto se practicará al VOR de SNT, en el 2do tramo del vuelo."], "estudiar": ["Procedimientos radioeléctricos, establecer posición con respecto a una radioayuda, entradas y salidas por radiales, inversiones de curso.", "Operación del VOR y TRANSPONDER.", "Cartas", "Publicaciones aeronáuticas", "Elección y trazado de ruta y procedimientos básicos de navegación (pilotaje y navegación a la estima)", "Información meteorológica", "Requerimientos de combustible", "Performance y limitaciones", "Registro de la navegación", "Plan de vuelo ANAC (confección, apertura en vuelo, terminación y enmienda)", "Peso y balanceo", "Administración de la cabina", "Factores aeromédicos", "Toma de decisiones aeronáuticas", "Uso de recursos", "Administración de la carga de trabajo", "Procedimientos y maniobras básicas por instrumentos", "Clasificación de espacios aéreos y operaciones en cada uno de estos", "Planificación de la navegación preparada para este vuelo (MOR- MRD-SNT-ENO-MOR)"], "secciones": [{"titulo": "MANIOBRAS A REALIZAR", "items": ["VOR – Sacar posición con respecto a una radioayuda por radial y distancia", "VOR – Sacar posición con respecto a una radioayuda por intersección de radiales", "VOR – Ingresos y salidas directas por radiales.", "VOR – Ingresos y salidas opuesto y paralelo por radiales > 70º.", "Confección del Plan de Vuelo", "Salida del ATZ", "Interceptación del curso a seguir", "Pilotaje", "Navegación a la estima", "Navegación VOR", "Seteos de potencia y control de mezcla", "Desvíos a la alternativa", "Procedimientos en caso de perderse", "Cálculos de Ground Speed (GS), re estimas de tiempo en vuelo (ETE) y hora de arribo (ETA)", "Sacar posición con intersección de radiales utilizando el VOR", "Prevención de colisiones", "Terminación del plan de vuelo", "Comunicaciones de salida, en ruta y al arribo"]}, {"titulo": "REPASO (Durante el Vuelo de Navegación)", "items": ["Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando"]}], "horas": 3.0}, {"id": "FL 16", "track": "vuelo", "titulo": "2da navegación e inversiones de curso utilizando VOR", "etapa": "STG VI – Navegación y procedimientos radioeléctricos", "opcional": false, "modalidad": "DOBLE COMANDO – TRAVESÍA (2 Turnos consecutivos de Vuelo, 3.5 de vuelo neto, sin", "objetivos": ["Realice su segunda navegación, que fue preparada por el alumno, las actividades a llevar a cabo previo, durante y después de la misma por su cuenta.", "Realice por primera vez en el avión los procedimientos radioeléctricos de Inversiones de Curso practicados en el simulador, utilizando el VOR. Esto se practicará al VOR de SNT, en el 2do tramo del vuelo.", "Perfeccione la realización en el avión de los procedimientos radioeléctricos hechos en el vuelo anterior."], "estudiar": ["Procedimientos radioeléctricos, establecer posición con respecto a una radioayuda, entradas y salidas por radiales, inversiones de curso.", "Operación del VOR y TRANSPONDER.", "Cartas", "Publicaciones aeronáuticas", "Elección y trazado de ruta y procedimientos básicos de navegación (pilotaje y navegación a la estima)", "Información meteorológica", "Requerimientos de combustible", "Performance y limitaciones", "Registro de la navegación", "Plan de vuelo ANAC (confección, apertura en vuelo, terminación y enmienda)", "Peso y balanceo", "Administración de la cabina", "Factores aeromédicos", "Toma de decisiones aeronáuticas", "Uso de recursos", "Administración de la carga de trabajo", "Procedimientos y maniobras básicas por instrumentos", "Clasificación de espacios aéreos y operaciones en cada uno de estos", "Planificación de la navegación preparada para este vuelo (MOR- ENO-SNT-FDO-PAL-MOR)"], "secciones": [{"titulo": "MANIOBRAS A REALIZAR", "items": ["VOR – Inversión de curso Gota de Agua", "VOR – Inversión de curso OACI", "VOR – Inversión de curso 90/270", "Confección del Plan de Vuelo", "Salida del ATZ", "Interceptación del curso a seguir", "Pilotaje", "Navegación a la estima", "Navegación VOR", "Seteos de potencia y control de mezcla", "Desvíos a la alternativa", "Procedimientos en caso de perderse", "Cálculos de Ground Speed (GS), re estimas de tiempo en vuelo (ETE) y hora de arribo (ETA)", "Sacar posición con intersección de radiales utilizando el VOR", "Prevención de colisiones", "Terminación del plan de vuelo", "Comunicaciones de salida, en ruta y al arribo"]}, {"titulo": "REPASO (Durante el Vuelo de Navegación)", "items": ["VOR – Sacar posición con respecto a una radioayuda por radial y distancia", "VOR – Sacar posición con respecto a una radioayuda por intersección de radiales", "VOR – Ingresos y salidas directas por radiales.", "VOR – Ingresos y salidas opuesto y paralelo por radiales > 70º.", "Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando"]}], "horas": 3.0}, {"id": "FL 17", "track": "vuelo", "titulo": "Maniobras con referencia al terreno", "etapa": "STG VII – Perfeccionamiento final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Perfeccionamiento de las maniobras con referencia al terreno para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Despegues normales (o con viento cruzado si hay condiciones)", "Emergencia por falla de motor en Despegue", "Cursos rectangulares", "Virajes alrededor de un punto", "S sobre caminos (S turns)", "8 sobre pilones", "8 alrededor de pilones", "Emergencia en Vuelo", "Circuito de Tránsito (sin Flaps)", "Aproximación normal (sin Flaps) (o con viento cruzado si hay condiciones)", "Escapes (sin Flaps)", "Aterrizajes Normales (sin Flaps) (tres completos o TyM en MOR)"]}], "horas": 1.7}, {"id": "FL 18", "track": "vuelo", "titulo": "Pérdidas", "etapa": "STG VII – Perfeccionamiento final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Perfeccionamiento de las maniobras de entrada en pérdida para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Despegues normales (o con viento cruzado si hay condiciones)", "Emergencia por falla de motor en despegue", "Pérdidas sin potencia rectas en vuelo nivelado", "Pérdidas sin potencia en virajes a nivel", "Pérdidas sin potencia rectas en configuración de aproximación final", "Pérdidas sin potencia en viraje en configuración de aproximación", "Pérdidas con potencia rectas en vuelo nivelado", "Pérdidas con potencia en virajes a nivel", "Pérdidas con potencia rectas en configuración de despegue", "Pérdidas con potencia en viraje en configuración de despegue", "Emergencia por falla de motor en Vuelo", "Circuito de Tránsito (con Flaps)", "Aproximación normal (con Flaps) (o con viento cruzado si hay condiciones)", "Escapes (con Flaps)", "Aterrizajes Normales (con Flaps) (cuatro completos o TyM en MOR)"]}], "horas": 1.7}, {"id": "FL 19", "track": "vuelo", "titulo": "Aproximaciones de precisión, operaciones en campo corto y campo blando", "etapa": "STG VII – Perfeccionamiento final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Perfeccionamiento de las aproximaciones de precisión y operaciones en campo corto y blando para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Despegues normales (o con viento cruzado si hay condiciones)", "Aproximación de precisión 90", "Aproximación de precisión 180", "Aproximación de precisión 360", "Emergencia por falla de motor en despegue", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando", "Aproximaciones normales (o con viento cruzado si hay condiciones)", "Aterrizajes normales (o con viento cruzado si hay condiciones) (3 completos en GEZ)"]}], "horas": 1.7}, {"id": "FL 20", "track": "vuelo", "titulo": "Virajes escarpados y vuelo a mínima velocidad de sustentación", "etapa": "STG VII – Perfeccionamiento final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo fuera del circuito de transito", "Perfeccionamiento de virajes escarpados y vuelo lento a mínima velocidad de sustentación para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Despegues normales (o con viento cruzado si hay condiciones)", "Emergencia por falla de motor en despegue", "Virajes escarpados (45º de inclinación)", "Vuelo lento a mínima velocidad de sustentación", "Emergencias por falla de motor en vuelo", "Circuito de Tránsito (sin Flaps)", "Aproximación normal (sin Flaps) (o con viento cruzado si hay condiciones)", "Escapes (sin Flaps)", "Aterrizajes Normales (sin Flaps) (tres completos o TyM en MOR)"]}], "horas": 1.7}, {"id": "FL 21", "track": "vuelo", "titulo": "Espirales descendentes", "etapa": "STG VII – Perfeccionamiento final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo fuera del circuito de transito", "Perfeccionamiento de espirales descendentes para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Despegues normales (o con viento cruzado si hay condiciones)", "Emergencia por falla de motor en despegue", "Emergencias por falla de motor en vuelo", "Espirales descendentes", "Circuito de Tránsito (sin Flaps)", "Aproximación normal (sin Flaps) (o con viento cruzado si hay condiciones)", "Escapes (sin Flaps)", "Deslizamiento", "Aterrizajes Normales (sin Flaps) (cuatro completos o TyM en MOR)"]}], "horas": 1.7}, {"id": "FL 22", "track": "vuelo", "titulo": "Maniobras que requieran un nuevo repaso", "etapa": "STG VII – Perfeccionamiento final", "opcional": true, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Perfeccionamiento de las maniobras necesarias para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Radiocomunicaciones aeronáuticas", "Despegues normales (o con viento cruzado si hay condiciones)", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Ejercicio de Coordinación", "Cambios de velocidad y configuración", "Cursos rectangulares", "Virajes alrededor de un punto", "S sobre caminos (S turns)", "8 sobre pilones", "8 alrededor de pilones", "Virajes con inclinación definida utilizando el Horizonte Artificial.", "Virajes a Rumbo utilizando el Giro Direccional.", "Ascensos con Pitch definido utilizando el Horizonte Artificial.", "Descensos con Pitch definido utilizando el Horizonte Artificial.", "Virajes suaves (15º)", "Virajes medios (30º)", "Virajes escarpados (45º)", "Prevención de tirabuzones", "Perdidas sin potencia rectas (en configuración de aproximación final)", "Perdidas con potencia rectas (en configuración de despegue)", "Perdidas sin potencia en viraje (en configuración de aproximación final)", "Perdidas con potencia en viraje (en configuración de despegue)", "Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando", "Circuito de Tránsito (con y sin Flaps)", "Aproximación normal (con y sin Flaps) (o con viento cruzado si hay condiciones)", "Aproximación de precisión 90", "Aproximación de precisión 180", "Aproximación de precisión 360", "Escapes (desde aproximaciones con y sin Flaps)", "Deslizamiento", "Aterrizajes Normales (con y sin Flaps) (o con viento cruzado si hay condiciones)"]}], "horas": 1.7}, {"id": "FL 23", "track": "vuelo", "titulo": "Chequeo final", "etapa": "STG VII – Chequeo final", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (2 Turnos de Vuelo, 3.4 de vuelo neto, sin contar los rodajes)", "objetivos": ["El Jefe de Instructores, su asistente o un instructor designado para realizar chequeos, evaluará que todas que las maniobras y procedimientos listados a continuación se realicen dentro de los standards requeridos para obtener la licencia y que posea los conocimientos teóricos correspondientes al curso de PPA con VFR controlado."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Radiocomunicaciones aeronáuticas", "Despegues normales (o con viento cruzado si hay condiciones)", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Ejercicio de Coordinación", "Cambios de velocidad y configuración", "Cursos rectangulares", "Virajes alrededor de un punto", "S sobre caminos (S turns)", "8 sobre pilones", "8 alrededor de pilones", "Virajes suaves (15º)", "Virajes medios (30º)", "Virajes escarpados (45º)", "Virajes con inclinación definida utilizando el Horizonte Artificial.", "Virajes a Rumbo utilizando el Giro Direccional.", "Ascensos con Pitch definido utilizando el Horizonte Artificial.", "Descensos con Pitch definido utilizando el Horizonte Artificial.", "Espirales descendentes", "Vuelo lento a mínima velocidad de sustentación.", "Prevención de tirabuzones", "Perdidas sin potencia rectas (en configuración de aproximación final)", "Perdidas con potencia rectas (en configuración de despegue)", "Perdidas sin potencia en viraje (en configuración de aproximación final)", "Perdidas con potencia en viraje (en configuración de despegue)", "Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando", "Circuito de Tránsito (con y sin Flaps)", "Aproximación normal (con y sin Flaps) (o con viento cruzado si hay condiciones)", "Aproximación de precisión 90", "Aproximación de precisión 180", "Aproximación de precisión 360", "Escapes (desde aproximaciones con y sin Flaps)", "Deslizamiento", "Aterrizajes Normales (con y sin Flaps) (o con viento cruzado si hay condiciones)"]}], "horas": 3.0}, {"id": "FL 24", "track": "vuelo", "titulo": "Repaso para el examen de ANAC", "etapa": "STG VII – Repaso para el examen de la ANAC", "opcional": false, "modalidad": "DOBLE COMANDO – LOCAL (Turnos de Vuelo, 1.7 de vuelo neto, sin contar los rodajes)", "objetivos": ["El alumno realice vuelo solo en el circuito de transito", "Perfeccionamiento de las maniobras necesarias para el chequeo final."], "estudiar": [], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Radiocomunicaciones aeronáuticas", "Despegues normales (o con viento cruzado si hay condiciones)", "Uso del Trim/Compensador", "Clareos visuales de área antes de realizar una maniobra", "Ejercicio de Coordinación", "Cambios de velocidad y configuración", "Cursos rectangulares", "Virajes alrededor de un punto", "S sobre caminos (S turns)", "8 sobre pilones", "8 alrededor de pilones", "Virajes con inclinación definida utilizando el Horizonte Artificial.", "Virajes a Rumbo utilizando el Giro Direccional.", "Ascensos con Pitch definido utilizando el Horizonte Artificial.", "Descensos con Pitch definido utilizando el Horizonte Artificial.", "Deslizamiento.", "Aproximación con viento cruzado.", "Aterrizaje con viento cruzado.", "Prevención de tirabuzones", "Perdidas sin potencia rectas (en configuración de aproximación final)", "Perdidas con potencia rectas (en configuración de despegue)", "Perdidas sin potencia en viraje (en configuración de aproximación final)", "Perdidas con potencia en viraje (en configuración de despegue)", "Emergencia por falla de motor en Despegue", "Emergencia por falla de motor en el Circuito de Tránsito", "Emergencias por falla de motor en vuelo", "Despegues en campo corto", "Ascenso a mejor ángulo (Vx)", "Aterrizajes en campo corto", "Despegues en campo blando", "Aterrizajes en campo blando", "Circuito de Tránsito (con y sin Flaps)", "Aproximación normal (con y sin Flaps) (o con viento cruzado si hay condiciones)", "Escapes (desde aproximaciones con y sin Flaps)", "Deslizamiento", "Aterrizajes Normales (con y sin Flaps) (o con viento cruzado si hay condiciones)"]}], "horas": 3.0}], "simulador": [{"id": "SL 1", "track": "simulador", "titulo": "Adaptacion al simulador, introduccion a las maniobras VOR", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Presentarle al alumno el equipo a utilizar, los distintos comando y la operación de los mismos y que conozca los procedimientos a realizar previo al vuelo, y como configurar la cabina de vuelo.", "Que el alumno se familiarice con la operación del equipo en vuelo, practique el listado de maniobras de adaptación y finalice con un pilotaje apropiado para avanzar con las operaciones radioeléctricas", "Realizar las primeras maniobras con referencia al VOR"], "estudiar": ["Reglaje altimétrico", "Utilización del equipo VHF COM, rango de frecuencias, frecuencias de emergencia y de los aeródromos de MOR, PAL, ENO, FDO, EZE, fraseología de comunicaciones aeronáuticas", "Utilización del equipo VHF NAV (VOR), rango de frecuencias en las que opera, frecuencias de PAL, ENO, EZE, FDO, utilidad.", "Teoría de las maniobras a realizar en esta lección"], "secciones": [{"titulo": "MANIOBRAS A REALIZAR", "items": ["Briefing del trabajo a realizar", "Operación de los distintos comandos, instrumentos y sistemas del equipo", "Puesta en marcha", "Seteo de frecuencias", "Utilización del Transponder", "Comunicaciones", "Despegues normales", "Utilización del Trim", "Ascensos y descensos y nivelado desde ambas maniobras", "Virajes a nivel a distinto régimen y ángulos de bankeo", "Descensos en configuración de aterrizaje y escapes", "Circuitos de transito y aterrizajes", "Sacar radial de posición e identificar curso de ingreso (VOR)", "Entradas y salidas directas (<70º) por radiales", "Cambios de frente (cambiar el radial de ingreso a la estación)"]}], "horas": 1.0}, {"id": "SL 2", "track": "simulador", "titulo": "Maniobras VOR", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Perfeccionar las maniobras de vuelo", "Repasar y perfeccionar las maniobras VOR realizadas en la lección anterior", "Realizar y comprender las nuevas maniobras VOR de esta lección"], "estudiar": ["Teoría de las maniobras VOR a realizar en esta lección y de las realizadas en la anterior"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Briefing del trabajo a realizar", "Operación de los distintos comandos, instrumentos y sistemas del equipo", "Puesta en marcha", "Seteo de frecuencias", "Utilización del Transponder", "Comunicaciones", "Despegues normales", "Utilización del Trim", "Ascensos y descensos y nivelado desde ambas maniobras", "Virajes a nivel a distinto régimen y angulos de bankeo", "Descensos en configuración de aterrizaje y escapes", "Circuitos de transito y aterrizajes", "Sacar radial de posición e identificar curso de ingreso (VOR)", "Entradas y salidas directas (<70º) por radiales", "Cambios de frente (cambiar el radial de ingreso a la estación)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo)", "Inversiones de curso (Gota de agua, OACI, 90/270)", "Sacar posición en la carta visual con intersección de radiales"]}], "horas": 1.0}, {"id": "SL 3", "track": "simulador", "titulo": "Perfeccionamiento de maniobras VOR, introduccion del HSI", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Perfecciones todas las maniobras VOR ya realizadas", "Introducción del HSI"], "estudiar": ["Utilización del HSI."], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Briefing del trabajo a realizar", "Operación de los distintos comandos, instrumentos y sistemas del equipo", "Puesta en marcha", "Seteo de frecuencias", "Utilización del Transponder", "Comunicaciones", "Sacar radial de posición e identificar curso de ingreso (VOR)", "Entradas y salidas directas (<70º) por radiales", "Cambios de frente (cambiar el radial de ingreso a la estación)", "Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo)", "Inversiones de curso (Gota de agua, OACI, 90/270)", "Sacar posición en la carta visual con intersección de radiales"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Sacar radial de posición e identificar curso de ingreso (HSI)", "Entradas y salidas directas (<70º) por radiales (HSI)", "Cambios de frente (cambiar el radial de ingreso a la estación) (HSI)", "Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo) (HSI)", "Inversiones de curso (Gota de agua, OACI, 90/270) (HSI)"]}], "horas": 1.0}, {"id": "SL 4", "track": "simulador", "titulo": "Perfeccionamiento de maniobras HSI, introduccion de maniobras RMI", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Perfecciones de la utilización del HSI", "Introducción del RMI"], "estudiar": ["Utilización del RMI", "Frecuencias NDB y Broadcasting", "Definiciones: Rumbo magnético, Marcación, QDM, QDR, Cuadrante, Línea de posición", "Entradas y Salidas directas (menos de 70°), cortes de 90°, 30° (aclarar que hay que tener en cuenta distancia a la antena y velocidad para la demora en llegar)"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Sacar radial de posición e identificar curso de ingreso (HSI)", "Entradas y salidas directas (<70º) por radiales (HSI)", "Cambios de frente (cambiar el radial de ingreso a la estación) (HSI)", "Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo) (HSI)", "Inversiones de curso (Gota de agua, OACI, 90/270) (HSI)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Utilización del RMI", "Entradas y Salidas directas (<70º) (RMI)", "Corrección de diferencia de marcación (RMI)", "Cambios de frente (RMI)"]}], "horas": 1.0}, {"id": "SL 5", "track": "simulador", "titulo": "Perfeccionamiento de maniobras RMI", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Perfeccione las maniobras RMI de la lección anterior", "Realice y comprenda las maniobras RMI de esta lección"], "estudiar": ["Teoría de las maniobras RMI a realizar en esta lección"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Utilización del RMI", "Entradas y Salidas directas (<70º) (RMI)", "Corrección de diferencia de marcación (RMI)", "Cambios de frente (RMI)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Cambios de cuadrante (entradas y salidas >70º, opuesto y paralelo) (RMI)", "Inversiones de curso (Gota de agua, OACI, 90/270) (RMI)"]}], "horas": 1.0}, {"id": "SL 6", "track": "simulador", "titulo": "Simu CHK", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["El Jefe de instructores, su asistente o un Instructor de ETVI designado evaluará que todas las maniobras listadas a continuación se realicen dentro del standard requerido para aprobar este chequeo.", "Se evaluaran también los contenidos teóricos correspondientes a este curso"], "estudiar": ["Teoría de las maniobras a ser repasadas en esta lección", "Contenido correspondiente a la clase de TEORIA 7"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Briefing del trabajo a realizar", "Operación de los distintos comandos, instrumentos y sistemas del equipo", "Puesta en marcha", "Seteo de frecuencias", "Utilización del Transponder", "Comunicaciones", "Despegues normales", "Utilización del Trim", "Ascensos y descensos y nivelado desde ambas maniobras", "Virajes a nivel a distinto régimen y angulos de bankeo", "Descensos en configuración de aterrizaje y escapes", "Circuitos de transito y aterrizajes", "Sacar radial de posición e identificar curso de ingreso (VOR, HSI y RMI)", "Entradas y salidas directas (<70º) por radiales (VOR, HSI y RMI)", "Cambios de frente (cambiar el radial de ingreso a la estación) (VOR, HSI y RMI)", "Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo) ((VOR, HSI y", "RMI)", "Inversiones de curso (Gota de agua, OACI, 90/270) (VOR, HSI y RMI)"]}], "horas": 1.0}, {"id": "SL 7", "track": "simulador", "titulo": "Repaso de maniobras VOR, HSI y RMI, introduccion de maniobras ADF", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Introducción a las maniobras ADF"], "estudiar": ["Utilización del equipo ADF, frecuencias en las que opera, errores", "Definiciones: Rumbo magnético, Marcación, QDM, QDR, Cuadrante, Línea de posición", "Entradas y Salidas directas (menos de 70°), cortes de 90°, 30° (aclarar que hay que tener en cuenta distancia a la antena y velocidad para la demora en llegar)"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Sacar radial de posición e identificar curso de ingreso (VOR, HSI y RMI)", "Entradas y salidas directas (<70º) por radiales (VOR, HSI y RMI)", "Cambios de frente (cambiar el radial de ingreso a la estación) (VOR, HSI y RMI)", "Cambios de cuadrante (entradas y salidas por radiales >70º, opuesto y paralelo) ((VOR, HSI y", "RMI)", "Inversiones de curso (Gota de agua, OACI, 90/270) (VOR, HSI y RMI)"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Utilización del equipo ADF", "Sacar QDR y QDM", "Entradas y Salidas directas (<70º)", "Corrección de diferencia de marcación", "Cambios de frente"]}], "horas": 1.0}, {"id": "SL 8", "track": "simulador", "titulo": "Maniobras ADF", "etapa": null, "opcional": false, "modalidad": "", "objetivos": ["Perfeccione las maniobras ADF de la lección anterior", "Realice y comprenda las maniobras ADF de esta lección"], "estudiar": ["Teoría de las maniobras ADF a realizar en esta lección"], "secciones": [{"titulo": "REPASO (Maniobras realizadas en FLs anteriores especialmente las siguientes)", "items": ["Briefing del trabajo a realizar", "Operación de los distintos comandos, instrumentos y sistemas del equipo", "Puesta en marcha", "Seteo de frecuencias", "Utilización del Transponder", "Comunicaciones", "Utilización del equipo ADF", "Sacar QDR y QDM", "Entradas y Salidas directas (<70º)", "Cambios de frente"]}, {"titulo": "MANIOBRAS A REALIZAR", "items": ["Cambios de cuadrante (entradas y salidas >70º, opuesto y paralelo)", "Inversiones de curso (Gota de agua, OACI, 90/270)", "Sacar posición en la carta visual con intersección de QDRs"]}], "horas": 1.0}], "reglas": ["TEO 1, 2 y 3 antes de comenzar a volar", "Terminar hasta TEO 6 antes de FL 3", "TEO 7 al iniciar FL 7", "TEO 8 antes de FL 13", "SIMU 1 después de TEO 7 y antes de FL 9", "Terminar SIMU 5 antes de FL 13", "Para pedir examen ANAC: 40 hs de vuelo, chequeos finales aprobados (FL 23, SL 5 y teoría) y mínimo 10 vuelos solo"]};
 
 /* =====================================================================
-   Flight Center · capa de datos (demo en el navegador)
-   Todas las reglas del negocio viven acá, para poder pasarlas a un
-   servidor real sin tocar la interfaz.
+   Flight Center · capa de datos
+   Todas las reglas del negocio viven acá. El mismo archivo corre:
+   - en el navegador (demo de GitHub Pages, datos en localStorage)
+   - en el servidor (Node), con persistencia en PostgreSQL
    ===================================================================== */
-const Store = (() => {
+function crearStore(opts = {}) {
   const KEY = 'flightcenter-demo-v2';
   const BLOQUES = [8, 10, 12, 14, 16];
   const NOTAS_OK = ['MB', 'B'];
@@ -817,6 +819,8 @@ const Store = (() => {
   const ahora = () => new Date().toISOString().replace('T', ' ').slice(0, 16);
   const hh = (b) => `${String(b).padStart(2, '0')}:00`;
   const fail = (m) => { throw new Error(m); };
+  const hashPass = opts.hashPass || ((p) => String(p));
+  const verificarPass = opts.verificarPass || ((p, h) => String(p) === h);
 
   // ---------- syllabus ----------
   const TRACKS = { teorica: SYLLABUS.teorica, vuelo: SYLLABUS.vuelo, simulador: SYLLABUS.simulador };
@@ -834,7 +838,7 @@ const Store = (() => {
   function semilla() {
     const db = { v: 2, seq: { u: 0, rec: 0, r: 0, c: 0, i: 0, n: 0 }, usuarios: [], recursos: [], disponibilidad: {}, reservas: [], clases: [], inscripciones: [], novedades: [] };
     const U = (rol, nombre, apellido, email, extra = {}) => {
-      const u = { id: ++db.seq.u, rol, activo: true, nombre, apellido, email, password: 'flight123', dni: '', fecha_nacimiento: '', direccion: '', telefono: '',
+      const u = { id: ++db.seq.u, rol, activo: true, nombre, apellido, email, password: hashPass('flight123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '',
         contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {}, ...extra };
       db.usuarios.push(u); return u.id;
     };
@@ -919,6 +923,19 @@ const Store = (() => {
     db.meteo = { metar: `METAR SADM ${z(obs.getUTCDate())}${z(obs.getUTCHours())}00Z 03008KT 9999 FEW030 24/12 Q1016`, taf: '', fecha: ahora(), autor_id: martin, ejemplo: true };
     return db;
   }
+  // semilla del sistema real: solo el administrador, la flota y las tarifas
+  function semillaProduccion() {
+    const a = opts.adminInicial || {};
+    const db = { v: 2, seq: { u: 1, rec: 0, r: 0, c: 0, i: 0, n: 0, m: 0, nt: 0, p: 0 }, disponibilidad: {}, reservas: [], clases: [], inscripciones: [], novedades: [],
+      movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
+      usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
+        password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
+      recursos: [] };
+    const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
+    R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
+    R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
+    return db;
+  }
   // ---------- cuentas: tarifas y movimientos ----------
   const TARIFAS_INICIALES = { vuelo: 196000, simulador: 36000, teorica: 26000, recargo: 20, horas_aviso: 24 };
   function reconstruirCuentas(d) {
@@ -946,13 +963,18 @@ const Store = (() => {
     return d;
   }
 
+  const navegador = !opts.cargar;
   let db;
-  try { db = JSON.parse(localStorage.getItem(KEY)); } catch { db = null; }
-  if (!db || db.v !== 2) db = semilla(); else db = migrar(db);
+  if (navegador) { try { db = JSON.parse(localStorage.getItem(KEY)); } catch { db = null; } } else db = opts.cargar();
+  if (!db || db.v !== 2) db = opts.produccion ? semillaProduccion() : semilla(); else db = migrar(db);
   let sesion = null;
-  try { sesion = Number(sessionStorage.getItem(KEY + '-s')) || null; } catch { /* sin storage */ }
-  const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* cuota llena o bloqueado: queda en memoria */ } };
-  const guardarSesion = () => { try { sesion ? sessionStorage.setItem(KEY + '-s', String(sesion)) : sessionStorage.removeItem(KEY + '-s'); } catch { /* ignorar */ } };
+  if (navegador) { try { sesion = Number(sessionStorage.getItem(KEY + '-s')) || null; } catch { /* sin storage */ } }
+  const guardar = () => {
+    if (!navegador) return opts.guardar(db);
+    try { localStorage.setItem(KEY, JSON.stringify(db)); } catch { /* cuota llena o bloqueado: queda en memoria */ }
+  };
+  const guardarSesion = () => { if (!navegador) return; try { sesion ? sessionStorage.setItem(KEY + '-s', String(sesion)) : sessionStorage.removeItem(KEY + '-s'); } catch { /* ignorar */ } };
+  if (!navegador) guardar();
 
   // ---------- notificaciones (email y WhatsApp) ----------
   // En la demo quedan registradas para verlas; con un servidor se envían de verdad.
@@ -960,8 +982,10 @@ const Store = (() => {
     const pref = u.notif || { email: true, whatsapp: true };
     const canales = [pref.email && u.email ? ['email', u.email] : null, pref.whatsapp && u.telefono ? ['whatsapp', u.telefono] : null].filter(Boolean);
     for (const [canal, destino] of canales) {
-      db.notificaciones.push({ id: ++db.seq.nt, usuario_id: u.id, canal, destino, tipo, fecha: ahora(), dia: hoy(), datos: JSON.parse(JSON.stringify(datos)),
-        nombre: u.nombre, apellido: u.apellido, rol: u.rol });
+      const n = { id: ++db.seq.nt, usuario_id: u.id, canal, destino, tipo, fecha: ahora(), dia: hoy(), datos: JSON.parse(JSON.stringify(datos)),
+        nombre: u.nombre, apellido: u.apellido, rol: u.rol, estado: navegador ? 'demo' : 'pendiente' };
+      db.notificaciones.push(n);
+      if (opts.alNotificar) setTimeout(() => opts.alNotificar(n), 0);
     }
     return canales.length;
   }
@@ -1056,12 +1080,12 @@ const Store = (() => {
   const api = {
     BLOQUES, LECCIONES, TRACKS, itemKeys, hoy, dia,
 
-    reiniciar() { db = semilla(); sesion = null; guardarSesion(); guardar(); },
+    reiniciar() { if (!navegador) fail('No disponible'); db = semilla(); sesion = null; guardarSesion(); guardar(); },
     login(email, password) {
       const u = db.usuarios.find((x) => x.email.toLowerCase() === String(email || '').trim().toLowerCase());
-      if (!u || u.password !== String(password || '')) fail('Email o contraseña incorrectos. Verificá que estés registrado en Flight Center.');
+      if (!u || !verificarPass(String(password || ''), u.password)) fail('Email o contraseña incorrectos. Verificá que estés registrado en Flight Center.');
       if (!u.activo) fail('Tu usuario está desactivado. Consultá con la administración.');
-      sesion = u.id; guardarSesion(); api.recordatoriosDeuda(); return pub(u);
+      sesion = u.id; guardarSesion(); if (navegador) api.recordatoriosDeuda(); return pub(u);
     },
     logout() { sesion = null; guardarSesion(); },
     yo: () => { try { return pub(yo()); } catch { return null; } },
@@ -1078,25 +1102,29 @@ const Store = (() => {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
         if (datos.rol && u.id !== me.id) u.rol = datos.rol;
         if ('activo' in datos && u.id !== me.id) u.activo = !!datos.activo;
-        if (datos.password) { if (String(datos.password).length < 6) fail('La contraseña debe tener al menos 6 caracteres'); u.password = datos.password; }
+        if (datos.password) { if (String(datos.password).length < 6) fail('La contraseña debe tener al menos 6 caracteres'); u.password = hashPass(datos.password); }
       }
       guardar(); return pub(u);
     },
     cambiarPassword(actual, nueva) {
       const u = yo();
-      if (u.password !== String(actual || '')) fail('La contraseña actual no es correcta');
+      if (!verificarPass(String(actual || ''), u.password)) fail('La contraseña actual no es correcta');
       if (String(nueva || '').length < 6) fail('La nueva contraseña debe tener al menos 6 caracteres');
-      u.password = nueva; guardar();
+      u.password = hashPass(nueva); guardar();
     },
-    async subirDoc(tipo, file) {
+    // archivo = { nombre, tam, tipo, data (data URL) } leído por la interfaz
+    subirDoc(tipo, archivo) {
       const u = yo();
-      if (!file) fail('No se eligió ningún archivo');
-      if (!(file.type === 'application/pdf' || /\.pdf$/i.test(file.name))) fail('Solo se aceptan archivos PDF');
-      if (file.size > 10 * 1024 * 1024) fail('El PDF supera los 10 MB');
-      const data = await new Promise((ok, mal) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = mal; fr.readAsDataURL(file); });
-      u.docs[tipo] = { nombre: file.name, tam: file.size, fecha: ahora(), data }; guardar(); return pub(u);
+      if (!['cma', 'licencia', 'autorizacion'].includes(tipo)) fail('Documento desconocido');
+      if (!archivo || !archivo.data) fail('No se eligió ningún archivo');
+      if (!(archivo.tipo === 'application/pdf' || /\.pdf$/i.test(archivo.nombre || ''))) fail('Solo se aceptan archivos PDF');
+      if (!String(archivo.data).startsWith('data:application/pdf') && !String(archivo.data).startsWith('data:application/octet-stream')) fail('El archivo no es un PDF válido');
+      if (archivo.tam > 10 * 1024 * 1024) fail('El PDF supera los 10 MB');
+      const meta = { nombre: String(archivo.nombre).slice(0, 120), tam: Number(archivo.tam) || 0, fecha: ahora() };
+      if (opts.docs) { opts.docs.guardar(u.id, tipo, archivo.data); u.docs[tipo] = meta; } else u.docs[tipo] = { ...meta, data: archivo.data };
+      guardar(); return pub(u);
     },
-    quitarDoc(tipo) { const u = yo(); delete u.docs[tipo]; guardar(); return pub(u); },
+    quitarDoc(tipo) { const u = yo(); delete u.docs[tipo]; if (opts.docs) opts.docs.borrar(u.id, tipo); guardar(); return pub(u); },
     documento(uid, tipo) {
       const me = yo();
       if (me.id !== Number(uid) && !['instructor', 'admin'].includes(me.rol)) return null;
@@ -1108,7 +1136,7 @@ const Store = (() => {
     recursos: (tipo) => db.recursos.filter((r) => !tipo || r.tipo === tipo).map((r) => ({ ...r,
       abiertas: db.novedades.filter((n) => n.recurso_id === r.id && ['reportada', 'en_revision'].includes(n.estado)).length,
       reportadas: db.novedades.filter((n) => n.recurso_id === r.id && n.estado === 'reportada').length })),
-    usuario: (id) => pub(usuario(id)),
+    usuario: (id) => { exigir('admin'); return pub(usuario(id)); },
 
     // ---------- reservas de vuelo y simulador ----------
     disponibilidadDia(tipo, f) {
@@ -1159,11 +1187,13 @@ const Store = (() => {
         const x = { id: ++db.seq.r, tipo, piloto_id: u.id, instructor_id: inst?.id || null, recurso_id: r.id, fecha, bloque: b, estado: 'pendiente', horas: null, observaciones: null, leccion: null, notas: {}, destino, creado: ahora() };
         db.reservas.push(x); return x;
       });
-      const exp = nuevas.map(expandir);
-      notificar(u, 'reserva', { reservas: exp, leccion: u.rol === 'alumno' ? leccionActual(u.id, tipo)?.id || null : null });
+      const lec = u.rol === 'alumno' ? leccionActual(u.id, tipo)?.id || null : null;
+      const exp = nuevas.map((r) => ({ ...expandir(r), leccion_sugerida: lec }));
+      notificar(u, 'reserva', { reservas: exp, leccion: lec });
       guardar(); return exp;
     },
-    misReservas() { const u = yo(); return db.reservas.filter((r) => r.piloto_id === u.id).sort(ord).reverse().map(expandir); },
+    misReservas() { const u = yo(); const sug = (r) => u.rol === 'alumno' && r.estado === 'pendiente' ? leccionActual(u.id, r.tipo)?.id || null : null;
+      return db.reservas.filter((r) => r.piloto_id === u.id).sort(ord).reverse().map((r) => ({ ...expandir(r), leccion_sugerida: sug(r) })); },
     cancelarReserva(id) {
       const u = yo(); const r = db.reservas.find((x) => x.id === Number(id));
       if (!r) fail('Reserva no encontrada');
@@ -1301,7 +1331,11 @@ const Store = (() => {
       return p.rol === 'alumno' ? { leccion: r.leccion, ...estadoLeccion(p.id, r.leccion) } : null;
     },
     syllabus: syllabusDe,
-    leccionActual: (alumnoId, track) => leccionActual(alumnoId ?? yo().id, track),
+    leccionActual: (alumnoId, track) => {
+      const me = yo(); const id = alumnoId ?? me.id;
+      if (Number(id) !== me.id && !['instructor', 'admin'].includes(me.rol)) fail('Sin permiso');
+      return leccionActual(Number(id), track);
+    },
 
     // ---------- disponibilidad de instructores (admin) ----------
     disponibilidadSemana(lunes, instId) {
@@ -1360,7 +1394,7 @@ const Store = (() => {
       exigir('admin');
       if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
-      const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: datos.password, docs: {}, horas_previas: 0 };
+      const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };
       db.usuarios.push(u);
       try { return api.guardarPerfil(datos, u.id); } catch (e) { db.usuarios.pop(); db.seq.u--; throw e; }
     },
@@ -1468,12 +1502,88 @@ const Store = (() => {
     if (n) guardar();
     return n;
   };
+  api.enviarRecordatoriosAhora = () => { exigir('admin'); return api.recordatoriosDeuda(); };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
   api.guardarPreferencias = ({ email, whatsapp }) => { const u = yo(); u.notif = { email: !!email, whatsapp: !!whatsapp }; guardar(); return pub(u); };
+  // ---------- uso interno del servidor (no se exponen a la interfaz) ----------
+  api._como = (id) => { sesion = id || null; };
+  api._sesion = () => sesion;
+  api._metaDocumento = (uid, tipo) => { const me = yo(); if (me.id !== Number(uid) && !['instructor', 'admin'].includes(me.rol)) return null; return usuario(uid)?.docs[tipo] || null; };
+  api._marcarNotificacion = (id, estado, detalle) => { const n = db.notificaciones.find((x) => x.id === id); if (n) { n.estado = estado; n.detalle = detalle || null; guardar(); } };
+  api._pendientes = () => db.notificaciones.filter((n) => n.estado === 'pendiente');
   return api;
+}
+if (typeof module !== 'undefined') module.exports = { crearStore };
+
+/* Modo demo: la lógica corre en el navegador y los datos quedan en localStorage. */
+const MODO = 'demo';
+const Store = (() => {
+  const s = crearStore();
+  const SINCRONICOS = new Set(['BLOQUES', 'LECCIONES', 'TRACKS', 'itemKeys', 'OPR', 'hoy', 'dia']);
+  return new Proxy(s, {
+    get(t, k) {
+      const v = t[k];
+      if (SINCRONICOS.has(k) || typeof v !== 'function') return v;
+      return (...a) => new Promise((ok, mal) => { try { ok(v(...a)); } catch (e) { mal(e); } });
+    },
+  });
 })();
+
+/* Contenido de los avisos (email y WhatsApp). Lo usan la página y el servidor. */
+const contenidoAviso = (() => {
+  const hh = (h) => `${String(h).padStart(2, '0')}:00`;
+  const parseISO = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+  const fmtFecha = (s, o) => parseISO(s).toLocaleDateString('es-AR', o);
+  const codigoReserva = (id, p = 'FC') => `${p}-${String(id).padStart(5, '0')}`;
+  const pesos = (n) => `$ ${Math.round(n || 0).toLocaleString('es-AR')}`;
+  const fechaLarga = (f) => { const t = fmtFecha(f, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return t[0].toUpperCase() + t.slice(1); };
+  const fechaCorta = (f) => f.split('-').reverse().join('/');
+  const saludo = (n) => `Estimado/a ${n.nombre} ${n.apellido}`;
+
+  // ---------- contenido de cada aviso ----------
+  function datosAviso(n) {
+    if (n.tipo === 'reserva') {
+      const rs = n.datos.reservas; const r = rs[0]; const bl = rs.map((x) => x.bloque).sort((a, b) => a - b);
+      const sim = r.tipo === 'simulador';
+      return {
+        asunto: `Reserva confirmada · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(r.fecha)} · ${codigoReserva(r.id, sim ? 'SIM' : 'FC')}`,
+        titulo: sim ? 'Turno de simulador confirmado' : 'Reserva de vuelo confirmada',
+        intro: `Le confirmamos su reserva de ${sim ? 'simulador' : 'vuelo'} en Flight Center. A continuación encontrará el detalle.`,
+        filas: [['Código de reserva', codigoReserva(r.id, sim ? 'SIM' : 'FC')], ['Fecha', fechaLarga(r.fecha)], ['Horario', `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs (${rs.length} bloque${rs.length > 1 ? 's' : ''})`],
+          ['Presentación', `${String(bl[0] - 1).padStart(2, '0')}:45 hs`], [sim ? 'Simulador' : 'Aeronave', `${r.recurso} · ${r.modelo}`], ['Instructor', r.instructor || 'Sin instructor'],
+          ...(sim ? [] : [['Ruta', `MOR → ${r.destino && r.destino !== 'MOR' ? r.destino : 'MOR (vuelo local)'}`]]), ...(n.datos.leccion ? [['Lección del syllabus', n.datos.leccion]] : [])],
+        notas: ['Preséntese 15 minutos antes con su CMA vigente y documentación.', 'Antes del vuelo consulte METAR, TAF y NOTAM en las fuentes oficiales.',
+          'Cancelación sin cargo hasta 24 horas antes. Con menos aviso se cobra el 20% del valor de cada bloque.'],
+        wpp: [`✈️ *Flight Center* · ${sim ? 'Simulador confirmado' : 'Reserva confirmada'}`, '', `Hola ${n.nombre}, tu ${sim ? 'turno de simulador' : 'vuelo'} quedó confirmado.`, '',
+          `📅 *${fechaLarga(r.fecha)}*`, `🕗 ${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs · presentación ${String(bl[0] - 1).padStart(2, '0')}:45`, `${sim ? '🖥️' : '🛩️'} ${r.recurso} · ${r.modelo}`,
+          `👨‍✈️ ${r.instructor || 'Sin instructor'}`, ...(sim ? [] : [`🛫 MOR → ${r.destino && r.destino !== 'MOR' ? r.destino : 'MOR (local)'}`]), ...(n.datos.leccion ? [`📘 Lección ${n.datos.leccion}`] : []),
+          `🔖 Código ${codigoReserva(r.id, sim ? 'SIM' : 'FC')}`, '', '_Cancelación sin cargo hasta 24 h antes; después se cobra el 20% del bloque._', '', '¡Buen vuelo!'],
+      };
+    }
+    if (n.tipo === 'clase') {
+      const k = n.datos.clase;
+      return {
+        asunto: `Inscripción confirmada · Clase ${k.teo} del ${fechaCorta(k.fecha)}`, titulo: 'Inscripción a clase teórica confirmada',
+        intro: 'Le confirmamos su inscripción a la siguiente clase teórica.',
+        filas: [['Clase', `${k.teo} · ${k.titulo}`], ['Fecha', fechaLarga(k.fecha)], ['Horario', `${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`], ['Aula', k.aula], ['Instructor', k.instructor]],
+        notas: ['Traiga leídos los contenidos de la clase del syllabus.', 'Baja sin cargo hasta 24 horas antes. Con menos aviso se cobra el 20% del valor de la clase.'],
+        wpp: ['📚 *Flight Center* · Inscripción confirmada', '', `Hola ${n.nombre}, quedaste inscripto/a en la clase *${k.teo} · ${k.titulo}*.`, '', `📅 *${fechaLarga(k.fecha)}*`, `🕗 ${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`, `🏫 ${k.aula} · ${k.instructor}`, '', '_Baja sin cargo hasta 24 h antes._'],
+      };
+    }
+    const d = n.datos;
+    return {
+      asunto: `Recordatorio de saldo pendiente · ${pesos(d.saldo)}`, titulo: 'Recordatorio de saldo pendiente',
+      intro: `Le recordamos que al día de la fecha su cuenta en Flight Center registra un saldo pendiente de pago de ${pesos(d.saldo)}.`,
+      filas: [['Saldo a pagar', pesos(d.saldo)], ...d.ultimos.map((m) => [`${fechaCorta(m.fecha)} · ${m.concepto}`, pesos(m.importe)])],
+      notas: ['Puede abonar en la oficina de la escuela en efectivo, con tarjeta o por transferencia bancaria / Mercado Pago.', 'Si ya realizó el pago, por favor desestime este mensaje.', 'Este recordatorio se envía una vez por día mientras haya saldo pendiente.'],
+      wpp: ['💳 *Flight Center* · Recordatorio de pago', '', `Hola ${n.nombre}, tu cuenta registra un saldo pendiente de *${pesos(d.saldo)}*.`, '', 'Podés abonar en la oficina de la escuela en efectivo, tarjeta, transferencia o Mercado Pago.', '', '_Si ya pagaste, desestimá este mensaje. ¡Gracias!_'],
+    };
+  }
+  return datosAviso;
+})();
+if (typeof module !== 'undefined') module.exports = { contenidoAviso };
 
 /* Flight Center · interfaz (parte 1: base, login, alumno y PPA) */
 'use strict';
@@ -1523,8 +1633,8 @@ function toast(msg, tipo = '') {
   setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 3400);
 }
 // ejecuta una acción del Store y muestra el error si lo hay
-function hacer(fn, ok) {
-  try { const r = fn(); if (ok) toast(ok, 'ok'); return r; } catch (e) { toast(e.message, 'error'); return undefined; }
+async function hacer(fn, ok) {
+  try { const r = await fn(); if (ok) toast(ok, 'ok'); return r; } catch (e) { toast(e.message, 'error'); return undefined; }
 }
 function countUp(el, fin, dec = 0) {
   const t0 = performance.now();
@@ -1545,10 +1655,10 @@ const stat = (lbl, val, { dec = 0, suf = '', dest = false, i = 0 } = {}) =>
 function modal(html, { ancho = false } = {}) {
   const bg = document.createElement('div'); bg.className = 'modal-bg';
   bg.innerHTML = `<div class="modal ${ancho ? 'ancho' : ''}" role="dialog" aria-modal="true">${html}</div>`;
-  const onKey = (e) => { if (e.key === 'Escape') cerrar(); };
+  const onKey = async (e) => { if (e.key === 'Escape') await cerrar(); };
   const cerrar = () => { bg.style.animation = 'fadeIn .2s reverse both'; setTimeout(() => bg.remove(), 180); document.removeEventListener('keydown', onKey); };
   document.addEventListener('keydown', onKey);
-  bg.addEventListener('click', (e) => { if (e.target === bg || e.target.closest('[data-cerrar]')) cerrar(); });
+  bg.addEventListener('click', async (e) => { if (e.target === bg || e.target.closest('[data-cerrar]')) await cerrar(); });
   $('#modal-root').append(bg);
   return { el: bg, cerrar };
 }
@@ -1564,7 +1674,7 @@ function confirmar(titulo, texto, ok = 'Confirmar') {
 }
 
 // ---------- shell ----------
-function render() { if (!state.user) return renderLogin(); renderApp(); }
+async function render() { if (!state.user) return renderLogin(); await renderApp(); }
 
 function renderLogin() {
   const nubes = Array.from({ length: 7 }, (_, i) => { const w = 120 + Math.random() * 160;
@@ -1573,7 +1683,7 @@ function renderLogin() {
   app.innerHTML = `<section class="login">${nubes}
     <div class="plane-fly">${ICON.avion.replace('<svg', '<svg style="transform:rotate(80deg)"')}</div>
     <div class="login-card">
-      ${logo('Sistema de reservas', 'claro')}<span class="demo-tag">Versión demo · los datos se guardan en este navegador</span>
+      ${logo('Sistema de reservas', 'claro')}${MODO === 'demo' ? '<span class="demo-tag">Versión demo · los datos se guardan en este navegador</span>' : ''}
       <p class="muted" style="margin:16px 0 0">Ingresá con el email registrado en la escuela.</p>
       <form id="f-login" novalidate>
         <label class="campo">Email<input id="l-email" type="email" name="email" autocomplete="username" required placeholder="tu@email.com"></label>
@@ -1581,17 +1691,17 @@ function renderLogin() {
         <div class="error-msg" id="login-err"></div>
         <button class="btn block" type="submit">Iniciar sesión ${avionIco(16, 90)}</button>
       </form>
-      <div class="demo">Cuentas de prueba (contraseña <b>flight123</b>):
+      ${MODO === 'demo' ? `<div class="demo">Cuentas de prueba (contraseña <b>flight123</b>):
         <div class="demo-list">${demo.map(([t, e]) => `<button type="button" data-email="${e}">${t}</button>`).join('')}</div>
         <div style="margin-top:10px"><button class="link-btn" id="reset-demo" type="button">Restablecer los datos de ejemplo</button></div>
-      </div>
+      </div>` : '<p class="muted" style="margin:14px 0 0;font-size:13px">¿No tenés usuario o te olvidaste la contraseña? Pedíselo a la administración de la escuela.</p>'}
     </div></section>`;
   const f = $('#f-login');
   $$('.demo-list button').forEach((b) => b.onclick = () => { f.email.value = b.dataset.email; f.password.value = 'flight123'; f.password.focus(); });
-  $('#reset-demo').onclick = () => { Store.reiniciar(); toast('Datos de ejemplo restablecidos', 'ok'); };
-  f.onsubmit = (e) => {
+  if ($('#reset-demo')) $('#reset-demo').onclick = async () => { await Store.reiniciar(); toast('Datos de ejemplo restablecidos', 'ok'); };
+  f.onsubmit = async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
-    try { state.user = Store.login(f.email.value, f.password.value); state.tab = null; render(); }
+    try { state.user = await Store.login(f.email.value, f.password.value); state.tab = null; await render(); }
     catch (err) {
       $('#login-err').textContent = err.message;
       $('.login-card').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }], { duration: 350 });
@@ -1600,17 +1710,18 @@ function renderLogin() {
 }
 
 const TABS = {
-  alumno: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
-  ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  alumno: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   instructor: [['agenda', 'Mi agenda'], ['alumnos', 'Mis alumnos'], ['clases', 'Clases teóricas'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   mecanico: [['mantenimiento', 'Libros de novedades'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
 };
 const VISTAS = {};
 
-function renderApp() {
-  const u = state.user = Store.yo() || state.user;
-  if (!Store.yo()) { state.user = null; return renderLogin(); }
+async function renderApp() {
+  const u = await Store.yo();
+  if (!u) { state.user = null; return renderLogin(); }
+  state.user = u;
   const tabs = TABS[u.rol];
   if (!state.tab || !tabs.some(([k]) => k === state.tab)) state.tab = tabs[0][0];
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
@@ -1619,12 +1730,12 @@ function renderApp() {
       <div class="user-chip"><div class="avatar">${esc(iniciales(u))}</div><span class="nombre">${esc(u.nombre)}</span>
         <button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
     </div></header><main id="vista"></main>`;
-  $$('.tab').forEach((b) => b.onclick = () => irA(b.dataset.tab));
-  $('#logout').onclick = () => { Store.logout(); state.user = null; render(); };
+  $$('.tab').forEach((b) => b.onclick = async () => await irA(b.dataset.tab));
+  $('#logout').onclick = async () => { await Store.logout(); state.user = null; await render(); };
   const key = `${u.rol}:${state.tab}`;
   (VISTAS[key] || VISTAS[state.tab])($('#vista'));
 }
-function irA(tab) { state.tab = tab; renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+async function irA(tab) { state.tab = tab; await renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 function hero(titulo, texto, extra = '') {
   return `<section class="hero anim"><span class="badge">${esc(ROLES[state.user.rol])}</span>
@@ -1637,7 +1748,7 @@ const badgeTipo = (t) => `<span class="badge ${t === 'simulador' ? 'gris' : ''}"
 // =====================================================================
 //                       RESERVAR (alumno / PPA)
 // =====================================================================
-VISTAS.reservar = function vistaReservar(v, tipo = state.tipoReserva || 'vuelo') {
+VISTAS.reservar = async function vistaReservar(v, tipo = state.tipoReserva || 'vuelo') {
   const u = state.user; const esPPA = u.rol === 'ppa';
   if (esPPA && tipo === 'teorica') tipo = 'vuelo';
   state.tipoReserva = tipo;
@@ -1650,15 +1761,15 @@ VISTAS.reservar = function vistaReservar(v, tipo = state.tipoReserva || 'vuelo')
   v.innerHTML = hero(`¡Hola, ${esc(u.nombre)}! ¿Qué reservamos?`, textos[tipo]) +
     `<div class="segmento anim" style="--i:1" role="tablist">${tipos.map((t) => `<button role="tab" class="${t === tipo ? 'on' : ''}" data-t="${t}">${TIPO_RES[t]}</button>`).join('')}</div>
      <div id="res-cuerpo"></div>`;
-  $$('.segmento button', v).forEach((b) => b.onclick = () => VISTAS.reservar(v, b.dataset.t));
+  $$('.segmento button', v).forEach((b) => b.onclick = async () => await VISTAS.reservar(v, b.dataset.t));
   const cuerpo = $('#res-cuerpo', v);
-  if (tipo === 'teorica') return reservarTeorica(cuerpo);
-  reservarTurno(cuerpo, tipo);
+  if (tipo === 'teorica') return await reservarTeorica(cuerpo);
+  await reservarTurno(cuerpo, tipo);
 };
 
-function avisoLeccion(track) {
+async function avisoLeccion(track) {
   if (state.user.rol !== 'alumno') return '';
-  const l = Store.leccionActual(state.user.id, track);
+  const l = await Store.leccionActual(state.user.id, track);
   if (!l) return `<div class="aviso anim"><div><strong>Completaste todas las lecciones de ${track === 'vuelo' ? 'vuelo' : 'simulador'}.</strong></div></div>`;
   const estudiar = (l.estudiar || []).slice(0, 6);
   return `<div class="aviso ${l.estado === 'repetir' ? 'warn' : ''} anim" style="--i:2">
@@ -1669,12 +1780,12 @@ function avisoLeccion(track) {
     </div></div></div>`;
 }
 
-function reservarTurno(c, tipo) {
+async function reservarTurno(c, tipo) {
   const u = state.user; const esPPA = u.rol === 'ppa'; const esSim = tipo === 'simulador';
-  const instructores = Store.instructores();
-  const recursos = Store.recursos(esSim ? 'simulador' : 'avion');
+  const instructores = await Store.instructores();
+  const recursos = await Store.recursos(esSim ? 'simulador' : 'avion');
   const eligeRecurso = esPPA || esSim;
-  c.innerHTML = avisoLeccion(tipo) + `
+  c.innerHTML = await avisoLeccion(tipo) + `
     <div class="card anim" style="--i:3"><div class="card-head"><div class="paso" id="p1"><span class="paso-num">1</span><h3>Elegí el día</h3></div></div><div class="dias" id="dias"></div></div>
     <div class="card anim" style="--i:4"><div class="card-head"><div class="paso" id="p2"><span class="paso-num">2</span><h3>Bloque horario</h3></div>
       <span class="muted">${esPPA ? 'Podés elegir varios bloques' : 'Un bloque por día'} · 08:00 a 18:00</span></div><div id="bloques" class="bloques"></div></div>
@@ -1691,15 +1802,15 @@ function reservarTurno(c, tipo) {
     return `<button class="dia anim" style="--i:${i}" data-f="${isoLocal(d)}"><small>${i === 0 ? 'Hoy' : d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')}</small>
       <strong>${d.getDate()}</strong><small>${d.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')}</small></button>`;
   }).join('');
-  $$('.dia', c).forEach((b) => b.onclick = () => elegirDia(b.dataset.f));
-  function elegirDia(f) {
+  $$('.dia', c).forEach((b) => b.onclick = async () => await elegirDia(b.dataset.f));
+  async function elegirDia(f) {
     s.fecha = f; s.bloques = [];
     $$('.dia', c).forEach((b) => b.classList.toggle('sel', b.dataset.f === f));
-    s.disp = Store.disponibilidadDia(tipo, f); pintar();
+    s.disp = await Store.disponibilidadDia(tipo, f); await pintar();
   }
   const interseccion = (campo) => !s.bloques.length ? null : s.bloques.map((b) => s.disp.find((d) => d.bloque === b)[campo]).reduce((a, l) => a.filter((x) => l.includes(x)));
-  function pintar() {
-    const yaTengo = !esPPA && Store.misReservas().some((r) => r.fecha === s.fecha && r.tipo === tipo && r.estado !== 'cancelado');
+  async function pintar() {
+    const yaTengo = !esPPA && (await Store.misReservas()).some((r) => r.fecha === s.fecha && r.tipo === tipo && r.estado !== 'cancelado');
     $('#bloques', c).innerHTML = s.disp.map((d, i) => {
       let est = `${d.instructores.length} instr. · ${d.recursos.length} ${esSim ? 'simul.' : 'aviones'}`; let dis = false;
       if (d.ocupadoYo) { est = 'Ya tenés actividad'; dis = true; }
@@ -1710,10 +1821,10 @@ function reservarTurno(c, tipo) {
       return `<button class="bloque anim ${sel ? 'sel' : ''} ${d.ocupadoYo ? 'mio' : ''}" style="--i:${i}" data-b="${d.bloque}" ${dis ? 'disabled' : ''}>
         <div class="hora">${rango(d.bloque)}</div><div class="estado">${est}</div><span class="check">${sel ? ICON.check : ''}</span></button>`;
     }).join('');
-    $$('#bloques .bloque', c).forEach((b) => b.onclick = () => {
+    $$('#bloques .bloque', c).forEach((b) => b.onclick = async () => {
       const n = Number(b.dataset.b);
       s.bloques = esPPA ? (s.bloques.includes(n) ? s.bloques.filter((x) => x !== n) : [...s.bloques, n].sort((a, z) => a - z)) : (s.bloques[0] === n ? [] : [n]);
-      pintar();
+      await pintar();
     });
     const il = interseccion('instructores');
     if (s.instructor && il && !il.includes(s.instructor)) s.instructor = null;
@@ -1721,7 +1832,7 @@ function reservarTurno(c, tipo) {
       instructores.map((ins) => { const ok = il && il.includes(ins.id);
         return `<button class="opcion ${s.instructor === ins.id ? 'sel' : ''}" data-i="${ins.id}" ${ok ? '' : 'disabled'}><span class="ico">${esc(iniciales(ins))}</span><span><strong>${esc(ins.nombre)} ${esc(ins.apellido)}</strong>
           <small>${!il ? 'Elegí un bloque primero' : ok ? 'Disponible' : 'No vuela en ese horario'}</small></span></button>`; }).join('');
-    $$('#instructores .opcion', c).forEach((b) => b.onclick = () => { s.instructor = Number(b.dataset.i); pintar(); });
+    $$('#instructores .opcion', c).forEach((b) => b.onclick = async () => { s.instructor = Number(b.dataset.i); await pintar(); });
     if (eligeRecurso) {
       const rl = interseccion('recursos');
       if (s.recurso && rl && !rl.includes(s.recurso)) s.recurso = null;
@@ -1731,7 +1842,7 @@ function reservarTurno(c, tipo) {
         return `<button class="opcion ${s.recurso === r.id ? 'sel' : ''}" data-r="${r.id}" ${ok ? '' : 'disabled'}><span class="ico">${esSim ? ICON.sim : avionIco()}</span>
           <span><strong class="${esSim ? '' : 'mono'}">${esc(r.nombre)}</strong><small>${esc(sub)}</small></span></button>`;
       }).join('');
-      $$('#recursos .opcion', c).forEach((b) => b.onclick = () => { s.recurso = Number(b.dataset.r); pintar(); });
+      $$('#recursos .opcion', c).forEach((b) => b.onclick = async () => { s.recurso = Number(b.dataset.r); await pintar(); });
     }
     $('#p1', c).classList.toggle('hecho', !!s.fecha); $('#p2', c).classList.toggle('hecho', s.bloques.length > 0);
     $('#p3', c).classList.toggle('hecho', s.instructor !== null); if (eligeRecurso) $('#p4', c).classList.toggle('hecho', !!s.recurso);
@@ -1740,20 +1851,20 @@ function reservarTurno(c, tipo) {
     $('#confirmar-wrap', c).classList.toggle('open', !!(s.fecha && s.bloques.length));
     $('#resumen', c).innerHTML = `<div><strong class="cap">${s.fecha ? esc(fmtFecha(s.fecha)) : ''}</strong>
       <div class="muted">${TIPO_RES[tipo]} · ${s.bloques.map(rango).join(' · ')}${inst ? ` · ${esc(inst.nombre)} ${esc(inst.apellido)}` : s.instructor === 0 ? ' · Sin instructor' : ''}${rec ? ` · ${esc(rec.nombre)}` : ''}</div></div>
-      <span class="muted" style="flex-basis:100%;order:3;font-size:12.5px">${politicaTxt(tipo)}</span>
+      <span class="muted" style="flex-basis:100%;order:3;font-size:12.5px">${await politicaTxt(tipo)}</span>
       <button class="btn" id="btn-reservar" ${listo ? '' : 'disabled'}>Confirmar y emitir pase ${avionIco(16, 90)}</button>`;
-    $('#btn-reservar', c).onclick = () => {
-      const r = hacer(() => Store.reservar({ tipo, fecha: s.fecha, bloques: s.bloques, instructor_id: s.instructor || null, recurso_id: s.recurso, destino: $('#destino', c)?.value }));
-      if (r) { boardingPass(paseDeReservas(r), { celebrar: true }); elegirDia(s.fecha); }
+    $('#btn-reservar', c).onclick = async () => {
+      const r = await hacer(async () => await Store.reservar({ tipo, fecha: s.fecha, bloques: s.bloques, instructor_id: s.instructor || null, recurso_id: s.recurso, destino: $('#destino', c)?.value }));
+      if (r) { boardingPass(paseDeReservas(r), { celebrar: true }); await elegirDia(s.fecha); }
     };
   }
-  elegirDia(isoLocal(hoy));
+  await elegirDia(isoLocal(hoy));
 }
 
-function reservarTeorica(c) {
+async function reservarTeorica(c) {
   const u = state.user;
-  const sug = Store.leccionActual(u.id, 'teorica');
-  const clases = Store.clasesParaAlumno();
+  const sug = await Store.leccionActual(u.id, 'teorica');
+  const clases = await Store.clasesParaAlumno();
   c.innerHTML = (sug ? `<div class="aviso ${sug.estado === 'repetir' ? 'warn' : ''} anim" style="--i:2"><div class="proxima"><div class="codigo">${esc(sug.id)}</div><div>
       <strong>${sug.estado === 'repetir' ? 'Tenés que recursar' : 'Te toca'}: ${esc(sug.titulo)}</strong>
       <div class="muted">${SYLLABUS.reglas.slice(0, 4).map(esc).join(' · ')}</div></div></div></div>` : '') +
@@ -1764,14 +1875,14 @@ function reservarTeorica(c) {
           <div class="vuelo-info"><div class="meta"><span class="cap">${esc(fmtFecha(k.fecha))}</span><span class="mono">${rango(k.bloque)}</span><span>${esc(k.aula)}</span><span>${esc(k.instructor)}</span><span>${k.cupo - k.inscriptos} lugares</span></div></div></div>
         <div>${k.inscripto ? `<button class="btn danger sm" data-baja="${k.id}">Darme de baja</button>` : `<button class="btn sm" data-ins="${k.id}" ${k.cupo - k.inscriptos <= 0 ? 'disabled' : ''}>Inscribirme</button>`}</div>
       </div>`).join('') : vacio('No hay clases programadas por ahora.')}</div>`;
-  $$('[data-ins]', c).forEach((b) => b.onclick = () => {
-    const k = hacer(() => Store.inscribirse(b.dataset.ins));
-    if (k) { boardingPass(paseDeClase(k), { celebrar: true }); reservarTeorica(c); }
+  $$('[data-ins]', c).forEach((b) => b.onclick = async () => {
+    const k = await hacer(async () => await Store.inscribirse(b.dataset.ins));
+    if (k) { boardingPass(paseDeClase(k), { celebrar: true }); await reservarTeorica(c); }
   });
   $$('[data-baja]', c).forEach((b) => b.onclick = async () => {
-    const info = Store.infoCancelacion(b.dataset.baja, 'teorica');
+    const info = await Store.infoCancelacion(b.dataset.baja, 'teorica');
     if (await confirmar('Darte de baja', `¿Querés liberar tu lugar en esta clase? ${textoCargo(info)}`, info.cargo ? `Darme de baja y pagar ${pesos(info.cargo)}` : 'Darme de baja')) {
-      const cargo = hacer(() => Store.darseDeBaja(b.dataset.baja)); if (cargo !== undefined) toast(cargo ? `Baja registrada. Se cargó ${pesos(cargo)} a tu cuenta.` : 'Te diste de baja de la clase', 'ok'); reservarTeorica(c); }
+      const cargo = await hacer(async () => await Store.darseDeBaja(b.dataset.baja)); if (cargo !== undefined) toast(cargo ? `Baja registrada. Se cargó ${pesos(cargo)} a tu cuenta.` : 'Te diste de baja de la clase', 'ok'); await reservarTeorica(c); }
   });
 }
 
@@ -1781,7 +1892,7 @@ function reservarTeorica(c) {
 function paseDeReservas(reservas) {
   const r = reservas[0]; const bl = reservas.map((x) => x.bloque).sort((a, b) => a - b);
   const contiguo = bl.every((b, i) => !i || b === bl[i - 1] + 2);
-  const lec = r.piloto_rol === 'alumno' && r.estado === 'pendiente' ? Store.leccionActual(r.piloto_id, r.tipo)?.id : r.leccion;
+  const lec = r.estado === 'pendiente' ? r.leccion_sugerida || null : r.leccion;
   return { reservaId: r.id, tipo: r.tipo, codigo: codigoReserva(r.id, r.tipo === 'simulador' ? 'SIM' : 'FC'), destino: r.tipo === 'simulador' ? 'SIM' : (r.destino || 'MOR'), local: r.tipo === 'vuelo' && (r.destino || 'MOR') === 'MOR',
     salida: bl[0], regreso: bl.at(-1) + 2, horario: contiguo ? `${hh(bl[0])} – ${hh(bl.at(-1) + 2)}` : bl.map(rango).join(', '),
     piloto: r.piloto, clase: r.piloto_rol === 'ppa' ? 'PPA' : 'ALUMNO', fecha: r.fecha, recursoLbl: r.tipo === 'simulador' ? 'Simulador' : 'Aeronave', recurso: r.recurso,
@@ -1825,10 +1936,10 @@ function boardingPass(p, { celebrar = false } = {}) {
     </article></div>
     <div class="bp-acc">${celebrar ? '<button class="btn sec" id="bp-msj">Ver el email y el WhatsApp de confirmación</button>' : ''}<button class="btn" id="bp-ok">${celebrar ? 'Ver mis reservas' : 'Cerrar'}</button></div></div>`;
   document.body.append(e);
-  const cerrar = (ir) => { e.style.animation = 'fadeIn .25s reverse both'; setTimeout(() => e.remove(), 220); if (ir) irA('reservas'); };
-  $('#bp-ok', e).onclick = () => cerrar(celebrar);
-  const bm = $('#bp-msj', e); if (bm) bm.onclick = () => verMensajes(Store.ultimasDeReserva());
-  e.addEventListener('click', (ev) => { if (ev.target === e) cerrar(false); });
+  const cerrar = async (ir) => { e.style.animation = 'fadeIn .25s reverse both'; setTimeout(() => e.remove(), 220); if (ir) await irA('reservas'); };
+  $('#bp-ok', e).onclick = async () => await cerrar(celebrar);
+  const bm = $('#bp-msj', e); if (bm) bm.onclick = async () => verMensajes(await Store.ultimasDeReserva());
+  e.addEventListener('click', async (ev) => { if (ev.target === e) await cerrar(false); });
   if (celebrar && !matchMedia('(prefers-reduced-motion: reduce)').matches) setTimeout(() => {
     const col = ['#4fc3f7', '#1e88e5', '#ffffff', '#81d4fa', '#1565c0'];
     for (let i = 0; i < 70; i++) { const k = document.createElement('div'); k.className = 'confeti'; k.style.left = `${Math.random() * 100}vw`; k.style.background = col[i % 5];
@@ -1839,14 +1950,14 @@ function boardingPass(p, { celebrar = false } = {}) {
 // =====================================================================
 //                          MIS RESERVAS
 // =====================================================================
-VISTAS.reservas = function vistaMisReservas(v) {
-  const todas = Store.misReservas(); const hoy = isoLocal(new Date());
+VISTAS.reservas = async function vistaMisReservas(v) {
+  const todas = await Store.misReservas(); const hoy = isoLocal(new Date());
   const grupos = new Map();
   for (const r of todas.filter((x) => x.estado === 'pendiente' && x.fecha >= hoy)) {
     const k = `${r.tipo}|${r.fecha}|${r.recurso_id}|${r.instructor_id}`; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r);
   }
   const prox = [...grupos.values()].map((g) => g.sort((a, b) => a.bloque - b.bloque)).sort((a, b) => (a[0].fecha + hh(a[0].bloque)).localeCompare(b[0].fecha + hh(b[0].bloque)));
-  const clases = state.user.rol === 'alumno' ? Store.misClases() : [];
+  const clases = state.user.rol === 'alumno' ? await Store.misClases() : [];
   const clasesProx = clases.filter((k) => k.estado === 'programada' && k.inscripcion.estado === 'inscripto');
   const pasados = todas.filter((r) => !(r.estado === 'pendiente' && r.fecha >= hoy));
   v.innerHTML = hero('Mis reservas', 'Tus próximos vuelos, turnos de simulador y clases, cada uno con su pase. Tocá un pase para verlo completo.') + `
@@ -1865,11 +1976,11 @@ VISTAS.reservas = function vistaMisReservas(v) {
     el.onclick = (e) => { if (!e.target.closest('[data-cancelar]')) boardingPass(pase); };
     $('[data-cancelar]', el).onclick = async () => {
       const grupo = id.startsWith('g') ? prox[Number(id.slice(1))] : null;
-      const info = grupo ? Store.infoCancelacion(grupo.map((r) => r.id)) : Store.infoCancelacion(id.slice(1), 'teorica');
+      const info = grupo ? await Store.infoCancelacion(grupo.map((r) => r.id)) : await Store.infoCancelacion(id.slice(1), 'teorica');
       if (!(await confirmar('Cancelar reserva', `¿Cancelar ${TIPO_RES[pase.tipo].toLowerCase()} del ${fmtFecha(pase.fecha)} (${pase.horario})? ${textoCargo(info)}`, info.cargo ? `Cancelar y pagar ${pesos(info.cargo)}` : 'Sí, cancelar'))) return;
-      const cargo = hacer(() => grupo ? grupo.reduce((s, r) => s + Store.cancelarReserva(r.id), 0) : Store.darseDeBaja(id.slice(1)));
+      const cargo = await hacer(async () => { if (!grupo) return await Store.darseDeBaja(id.slice(1)); let t = 0; for (const r of grupo) t += await Store.cancelarReserva(r.id); return t; });
       if (cargo !== undefined) toast(cargo ? `Cancelada. Se cargó ${pesos(cargo)} a tu estado de cuenta.` : 'Reserva cancelada sin cargo', 'ok');
-      VISTAS.reservas(v);
+      await VISTAS.reservas(v);
     };
   });
 };
@@ -1889,8 +2000,8 @@ function miniPass(p, i, key) {
 // =====================================================================
 //                         MIS HORAS
 // =====================================================================
-VISTAS.horas = function vistaHoras(v) {
-  const h = Store.historial(); const esPPA = state.user.rol === 'ppa';
+VISTAS.horas = async function vistaHoras(v) {
+  const h = await Store.historial(); const esPPA = state.user.rol === 'ppa';
   const meses = []; const d = new Date(); d.setDate(1);
   for (let i = 5; i >= 0; i--) { const x = new Date(d); x.setMonth(d.getMonth() - i); meses.push(isoLocal(x).slice(0, 7)); }
   const maxMes = Math.max(1, ...meses.map((m) => h.por_mes[m] || 0));
@@ -1919,9 +2030,9 @@ VISTAS.horas = function vistaHoras(v) {
   setTimeout(() => { $$('.bar', v).forEach((b) => b.classList.add('on')); $$('.fill', v).forEach((f) => f.style.width = `${f.dataset.w}%`); }, 250);
 };
 
-VISTAS.syllabus = (v) => {
+VISTAS.syllabus = async (v) => {
   v.innerHTML = hero('Mi syllabus', 'Tu libro de instrucción del curso PPA con habilitación VFR controlado. Lo completa tu instructor después de cada vuelo, simulador o clase.') + '<div id="libro"></div>';
-  libroSyllabus($('#libro', v), state.user.id);
+  await libroSyllabus($('#libro', v), state.user.id);
 };
 
 /* Flight Center · interfaz (parte 2: syllabus, perfil, instructor, mecánico y administración) */
@@ -1930,9 +2041,9 @@ VISTAS.syllabus = (v) => {
 //                    LIBRO DEL SYLLABUS
 // =====================================================================
 const TRACK_NOMBRE = { teorica: 'Teoría', vuelo: 'Vuelo', simulador: 'Simulador' };
-function libroSyllabus(cont, alumnoId, { abrir } = {}) {
+async function libroSyllabus(cont, alumnoId, { abrir } = {}) {
   let data;
-  try { data = Store.syllabus(alumnoId); } catch (e) { cont.innerHTML = `<div class="card">${vacio(esc(e.message))}</div>`; return; }
+  try { data = await Store.syllabus(alumnoId); } catch (e) { cont.innerHTML = `<div class="card">${vacio(esc(e.message))}</div>`; return; }
   const lecciones = ['teorica', 'vuelo', 'simulador'].flatMap((t) => data.pistas[t].lecciones);
   const paginas = ['tapa', 'reglas', ...lecciones.map((l) => l.id)];
   const actuales = new Set(['teorica', 'vuelo', 'simulador'].map((t) => data.pistas[t].actual?.id).filter(Boolean));
@@ -2027,17 +2138,17 @@ function libroSyllabus(cont, alumnoId, { abrir } = {}) {
   }
   ir(pag, 1);
 }
-function abrirLibro(alumnoId, abrir) {
+async function abrirLibro(alumnoId, abrir) {
   const m = modal(`<div class="modal-head"><h3>Syllabus del alumno</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div><div class="modal-body" id="libro-m"></div>`, { ancho: true });
   $('.modal', m.el).style.width = 'min(1180px, 100%)';
-  libroSyllabus($('#libro-m', m.el), alumnoId, { abrir });
+  await libroSyllabus($('#libro-m', m.el), alumnoId, { abrir });
 }
 
 // =====================================================================
 //                              PERFIL
 // =====================================================================
-VISTAS.perfil = function vistaPerfil(v) {
-  const u = Store.yo();
+VISTAS.perfil = async function vistaPerfil(v) {
+  const u = await Store.yo();
   const docs = {
     alumno: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia PPA', 'Si ya la tenés', true], ['autorizacion', 'Autorización de menor', 'Solo para menores de 18 años', true]],
     ppa: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia PPA', 'Licencia vigente', false], ['autorizacion', 'Autorización de menor', 'Solo para menores de 18 años', true]],
@@ -2066,16 +2177,23 @@ VISTAS.perfil = function vistaPerfil(v) {
         <label class="campo">Nueva contraseña<input id="pw-n" type="password" name="nueva" autocomplete="new-password" minlength="6" required></label>
         <div class="full" style="display:flex;justify-content:flex-end"><button class="btn sec" type="submit">Actualizar contraseña</button></div>
       </form></div>`;
-  $('#f-perfil', v).onsubmit = (e) => { e.preventDefault(); const r = hacer(() => Store.guardarPerfil(Object.fromEntries(new FormData(e.target))), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; } };
-  $('#f-pass', v).onsubmit = (e) => { e.preventDefault(); const f = e.target; if (hacer(() => { Store.cambiarPassword(f.actual.value, f.nueva.value); return true; }, 'Contraseña actualizada')) f.reset(); };
+  $('#f-perfil', v).onsubmit = async (e) => { e.preventDefault(); const r = await hacer(async () => await Store.guardarPerfil(Object.fromEntries(new FormData(e.target))), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; } };
+  $('#f-pass', v).onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (await hacer(async () => { await Store.cambiarPassword(f.actual.value, f.nueva.value); return true; }, 'Contraseña actualizada')) f.reset(); };
   $$('.doc', v).forEach((d) => {
     const tipo = d.dataset.doc; const input = $('input[type=file]', d);
-    const subir = async (file) => { if (!file) return; try { await Store.subirDoc(tipo, file); toast('Documento cargado', 'ok'); VISTAS.perfil(v); } catch (e) { toast(e.message, 'error'); } };
-    $('[data-subir]', d).onclick = () => input.click(); input.onchange = () => subir(input.files[0]);
+    const subir = async (file) => {
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) return toast('El PDF supera los 10 MB', 'error');
+      try {
+        const data = await new Promise((ok, mal) => { const fr = new FileReader(); fr.onload = () => ok(fr.result); fr.onerror = mal; fr.readAsDataURL(file); });
+        await Store.subirDoc(tipo, { nombre: file.name, tam: file.size, tipo: file.type, data }); toast('Documento cargado', 'ok'); await VISTAS.perfil(v);
+      } catch (e) { toast(e.message, 'error'); }
+    };
+    $('[data-subir]', d).onclick = () => input.click(); input.onchange = async () => await subir(input.files[0]);
     d.ondragover = (e) => { e.preventDefault(); d.classList.add('drag'); }; d.ondragleave = () => d.classList.remove('drag');
-    d.ondrop = (e) => { e.preventDefault(); d.classList.remove('drag'); subir(e.dataTransfer.files[0]); };
+    d.ondrop = async (e) => { e.preventDefault(); d.classList.remove('drag'); await subir(e.dataTransfer.files[0]); };
     const q = $('[data-quitar]', d);
-    if (q) q.onclick = async () => { if (await confirmar('Quitar documento', '¿Querés quitar este documento de tu perfil?', 'Quitar')) { Store.quitarDoc(tipo); toast('Documento quitado'); VISTAS.perfil(v); } };
+    if (q) q.onclick = async () => { if (await confirmar('Quitar documento', '¿Querés quitar este documento de tu perfil?', 'Quitar')) { await Store.quitarDoc(tipo); toast('Documento quitado'); await VISTAS.perfil(v); } };
   });
 };
 
@@ -2084,7 +2202,7 @@ const cargarScript = (src) => new Promise((ok, mal) => { const s = document.crea
 let pdfjsListo = null;
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 async function verDoc(uid, tipo, nombre) {
-  const d = Store.documento(uid, tipo);
+  const d = await Store.documento(uid, tipo);
   if (!d) return toast('Documento no disponible', 'error');
   const m = modal(`<div class="modal-head"><div><h3>${esc(nombre)}</h3><div class="muted">${esc(d.nombre)} · ${Math.max(1, Math.round(d.tam / 1024))} KB · subido ${esc(fmtCorta(d.fecha.slice(0, 10)))}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body"><div class="pdf-view" id="pdfv"><span class="muted">Cargando documento…</span></div></div>`, { ancho: true });
@@ -2101,11 +2219,11 @@ async function verDoc(uid, tipo, nombre) {
     }
   } catch { c.innerHTML = '<span class="muted">El documento está cargado, pero no se pudo mostrar la vista previa en este navegador.</span>'; }
 }
-document.addEventListener('click', (e) => { const b = e.target.closest('[data-verdoc]'); if (b) { const [uid, tipo, n] = b.dataset.verdoc.split('|'); verDoc(uid, tipo, n); } });
+document.addEventListener('click', async (e) => { const b = e.target.closest('[data-verdoc]'); if (b) { const [uid, tipo, n] = b.dataset.verdoc.split('|'); await verDoc(uid, tipo, n); } });
 
 // ---------- ficha de piloto ----------
-function fichaPiloto(id) {
-  const p = hacer(() => Store.fichaPiloto(id)); if (!p) return;
+async function fichaPiloto(id) {
+  const p = await hacer(async () => await Store.fichaPiloto(id)); if (!p) return;
   const doc = (t, n) => p.docs[t] ? `<button class="btn sec sm" data-verdoc="${p.id}|${t}|${n}">${n} (PDF)</button>` : `<span class="badge gris">${n}: no cargado</span>`;
   const venc = p.vencimiento_cma && p.vencimiento_cma < isoLocal(new Date());
   const m = modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar" style="width:44px;height:44px">${esc(iniciales(p))}</div>
@@ -2126,14 +2244,14 @@ function fichaPiloto(id) {
       ${p.reservas.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Horario</th><th>Equipo</th><th>Instructor</th><th>Estado</th></tr></thead><tbody>
         ${p.reservas.map((r) => `<tr><td>${esc(fmtCorta(r.fecha))}</td><td>${badgeTipo(r.tipo)}</td><td class="mono">${rango(r.bloque)}</td><td class="mono">${esc(r.recurso)}</td><td>${esc(r.instructor || 'Solo')}</td><td>${badgeEstado(r)}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('Sin actividad')}</div>`, { ancho: true });
-  const b = $('#ver-syl', m.el); if (b) b.onclick = () => abrirLibro(p.id);
+  const b = $('#ver-syl', m.el); if (b) b.onclick = async () => await abrirLibro(p.id);
 }
 
 // =====================================================================
 //                         INSTRUCTOR
 // =====================================================================
-VISTAS.agenda = function vistaAgenda(v, mes = isoLocal(new Date()).slice(0, 7)) {
-  const r = Store.resumenInstructor(mes);
+VISTAS.agenda = async function vistaAgenda(v, mes = isoLocal(new Date()).slice(0, 7)) {
+  const r = await Store.resumenInstructor(mes);
   const opMes = Array.from({ length: 12 }, (_, i) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i + 1); const m = isoLocal(d).slice(0, 7);
     return `<option value="${m}" ${m === mes ? 'selected' : ''}>${d.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' })}</option>`; }).join('');
   v.innerHTML = hero(`Hola, ${esc(state.user.nombre)}`, 'Tus vuelos, simuladores y clases. Al cerrar cada vuelo con un alumno calificás su lección del syllabus.',
@@ -2153,13 +2271,13 @@ VISTAS.agenda = function vistaAgenda(v, mes = isoLocal(new Date()).slice(0, 7)) 
           <td><a href="#" data-piloto="${f.piloto_id}">${esc(f.piloto)}</a></td><td class="mono">${esc(f.recurso)}</td><td>${esc(f.leccion || '—')}</td><td>${badgeEstado(f)}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('Sin actividad este mes.')}</div>`;
   animarNumeros(v);
-  gridDisponibilidad($('#mi-dispo', v), lunesDe(), { editable: false, inst: state.user.id });
-  $('#mes', v).onchange = (e) => VISTAS.agenda(v, e.target.value);
-  $$('[data-piloto]', v).forEach((a) => a.onclick = (e) => { e.preventDefault(); fichaPiloto(a.dataset.piloto); });
-  $$('[data-completar]', v).forEach((b) => b.onclick = () => completarReserva(r.pendientes.find((f) => f.id == b.dataset.completar), () => VISTAS.agenda(v, mes)));
-  $$('[data-syl]', v).forEach((b) => b.onclick = () => abrirLibro(Number(b.dataset.syl), b.dataset.lec));
+  await gridDisponibilidad($('#mi-dispo', v), lunesDe(), { editable: false, inst: state.user.id });
+  $('#mes', v).onchange = async (e) => await VISTAS.agenda(v, e.target.value);
+  $$('[data-piloto]', v).forEach((a) => a.onclick = async (e) => { e.preventDefault(); await fichaPiloto(a.dataset.piloto); });
+  $$('[data-completar]', v).forEach((b) => b.onclick = () => completarReserva(r.pendientes.find((f) => f.id == b.dataset.completar), async () => await VISTAS.agenda(v, mes)));
+  $$('[data-syl]', v).forEach((b) => b.onclick = async () => await abrirLibro(Number(b.dataset.syl), b.dataset.lec));
   $$('[data-cancelar-i]', v).forEach((b) => b.onclick = async () => {
-    if (await confirmar('Cancelar', '¿Seguro que querés cancelar? Avisale al piloto.', 'Cancelar')) { hacer(() => Store.cancelarReserva(b.dataset.cancelarI), 'Reserva cancelada'); VISTAS.agenda(v, mes); }
+    if (await confirmar('Cancelar', '¿Seguro que querés cancelar? Avisale al piloto.', 'Cancelar')) { await hacer(async () => await Store.cancelarReserva(b.dataset.cancelarI), 'Reserva cancelada'); await VISTAS.agenda(v, mes); }
   });
 };
 function filaPendiente(f, i) {
@@ -2205,30 +2323,30 @@ function completarReserva(f, despues) {
     $('#c-lec', m.el).onchange = (e) => { lec = e.target.value; for (const k of Object.keys(notas)) delete notas[k]; tabla(); };
     $$('[data-todas]', m.el).forEach((b) => b.onclick = () => { Store.itemKeys(Store.LECCIONES[lec]).forEach((k) => notas[k] = b.dataset.todas); tabla(); });
   }
-  $('#c-ok', m.el).onclick = () => {
-    const res = hacer(() => Store.completarReserva(f.id, { horas: $('#c-horas', m.el).value, observaciones: $('#c-obs', m.el).value, leccion: lec, notas }) ?? true);
+  $('#c-ok', m.el).onclick = async () => {
+    const res = await hacer(async () => await Store.completarReserva(f.id, { horas: $('#c-horas', m.el).value, observaciones: $('#c-obs', m.el).value, leccion: lec, notas }) ?? true);
     if (res === undefined) return;
     toast(res === true ? 'Vuelo cerrado' : res.estado === 'aprobada' ? `${res.leccion} aprobada ✓` : `${res.leccion}: el alumno debe repetirla`, 'ok');
     m.cerrar(); despues();
   };
 }
 
-VISTAS.alumnos = function vistaAlumnos(v) {
-  const l = Store.misAlumnos();
+VISTAS.alumnos = async function vistaAlumnos(v) {
+  const l = await Store.misAlumnos();
   v.innerHTML = hero('Mis alumnos', 'Solo ves el syllabus de los alumnos con los que volás o tenés vuelos programados.') + `<div class="card anim" style="--i:1">
     ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Alumno</th><th>Vuelo</th><th>Simulador</th><th>Teoría</th><th>Vuelos conmigo</th><th></th></tr></thead><tbody>
       ${l.map((a) => { const c = (x) => x ? `<span class="badge ${x.estado === 'repetir' ? 'warn' : ''}">${esc(x.id)}${x.estado === 'repetir' ? ' · repetir' : ''}</span>` : '<span class="badge ok">Completo</span>';
         return `<tr><td><strong>${esc(a.nombre)} ${esc(a.apellido)}</strong><div class="muted">${esc(a.telefono)}</div></td><td>${c(a.vuelo)}</td><td>${c(a.simulador)}</td><td>${c(a.teorica)}</td>
           <td class="mono">${a.vuelos_conmigo}</td><td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-piloto="${a.id}">Ficha</button> <button class="btn sm" data-syl="${a.id}" data-lec="${esc(a.vuelo?.id || '')}">${ICON.libro} Syllabus</button></td></tr>`; }).join('')}
     </tbody></table></div>` : vacio('Todavía no tenés alumnos asignados en vuelos.')}</div>`;
-  $$('[data-piloto]', v).forEach((b) => b.onclick = () => fichaPiloto(b.dataset.piloto));
-  $$('[data-syl]', v).forEach((b) => b.onclick = () => abrirLibro(Number(b.dataset.syl), b.dataset.lec));
+  $$('[data-piloto]', v).forEach((b) => b.onclick = async () => await fichaPiloto(b.dataset.piloto));
+  $$('[data-syl]', v).forEach((b) => b.onclick = async () => await abrirLibro(Number(b.dataset.syl), b.dataset.lec));
 };
 
 // ---------- clases teóricas (instructor y admin) ----------
-VISTAS.clases = function vistaClases(v) {
+VISTAS.clases = async function vistaClases(v) {
   const esAdmin = state.user.rol === 'admin';
-  const clases = Store.clases(esAdmin ? {} : { instructor: state.user.id });
+  const clases = await Store.clases(esAdmin ? {} : { instructor: state.user.id });
   const hoy = isoLocal(new Date());
   const prox = clases.filter((k) => k.fecha >= hoy && k.estado === 'programada'); const resto = clases.filter((k) => !prox.includes(k)).reverse();
   const fila = (k, i) => `<div class="clase-card anim" style="--i:${i}"><div class="teo">${esc(k.teo)}</div>
@@ -2240,14 +2358,14 @@ VISTAS.clases = function vistaClases(v) {
     esAdmin ? '<div style="margin-top:14px"><button class="btn sec" id="nueva">+ Programar clase</button></div>' : '') + `
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Próximas</h3><span class="badge">${prox.length}</span></div>${prox.length ? prox.map(fila).join('') : vacio('No hay clases programadas.')}</div>
     <div class="card anim" style="--i:2"><div class="card-head"><h3>Anteriores</h3></div>${resto.length ? resto.map(fila).join('') : vacio('Sin clases anteriores.')}</div>`;
-  const recargar = () => VISTAS.clases(v);
-  $$('[data-asis]', v).forEach((b) => b.onclick = () => asistencia(clases.find((k) => k.id == b.dataset.asis), recargar));
-  $$('[data-edit]', v).forEach((b) => b.onclick = () => editarClase(clases.find((k) => k.id == b.dataset.edit), recargar));
-  $$('[data-canc]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Cancelar clase', 'Los alumnos inscriptos dejarán de verla en su agenda.', 'Cancelar clase')) { hacer(() => Store.cancelarClase(b.dataset.canc), 'Clase cancelada'); recargar(); } });
-  const n = $('#nueva', v); if (n) n.onclick = () => editarClase(null, recargar);
+  const recargar = async () => await VISTAS.clases(v);
+  $$('[data-asis]', v).forEach((b) => b.onclick = async () => await asistencia(clases.find((k) => k.id == b.dataset.asis), recargar));
+  $$('[data-edit]', v).forEach((b) => b.onclick = async () => await editarClase(clases.find((k) => k.id == b.dataset.edit), recargar));
+  $$('[data-canc]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Cancelar clase', 'Los alumnos inscriptos dejarán de verla en su agenda.', 'Cancelar clase')) { await hacer(async () => await Store.cancelarClase(b.dataset.canc), 'Clase cancelada'); await recargar(); } });
+  const n = $('#nueva', v); if (n) n.onclick = async () => await editarClase(null, recargar);
 };
-function editarClase(k, despues) {
-  const insts = Store.instructores();
+async function editarClase(k, despues) {
+  const insts = await Store.instructores();
   const m = modal(`<div class="modal-head"><h3>${k ? 'Editar clase' : 'Programar clase teórica'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <form class="modal-body form-grid" id="f-clase">
       <label class="campo full">Clase<select id="k-teo" name="teo">${SYLLABUS.teorica.map((t) => `<option value="${t.id}" ${k?.teo === t.id ? 'selected' : ''}>${t.id} · ${esc(t.titulo)}</option>`).join('')}</select></label>
@@ -2257,9 +2375,9 @@ function editarClase(k, despues) {
       <label class="campo">Cupo<input id="k-cupo" type="number" min="1" name="cupo" value="${k?.cupo || 10}"></label>
       <label class="campo full">Aula<input id="k-aula" name="aula" value="${esc(k?.aula || 'Aula 1')}"></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="k-ok">Guardar</button></div>`);
-  $('#k-ok', m.el).onclick = () => { if (hacer(() => Store.guardarClase({ ...Object.fromEntries(new FormData($('#f-clase', m.el))), id: k?.id }), 'Clase guardada')) { m.cerrar(); despues(); } };
+  $('#k-ok', m.el).onclick = async () => { if (await hacer(async () => await Store.guardarClase({ ...Object.fromEntries(new FormData($('#f-clase', m.el))), id: k?.id }), 'Clase guardada')) { m.cerrar(); despues(); } };
 }
-function asistencia(k, despues) {
+async function asistencia(k, despues) {
   const reg = Object.fromEntries(k.alumnos.map((a) => [a.id, { estado: a.estado === 'inscripto' ? 'presente' : a.estado, nota: a.nota || 'B' }]));
   const puede = state.user.rol === 'admin' || k.instructor_id === state.user.id;
   const m = modal(`<div class="modal-head"><div><h3>${esc(k.teo)} · asistencia</h3><div class="muted">${esc(fmtFecha(k.fecha))} · ${rango(k.bloque)} · ${esc(k.instructor)}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -2270,11 +2388,11 @@ function asistencia(k, despues) {
       <td style="text-align:right"><span class="flujo" style="justify-content:flex-end"><select data-est="${a.id}" style="width:auto">${['presente', 'ausente'].map((e) => `<option ${reg[a.id].estado === e ? 'selected' : ''}>${e}</option>`).join('')}</select>
       ${reg[a.id].estado === 'presente' ? `<span class="notas" data-a="${a.id}">${['MB', 'B', 'R'].map((n) => `<button type="button" data-v="${n}" class="${reg[a.id].nota === n ? 'on' : ''}" title="${NOTA[n]}">${n}</button>`).join('')}</span>` : ''}</span></td></tr>`).join('')}</table>
       <p class="muted">Una clase en Regular queda para recursar en el syllabus del alumno.</p>` : vacio('No hay alumnos inscriptos.');
-    $$('[data-est]', m.el).forEach((s) => s.onchange = () => { reg[s.dataset.est].estado = s.value; pintar(); });
-    $$('.notas button', m.el).forEach((b) => b.onclick = () => { reg[b.parentElement.dataset.a].nota = b.dataset.v; pintar(); });
+    $$('[data-est]', m.el).forEach((s) => s.onchange = async () => { reg[s.dataset.est].estado = s.value; await pintar(); });
+    $$('.notas button', m.el).forEach((b) => b.onclick = async () => { reg[b.parentElement.dataset.a].nota = b.dataset.v; await pintar(); });
   };
-  pintar();
-  const ok = $('#a-ok', m.el); if (ok) ok.onclick = () => { if (hacer(() => { Store.tomarAsistencia(k.id, reg); return true; }, 'Asistencia guardada')) { m.cerrar(); despues(); } };
+  await pintar();
+  const ok = $('#a-ok', m.el); if (ok) ok.onclick = async () => { if (await hacer(async () => { await Store.tomarAsistencia(k.id, reg); return true; }, 'Asistencia guardada')) { m.cerrar(); despues(); } };
 }
 
 // =====================================================================
@@ -2299,8 +2417,8 @@ function itemNovedad(n, i, { mecanico }) {
     ${n.revision?.comentario ? `<div class="res"><b>Mecánico (${esc(n.revision.mecanico)} · ${esc(fmtCorta(n.revision.fecha.slice(0, 10)))}):</b> ${esc(n.revision.comentario)}</div>` : ''}
     ${mecanico ? `<div class="acc"><button class="btn sm ${n.estado === 'reportada' ? '' : 'sec'}" data-rev="${n.id}">${n.estado === 'reportada' ? 'Revisar' : 'Modificar'}</button></div>` : ''}</div>`;
 }
-function libroNovedades(cont, rec, { mecanico = false, reportar = false, admin = false, recargar }) {
-  const novs = Store.novedades(rec.id);
+async function libroNovedades(cont, rec, { mecanico = false, reportar = false, admin = false, recargar }) {
+  const novs = await Store.novedades(rec.id);
   cont.innerHTML = `<div class="grid-2">
     <div class="card anim"><div class="card-head"><h3>Libro de novedades · <span class="mono">${esc(rec.nombre)}</span></h3>
       <div class="flujo">${mecanico || admin ? `<button class="btn ${rec.estado === 'operativa' ? 'danger' : 'ok'} sm" id="toggle">${rec.estado === 'operativa' ? 'Poner fuera de servicio' : 'Habilitar (operativo)'}</button>` : ''}
@@ -2313,10 +2431,10 @@ function libroNovedades(cont, rec, { mecanico = false, reportar = false, admin =
         ${mecanico ? '' : '<p class="muted" style="margin:0">El mecánico revisa cada reporte y decide si corresponde, lo corrige o lo da por resuelto.</p>'}
         <button class="btn" type="submit">${mecanico ? 'Agregar al libro' : 'Enviar al mecánico'}</button></form></div>` : ''}</div>`;
   const f = $('#f-nov', cont);
-  if (f) f.onsubmit = (e) => { e.preventDefault(); if (hacer(() => { Store.reportarNovedad(rec.id, f.tipo.value, f.descripcion.value); return true; }, mecanico ? 'Anotación agregada' : 'Novedad reportada al mecánico')) recargar(); };
+  if (f) f.onsubmit = async (e) => { e.preventDefault(); if (await hacer(async () => { await Store.reportarNovedad(rec.id, f.tipo.value, f.descripcion.value); return true; }, mecanico ? 'Anotación agregada' : 'Novedad reportada al mecánico')) await recargar(); };
   const t = $('#toggle', cont);
-  if (t) t.onclick = () => { const n = hacer(() => Store.estadoRecurso(rec.id, rec.estado === 'operativa' ? 'mantenimiento' : 'operativa'));
-    if (n !== undefined) { toast(n ? `${rec.nombre} fuera de servicio. Tiene ${n} reserva(s) pendiente(s) para reprogramar.` : 'Estado actualizado', 'ok'); recargar(); } };
+  if (t) t.onclick = async () => { const n = await hacer(async () => await Store.estadoRecurso(rec.id, rec.estado === 'operativa' ? 'mantenimiento' : 'operativa'));
+    if (n !== undefined) { toast(n ? `${rec.nombre} fuera de servicio. Tiene ${n} reserva(s) pendiente(s) para reprogramar.` : 'Estado actualizado', 'ok'); await recargar(); } };
   const ed = $('#edit-rec', cont); if (ed) ed.onclick = () => editarRecurso(rec, recargar);
   $$('[data-rev]', cont).forEach((b) => b.onclick = () => revisarNovedad(novs.find((n) => n.id == b.dataset.rev), recargar));
 }
@@ -2332,7 +2450,7 @@ function revisarNovedad(n, despues) {
       <label class="campo">Descripción <span class="op">(podés corregir lo que se anotó)</span><textarea id="r-desc" name="descripcion">${esc(n.descripcion)}</textarea></label>
       <label class="campo">Comentario del mecánico<textarea id="r-com" name="comentario" placeholder="Qué se hizo, qué falta o por qué no corresponde">${esc(n.revision?.comentario || '')}</textarea></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="r-ok">Guardar revisión</button></div>`);
-  $('#r-ok', m.el).onclick = () => { if (hacer(() => { Store.revisarNovedad(n.id, Object.fromEntries(new FormData($('#f-rev', m.el)))); return true; }, 'Revisión guardada')) { m.cerrar(); despues(); } };
+  $('#r-ok', m.el).onclick = async () => { if (await hacer(async () => { await Store.revisarNovedad(n.id, Object.fromEntries(new FormData($('#f-rev', m.el)))); return true; }, 'Revisión guardada')) { m.cerrar(); despues(); } };
 }
 function editarRecurso(r, despues) {
   const m = modal(`<div class="modal-head"><h3>${r ? 'Editar equipo' : 'Agregar equipo'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -2341,20 +2459,20 @@ function editarRecurso(r, despues) {
       <label class="campo">Matrícula o nombre<input id="e-nombre" name="nombre" value="${esc(r?.nombre || '')}" placeholder="LV-FCE"></label>
       <label class="campo full">Modelo<input id="e-modelo" name="modelo" value="${esc(r?.modelo || '')}" placeholder="Cessna 152"></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="e-ok">Guardar</button></div>`);
-  $('#e-ok', m.el).onclick = () => { if (hacer(() => Store.guardarRecurso({ ...Object.fromEntries(new FormData($('#f-rec', m.el))), id: r?.id }), 'Equipo guardado')) { m.cerrar(); despues(); } };
+  $('#e-ok', m.el).onclick = async () => { if (await hacer(async () => await Store.guardarRecurso({ ...Object.fromEntries(new FormData($('#f-rec', m.el))), id: r?.id }), 'Equipo guardado')) { m.cerrar(); despues(); } };
 }
-VISTAS.flota = function vistaFlota(v, sel) {
+VISTAS.flota = async function vistaFlota(v, sel) {
   const esAdmin = state.user.rol === 'admin';
-  const recs = Store.recursos(); sel = sel || state.flotaSel || recs[0]?.id; state.flotaSel = sel;
+  const recs = await Store.recursos(); sel = sel || state.flotaSel || recs[0]?.id; state.flotaSel = sel;
   v.innerHTML = hero('Flota', esAdmin ? 'Aeronaves y simuladores de la escuela. Podés agregar equipos y ver el libro de novedades de cada uno.' : 'Reportá fallas u observaciones. El mecánico revisa cada reporte y decide.',
     esAdmin ? '<div style="margin-top:14px"><button class="btn sec" id="nuevo-rec">+ Agregar equipo</button></div>' : '') + tarjetasFlota(recs, sel) + '<div id="libro" style="margin-top:22px"></div>';
-  $$('.avion', v).forEach((b) => b.onclick = () => VISTAS.flota(v, Number(b.dataset.av)));
-  const nr = $('#nuevo-rec', v); if (nr) nr.onclick = () => editarRecurso(null, () => VISTAS.flota(v));
+  $$('.avion', v).forEach((b) => b.onclick = async () => await VISTAS.flota(v, Number(b.dataset.av)));
+  const nr = $('#nuevo-rec', v); if (nr) nr.onclick = () => editarRecurso(null, async () => await VISTAS.flota(v));
   const rec = recs.find((r) => r.id === sel);
-  if (rec) libroNovedades($('#libro', v), rec, { reportar: true, admin: esAdmin, recargar: () => VISTAS.flota(v, sel) });
+  if (rec) await libroNovedades($('#libro', v), rec, { reportar: true, admin: esAdmin, recargar: async () => await VISTAS.flota(v, sel) });
 };
-VISTAS.mantenimiento = function vistaMantenimiento(v, sel) {
-  const recs = Store.recursos(); const todas = Store.novedades();
+VISTAS.mantenimiento = async function vistaMantenimiento(v, sel) {
+  const recs = await Store.recursos(); const todas = await Store.novedades();
   const pend = todas.filter((n) => n.estado === 'reportada'); const enRev = todas.filter((n) => n.estado === 'en_revision');
   sel = sel || state.flotaSel || recs[0]?.id; state.flotaSel = sel;
   v.innerHTML = hero(`Hola, ${esc(state.user.nombre)}`, 'Revisá los reportes de los instructores: confirmá si es falla, corregí la anotación, cerrala cuando esté resuelta y habilitá o sacá de servicio cada equipo.') + `
@@ -2364,18 +2482,18 @@ VISTAS.mantenimiento = function vistaMantenimiento(v, sel) {
       ${pend.length ? pend.map((n, i) => itemNovedad(n, i, { mecanico: true })).join('') : vacio('No hay reportes nuevos. ¡Todo revisado!')}</div>
     <h3 class="anim" style="margin:26px 0 14px">Flota</h3>${tarjetasFlota(recs, sel)}<div id="libro" style="margin-top:22px"></div>`;
   animarNumeros(v);
-  const recargar = () => VISTAS.mantenimiento(v, sel);
+  const recargar = async () => await VISTAS.mantenimiento(v, sel);
   $$('.card [data-rev]', v).forEach((b) => b.onclick = () => revisarNovedad(todas.find((n) => n.id == b.dataset.rev), recargar));
-  $$('.avion', v).forEach((b) => b.onclick = () => VISTAS.mantenimiento(v, Number(b.dataset.av)));
+  $$('.avion', v).forEach((b) => b.onclick = async () => await VISTAS.mantenimiento(v, Number(b.dataset.av)));
   const rec = recs.find((r) => r.id === sel);
-  if (rec) libroNovedades($('#libro', v), rec, { mecanico: true, reportar: true, recargar });
+  if (rec) await libroNovedades($('#libro', v), rec, { mecanico: true, reportar: true, recargar });
 };
 
 // =====================================================================
 //                        ADMINISTRACIÓN
 // =====================================================================
-VISTAS.panel = function vistaPanel(v) {
-  const p = Store.panelAdmin(); const hoy = isoLocal(new Date());
+VISTAS.panel = async function vistaPanel(v) {
+  const p = await Store.panelAdmin(); const hoy = isoLocal(new Date());
   const items = [...p.hoyRes.map((r) => ({ b: r.bloque, t: `${TIPO_RES[r.tipo]} · <b>${esc(r.piloto)}</b> · ${esc(r.recurso)} · ${esc(r.instructor || 'sin instructor')}`, e: r.estado })),
     ...p.hoyCla.map((k) => ({ b: k.bloque, t: `Clase ${esc(k.teo)} · ${esc(k.titulo)} · ${esc(k.instructor)} · ${k.inscriptos} alumnos`, e: k.estado }))].sort((a, b) => a.b - b.b);
   v.innerHTML = hero('Panel de administración', `<span class="cap">${esc(fmtFecha(hoy))}</span>. Desde acá manejás instructores, clases, reservas, usuarios y flota.`) + `
@@ -2394,11 +2512,11 @@ VISTAS.panel = function vistaPanel(v) {
         <button class="btn sec sm" id="ir-dispo" style="margin-top:8px">Asignar instructores</button></div>
     </div>`;
   animarNumeros(v);
-  $('#ir-dispo', v).onclick = () => irA('dispo');
+  $('#ir-dispo', v).onclick = async () => await irA('dispo');
 };
 
-function gridDisponibilidad(cont, lunes, { editable, inst }) {
-  const d = Store.disponibilidadSemana(lunes, inst); const hoy = isoLocal(new Date());
+async function gridDisponibilidad(cont, lunes, { editable, inst }) {
+  const d = await Store.disponibilidadSemana(lunes, inst); const hoy = isoLocal(new Date());
   cont.innerHTML = `<div class="tabla-wrap"><table class="dispo"><thead><tr><th>${editable ? 'Instructor' : ''}</th>${d.dias.map((f) => `<th class="dia-head ${f === hoy ? 'hoy' : ''}"><small>${parseISO(f).toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')}</small>${fmtDM(f)}</th>`).join('')}</tr></thead><tbody>
     ${d.filas.map((i) => `<tr><td><strong>${esc(i.nombre)} ${esc(i.apellido)}</strong><div class="muted">${i.dias.reduce((s, x) => s + x.bloques.filter((b) => b.disponible).length, 0)} bloques</div></td>
       ${i.dias.map((x) => `<td><div class="chips">${x.bloques.map((b) => `<button class="chip ${b.ocupado ? 'ocupado' : b.disponible ? 'on' : ''}" ${editable ? '' : 'disabled'} data-i="${i.id}" data-f="${x.fecha}" data-b="${b.bloque}" title="${b.ocupado ? esc(b.ocupado) : `${rango(b.bloque)} · ${b.disponible ? 'Vuela' : 'No vuela'}`}">${String(b.bloque).padStart(2, '0')}</button>`).join('')}</div>
@@ -2406,24 +2524,24 @@ function gridDisponibilidad(cont, lunes, { editable, inst }) {
   </tbody></table></div>
   <div class="leyenda"><span><span class="chip on" style="display:inline-block;padding:2px 6px">08</span> vuela en ese bloque</span><span><span class="chip ocupado" style="display:inline-block;padding:2px 6px">08</span> ya tiene vuelo o clase</span><span><span class="chip" style="display:inline-block;padding:2px 6px">08</span> no vuela</span></div>`;
   if (!editable) return;
-  const re = () => gridDisponibilidad(cont, lunes, { editable, inst });
-  $$('.chip[data-i]', cont).forEach((c) => c.onclick = () => { hacer(() => Store.alternarDisponibilidad(Number(c.dataset.i), c.dataset.f, Number(c.dataset.b))); re(); });
-  $$('[data-todo]', cont).forEach((c) => c.onclick = () => { const [i, f, on] = c.dataset.todo.split('|'); hacer(() => Store.diaCompleto(Number(i), f, on === '1')); re(); });
+  const re = async () => await gridDisponibilidad(cont, lunes, { editable, inst });
+  $$('.chip[data-i]', cont).forEach((c) => c.onclick = async () => { await hacer(async () => await Store.alternarDisponibilidad(Number(c.dataset.i), c.dataset.f, Number(c.dataset.b))); await re(); });
+  $$('[data-todo]', cont).forEach((c) => c.onclick = async () => { const [i, f, on] = c.dataset.todo.split('|'); await hacer(async () => await Store.diaCompleto(Number(i), f, on === '1')); await re(); });
 }
-VISTAS.dispo = function vistaDispo(v, lunes = state.semana || lunesDe()) {
+VISTAS.dispo = async function vistaDispo(v, lunes = state.semana || lunesDe()) {
   state.semana = lunes;
   const mover = (n) => { const d = parseISO(lunes); d.setDate(d.getDate() + n); return isoLocal(d); };
   v.innerHTML = hero('Disponibilidad de instructores', 'Marcá en qué días y bloques vuela cada instructor. Los alumnos y pilotos solo pueden reservar con instructores asignados en ese horario.') + `
     <div class="card anim" style="--i:1"><div class="card-head"><div class="flujo"><button class="btn sec sm" id="ant">← Semana anterior</button><button class="btn sec sm" id="hoy">Esta semana</button><button class="btn sec sm" id="sig">Semana siguiente →</button></div>
       <div class="flujo"><span class="muted">Semana del ${esc(fmtCorta(lunes))}</span><button class="btn sm" id="copiar">Copiar a la semana siguiente</button></div></div><div id="grid"></div></div>`;
-  gridDisponibilidad($('#grid', v), lunes, { editable: true });
-  $('#ant', v).onclick = () => VISTAS.dispo(v, mover(-7)); $('#sig', v).onclick = () => VISTAS.dispo(v, mover(7)); $('#hoy', v).onclick = () => VISTAS.dispo(v, lunesDe());
-  $('#copiar', v).onclick = () => { hacer(() => Store.copiarSemana(lunes), 'Semana copiada a la siguiente'); VISTAS.dispo(v, mover(7)); };
+  await gridDisponibilidad($('#grid', v), lunes, { editable: true });
+  $('#ant', v).onclick = async () => await VISTAS.dispo(v, mover(-7)); $('#sig', v).onclick = async () => await VISTAS.dispo(v, mover(7)); $('#hoy', v).onclick = async () => await VISTAS.dispo(v, lunesDe());
+  $('#copiar', v).onclick = async () => { await hacer(async () => await Store.copiarSemana(lunes), 'Semana copiada a la siguiente'); await VISTAS.dispo(v, mover(7)); };
 };
 
-VISTAS.todas = function vistaTodas(v, filtros = state.filtrosRes || { desde: isoLocal(new Date()), hasta: '', tipo: '', estado: 'pendiente' }) {
+VISTAS.todas = async function vistaTodas(v, filtros = state.filtrosRes || { desde: isoLocal(new Date()), hasta: '', tipo: '', estado: 'pendiente' }) {
   state.filtrosRes = filtros;
-  const l = Store.todasReservas(filtros);
+  const l = await Store.todasReservas(filtros);
   v.innerHTML = hero('Reservas', 'Todas las reservas de vuelo y simulador. Podés cancelar cualquiera o ver la ficha del piloto.') + `
     <div class="card anim" style="--i:1"><div class="filtro">
       <label class="campo">Desde<input id="fd" type="date" value="${filtros.desde}"></label><label class="campo">Hasta<input id="fh" type="date" value="${filtros.hasta}"></label>
@@ -2434,15 +2552,15 @@ VISTAS.todas = function vistaTodas(v, filtros = state.filtrosRes || { desde: iso
           <td><a href="#" data-piloto="${r.piloto_id}">${esc(r.piloto)}</a><div class="muted">${r.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</div></td><td>${esc(r.instructor || '—')}</td>
           <td class="mono">${esc(r.recurso)}</td><td>${badgeEstado(r)}</td><td>${r.estado === 'pendiente' ? `<button class="btn danger sm" data-c="${r.id}">Cancelar</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('No hay reservas con esos filtros.')}</div>`;
-  const leer = () => VISTAS.todas(v, { desde: $('#fd', v).value, hasta: $('#fh', v).value, tipo: $('#ft', v).value, estado: $('#fe', v).value });
+  const leer = async () => await VISTAS.todas(v, { desde: $('#fd', v).value, hasta: $('#fh', v).value, tipo: $('#ft', v).value, estado: $('#fe', v).value });
   $$('.filtro input, .filtro select', v).forEach((x) => x.onchange = leer);
-  $$('[data-piloto]', v).forEach((a) => a.onclick = (e) => { e.preventDefault(); fichaPiloto(a.dataset.piloto); });
-  $$('[data-c]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Cancelar reserva', 'Avisale al piloto que su reserva fue cancelada.', 'Cancelar reserva')) { hacer(() => Store.cancelarReserva(b.dataset.c), 'Reserva cancelada'); leer(); } });
+  $$('[data-piloto]', v).forEach((a) => a.onclick = async (e) => { e.preventDefault(); await fichaPiloto(a.dataset.piloto); });
+  $$('[data-c]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Cancelar reserva', 'Avisale al piloto que su reserva fue cancelada.', 'Cancelar reserva')) { await hacer(async () => await Store.cancelarReserva(b.dataset.c), 'Reserva cancelada'); await leer(); } });
 };
 
-VISTAS.usuarios = function vistaUsuarios(v, rol = state.filtroRol || '', q = '') {
+VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q = '') {
   state.filtroRol = rol;
-  const l = Store.usuarios(rol).filter((u) => !q || `${u.nombre} ${u.apellido} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
+  const l = (await Store.usuarios(rol)).filter((u) => !q || `${u.nombre} ${u.apellido} ${u.email}`.toLowerCase().includes(q.toLowerCase()));
   v.innerHTML = hero('Usuarios', 'Altas, bajas y datos de alumnos, pilotos, instructores, mecánicos y administradores. Solo pueden ingresar quienes estén cargados acá.',
     '<div style="margin-top:14px"><button class="btn sec" id="nuevo">+ Nuevo usuario</button></div>') + `
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
@@ -2453,11 +2571,11 @@ VISTAS.usuarios = function vistaUsuarios(v, rol = state.filtroRol || '', q = '')
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.rol === 'alumno' ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div></div>`;
-  $('#fr', v).onchange = (e) => VISTAS.usuarios(v, e.target.value, $('#fq', v).value);
-  $('#fq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(() => { VISTAS.usuarios(v, rol, e.target.value); const i = $('#fq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
-  $('#nuevo', v).onclick = () => editarUsuario(null, () => VISTAS.usuarios(v, rol));
-  $$('[data-e]', v).forEach((b) => b.onclick = () => editarUsuario(Store.usuario(b.dataset.e), () => VISTAS.usuarios(v, rol, q)));
-  $$('[data-syl]', v).forEach((b) => b.onclick = () => abrirLibro(Number(b.dataset.syl)));
+  $('#fr', v).onchange = async (e) => await VISTAS.usuarios(v, e.target.value, $('#fq', v).value);
+  $('#fq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(async () => { await VISTAS.usuarios(v, rol, e.target.value); const i = $('#fq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  $('#nuevo', v).onclick = () => editarUsuario(null, async () => await VISTAS.usuarios(v, rol));
+  $$('[data-e]', v).forEach((b) => b.onclick = async () => editarUsuario(await Store.usuario(b.dataset.e), async () => await VISTAS.usuarios(v, rol, q)));
+  $$('[data-syl]', v).forEach((b) => b.onclick = async () => await abrirLibro(Number(b.dataset.syl)));
 };
 const ROL_INFO = {
   alumno: ['Alumno piloto', 'Reserva vuelos de a un bloque por día, simulador y clases teóricas. Tiene su syllabus.'],
@@ -2497,12 +2615,12 @@ function editarUsuario(u, despues, rolElegido) {
     
   };
   $('#u-rol', m.el).onchange = ajustar; ajustar();
-  $('#u-ok', m.el).onclick = () => {
+  $('#u-ok', m.el).onclick = async () => {
     const d = Object.fromEntries(new FormData($('#f-u', m.el)));
     if (yoMismo) d.rol = u.rol;
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
-    if (hacer(() => u ? Store.guardarPerfil(d, u.id) : Store.crearUsuario(d), u ? 'Usuario actualizado' : `Usuario creado: ${ROL_INFO[d.rol][0]}`)) { m.cerrar(); despues(); }
+    if (await hacer(async () => u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d), u ? 'Usuario actualizado' : `Usuario creado: ${ROL_INFO[d.rol][0]}`)) { m.cerrar(); despues(); }
   };
 }
 
@@ -2599,7 +2717,8 @@ function buscadorOficial(id, codigo = 'SADM') {
   return `<div class="buscador-of" data-buscador="${id}">
     <label class="campo">Aeródromo (código OACI)<input id="${id}-oaci" maxlength="4" value="${codigo}" style="text-transform:uppercase" autocomplete="off"></label>
     <div class="flujo">
-      <a class="btn" data-link="metar" href="${urlMetar(codigo)}" target="_blank" rel="noopener">METAR y TAF de <span data-cod>${codigo}</span></a>
+      ${MODO === 'servidor' ? `<button class="btn" type="button" data-ver-meteo>Ver METAR, TAF y NOTAM</button>` : ''}
+      <a class="btn ${MODO === 'servidor' ? 'sec' : ''}" data-link="metar" href="${urlMetar(codigo)}" target="_blank" rel="noopener">${MODO === 'servidor' ? 'Abrir en aviationweather.gov' : 'METAR y TAF de <span data-cod>' + codigo + '</span>'}</a>
       <a class="btn sec" data-link="notam" href="${URL_NOTAM_AR}" target="_blank" rel="noopener">NOTAM Argentina (ANAC)</a>
       <a class="btn sec" href="${URL_NOTAM_FAA}" target="_blank" rel="noopener">NOTAM internacional (FAA)</a>
     </div></div>`;
@@ -2609,18 +2728,43 @@ function activarBuscador(root) {
     const inp = $('input', b);
     const upd = () => { const c = (inp.value.trim().toUpperCase() || 'SADM'); $('[data-link="metar"]', b).href = urlMetar(c); $$('[data-cod]', b).forEach((x) => x.textContent = c); };
     inp.oninput = upd;
-    $$('[data-ad]', root).forEach((x) => x.onclick = () => { inp.value = x.dataset.ad; upd(); });
+    const salida = $('[data-meteo-salida]', root);
+    const ver = $('[data-ver-meteo]', b);
+    if (ver && salida) {
+      ver.onclick = () => mostrarMeteo(inp.value.trim().toUpperCase() || 'SADM', salida, { compacto: !!b.closest('.meteo-widget') });
+      inp.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); ver.click(); } };
+    }
+    $$('[data-ad]', root).forEach((x) => x.onclick = () => { inp.value = x.dataset.ad; upd(); if (ver) ver.click(); });
   });
+}
+// consulta al servidor (Aviation Weather Center y FAA) y muestra los datos decodificados
+async function mostrarMeteo(id, cont, { compacto = false } = {}) {
+  cont.innerHTML = '<div class="muted" style="margin-top:14px">Consultando la fuente oficial…</div>';
+  let d;
+  try {
+    const r = await fetch(`/api/meteo?id=${encodeURIComponent(id)}`, { credentials: 'same-origin' });
+    d = await r.json(); if (!r.ok) throw new Error(d.error || 'Error');
+  } catch (e) { cont.innerHTML = `<div class="aviso warn" style="margin-top:14px"><div><strong>No se pudo consultar ${esc(id)}</strong>${esc(e.message)}. Probá con los links a las fuentes oficiales.</div></div>`; return; }
+  const hora = new Date(d.consultado).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+  if (d.error && !d.metar) { cont.innerHTML = `<div class="aviso warn" style="margin-top:14px"><div><strong>No se pudo consultar la fuente oficial</strong>El Aviation Weather Center no respondió. Probá de nuevo en unos minutos o abrí los links.</div></div>`; return; }
+  const metar = d.metar ? tarjetaMetar({ metar: d.metar, taf: d.taf || '' }, { compacto, pegado: true })
+    : `<div class="aviso" style="margin-top:14px"><div><strong>${esc(id)} no tiene METAR publicado</strong>${d.error ? esc(d.error) : 'Puede que el aeródromo no emita METAR. Probá con uno cercano.'}</div></div>`;
+  const taf = !compacto ? (d.taf ? `<h4 style="margin:18px 0 6px">TAF</h4><div class="metar-raw taf">${esc(d.taf).replace(/ (FM\d{6}|BECMG|TEMPO|PROB\d{2}(?: TEMPO)?)/g, '<br>$1')}</div>` : `<p class="muted">${esc(id)} no tiene TAF vigente.</p>`) : '';
+  const notam = compacto ? '' : !d.notamsConfigurado
+    ? `<h4 style="margin:18px 0 6px">NOTAM</h4><p class="muted">La consulta automática de NOTAM se activa al cargar la clave de la FAA en el servidor. Mientras tanto usá los links a ANAC y FAA.</p>`
+    : `<h4 style="margin:18px 0 6px">NOTAM vigentes (${(d.notams || []).length})</h4>${(d.notams || []).length ? d.notams.map((n) => `<div class="notam"><b class="mono">${esc(n.numero)}</b>${n.desde ? ` <span class="muted">${esc(n.desde.slice(0, 16).replace('T', ' '))} → ${esc((n.hasta || 'PERM').slice(0, 16).replace('T', ' '))}</span>` : ''}<pre>${esc(n.texto)}</pre></div>`).join('') : '<p class="muted">Sin NOTAM informados para este aeródromo.</p>'}`;
+  cont.innerHTML = `<div style="margin-top:16px">${metar}${taf}${notam}<div class="muted" style="font-size:12px;margin-top:8px">Fuente: Aviation Weather Center (NOAA)${d.notamsConfigurado ? ' y FAA' : ''} · consultado ${hora} hs</div></div>`;
 }
 function widgetMeteo(v) {
   const hero = $('.hero', v); if (!hero || $('.meteo-widget', v)) return;
   const div = document.createElement('div'); div.className = 'card anim meteo-widget'; div.style.marginBottom = '22px';
-  div.innerHTML = `<div class="card-head"><h3>Meteorología y NOTAM</h3><span class="muted">Fuente oficial · se abre en una pestaña nueva</span></div>${buscadorOficial('w')}`;
+  div.innerHTML = `<div class="card-head"><h3>Meteorología y NOTAM</h3><span class="muted">Fuente oficial${MODO === 'servidor' ? '' : ' · se abre en una pestaña nueva'}</span></div>${buscadorOficial('w')}<div data-meteo-salida></div>`;
   hero.after(div); activarBuscador(div);
+  if (MODO === 'servidor') mostrarMeteo('SADM', $('[data-meteo-salida]', div), { compacto: true });
 }
 for (const k of ['reservar', 'agenda', 'mantenimiento', 'panel']) {
   const f = VISTAS[k];
-  VISTAS[k] = function (v, ...a) { f(v, ...a); widgetMeteo(v); };
+  VISTAS[k] = async function (v, ...a) { await f(v, ...a); widgetMeteo(v); };
 }
 
 const AERODROMOS = [['SADM', 'Morón'], ['SADP', 'El Palomar'], ['SADF', 'San Fernando'], ['SABE', 'Aeroparque'], ['SAEZ', 'Ezeiza'], ['SADL', 'La Plata'], ['SAAR', 'Rosario'], ['SAZS', 'Bariloche']];
@@ -2633,12 +2777,14 @@ VISTAS.meteo = function vistaMeteo(v) {
   v.innerHTML = hero('Meteorología y NOTAM', 'Buscá cualquier aeródromo por su código OACI y abrí el METAR, el TAF y los NOTAM directamente en la fuente oficial.') + `
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Buscar aeródromo</h3></div>
       ${buscadorOficial('m')}
+      <div data-meteo-salida></div>
       <div class="flujo" style="margin-top:14px">${AERODROMOS.map(([c, n]) => `<button class="chip-ad" data-ad="${c}"><b>${c}</b> ${n}</button>`).join('')}</div>
-      <p class="muted" style="margin-bottom:0">METAR y TAF: Aviation Weather Center (NOAA), que publica los partes del SMN. NOTAM: AIS de ANAC y buscador de la FAA. En los NOTAM, escribí el código en el buscador del sitio.</p></div>
+      <p class="muted" style="margin-bottom:0">METAR y TAF: Aviation Weather Center (NOAA), que publica los partes del SMN. NOTAM: AIS de ANAC y buscador de la FAA${MODO === 'servidor' ? '' : '. En los NOTAM, escribí el código en el buscador del sitio'}.</p></div>
     <div class="card anim" style="--i:2"><div class="card-head"><h3>Decodificador de METAR</h3><span class="muted">Pegá el METAR que copiaste de la fuente oficial</span></div>
       <textarea id="dec-in" rows="2" placeholder="Ej: METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016"></textarea>
       <div id="dec-out" style="margin-top:12px"></div></div>`;
   activarBuscador(v);
+  if (MODO === 'servidor') mostrarMeteo('SADM', $('[data-meteo-salida]', v));
   $('#dec-in', v).oninput = (e) => { const t = e.target.value.trim(); $('#dec-out', v).innerHTML = t.length > 12 ? tarjetaMetar({ metar: t, taf: '', fecha: '', autor: '' }, { compacto: true, pegado: true }) : ''; };
 };
 
@@ -2647,8 +2793,8 @@ VISTAS.meteo = function vistaMeteo(v) {
 /* Flight Center · interfaz (parte 4: estado de cuenta y cobros) */
 
 const pesos = (n) => `$ ${Math.round(n || 0).toLocaleString('es-AR')}`;
-function politicaTxt(tipo) {
-  const t = Store.tarifas();
+async function politicaTxt(tipo) {
+  const t = await Store.tarifas();
   const base = tipo === 'teorica' ? t.teorica : t[tipo] * 2;
   return `Cancelación sin cargo hasta ${t.horas_aviso} hs antes. Después se cobra el ${t.recargo}% del valor del bloque (${pesos(base * t.recargo / 100)} por bloque).`;
 }
@@ -2679,8 +2825,8 @@ function tarifasCard(t) {
     <div><small>Cancelación tardía</small><b>${t.recargo}% del bloque</b><em>con menos de ${t.horas_aviso} hs</em></div></div>`;
 }
 
-VISTAS.cuenta = function vistaCuenta(v) {
-  const c = Store.miCuenta();
+VISTAS.cuenta = async function vistaCuenta(v) {
+  const c = await Store.miCuenta();
   v.innerHTML = hero('Estado de cuenta', 'Tus vuelos, simuladores y clases se cargan cuando se completan. Los pagos los registra la administración.') +
     tilesCuenta(c) + `
     <div class="card anim" style="--i:4"><div class="card-head"><h3>Tarifas vigentes</h3></div>${tarifasCard(c.tarifas)}
@@ -2688,9 +2834,9 @@ VISTAS.cuenta = function vistaCuenta(v) {
     <div class="card anim" style="--i:5"><div class="card-head"><h3>Movimientos</h3><span class="badge">${c.movimientos.length}</span></div>${tablaMovimientos(c.movimientos)}</div>`;
 };
 
-VISTAS.cuentas = function vistaCuentas(v, q = '') {
-  const l = Store.cuentas().filter((u) => !q || `${u.nombre} ${u.apellido}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.saldo - a.saldo);
-  const t = Store.tarifas();
+VISTAS.cuentas = async function vistaCuentas(v, q = '') {
+  const l = (await Store.cuentas()).filter((u) => !q || `${u.nombre} ${u.apellido}`.toLowerCase().includes(q.toLowerCase())).sort((a, b) => b.saldo - a.saldo);
+  const t = await Store.tarifas();
   const deuda = l.filter((u) => u.saldo > 0).reduce((s, u) => s + u.saldo, 0);
   v.innerHTML = hero('Cuentas', 'Saldos de alumnos y pilotos, registro de pagos y tarifas de la escuela.') + `
     <div class="stats"><div class="stat dest anim" style="--i:1"><div class="lbl">Total a cobrar</div><div class="val">${pesos(deuda)}</div></div>
@@ -2704,22 +2850,22 @@ VISTAS.cuentas = function vistaCuentas(v, q = '') {
         <td class="num">${u.saldo > 0 ? `<span class="badge warn">${pesos(u.saldo)}</span>` : u.saldo < 0 ? `<span class="badge ok">${pesos(-u.saldo)} a favor</span>` : '<span class="badge ok">Al día</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-ver="${u.id}">Ver cuenta</button> <button class="btn sm" data-pago="${u.id}">Registrar pago</button></td></tr>`).join('')}
       </tbody></table></div></div>`;
-  const re = () => VISTAS.cuentas(v, $('#cq', v)?.value || '');
-  $('#cq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(() => { VISTAS.cuentas(v, e.target.value); const i = $('#cq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  const re = async () => await VISTAS.cuentas(v, $('#cq', v)?.value || '');
+  $('#cq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(async () => { await VISTAS.cuentas(v, e.target.value); const i = $('#cq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
   $('#ed-tar', v).onclick = () => editarTarifas(t, re);
-  $$('[data-pago]', v).forEach((b) => b.onclick = () => registrarPago(Number(b.dataset.pago), re));
-  $$('[data-ver]', v).forEach((b) => b.onclick = () => verCuenta(Number(b.dataset.ver), re));
+  $$('[data-pago]', v).forEach((b) => b.onclick = async () => await registrarPago(Number(b.dataset.pago), re));
+  $$('[data-ver]', v).forEach((b) => b.onclick = async () => await verCuenta(Number(b.dataset.ver), re));
 };
-function verCuenta(uid, despues) {
-  const c = Store.cuenta(uid);
+async function verCuenta(uid, despues) {
+  const c = await Store.cuenta(uid);
   const m = modal(`<div class="modal-head"><div><h3>${esc(c.usuario.nombre)} ${esc(c.usuario.apellido)}</h3><div class="muted">Estado de cuenta</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body">${tilesCuenta(c)}${tablaMovimientos(c.movimientos)}</div>
     <div class="modal-foot"><button class="btn sec" id="aj">Cargo o crédito manual</button><button class="btn" id="pg">Registrar pago</button></div>`, { ancho: true });
-  $('#pg', m.el).onclick = () => { m.cerrar(); registrarPago(uid, despues); };
+  $('#pg', m.el).onclick = async () => { m.cerrar(); await registrarPago(uid, despues); };
   $('#aj', m.el).onclick = () => { m.cerrar(); ajuste(uid, despues); };
 }
-function registrarPago(uid, despues) {
-  const c = Store.cuenta(uid);
+async function registrarPago(uid, despues) {
+  const c = await Store.cuenta(uid);
   const m = modal(`<div class="modal-head"><div><h3>Registrar pago</h3><div class="muted">${esc(c.usuario.nombre)} ${esc(c.usuario.apellido)} · saldo ${c.saldo >= 0 ? 'a pagar' : 'a favor'} ${pesos(Math.abs(c.saldo))}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <form class="modal-body form-grid" id="f-pago">
       <label class="campo">Monto ($)<input id="p-monto" name="monto" inputmode="numeric" value="${c.saldo > 0 ? c.saldo : ''}"></label>
@@ -2727,7 +2873,7 @@ function registrarPago(uid, despues) {
       <label class="campo">Medio de pago<select id="p-medio" name="medio">${['efectivo', 'transferencia', 'tarjeta de débito', 'tarjeta de crédito', 'Mercado Pago'].map((x) => `<option>${x}</option>`).join('')}</select></label>
       <label class="campo">Nota <span class="op">(opcional)</span><input id="p-nota" name="nota" placeholder="N° de comprobante"></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn ok" id="p-ok">Registrar pago</button></div>`);
-  $('#p-ok', m.el).onclick = () => { if (hacer(() => { Store.registrarPago(uid, Object.fromEntries(new FormData($('#f-pago', m.el)))); return true; }, 'Pago registrado')) { m.cerrar(); despues(); } };
+  $('#p-ok', m.el).onclick = async () => { if (await hacer(async () => { await Store.registrarPago(uid, Object.fromEntries(new FormData($('#f-pago', m.el)))); return true; }, 'Pago registrado')) { m.cerrar(); despues(); } };
 }
 function ajuste(uid, despues) {
   const m = modal(`<div class="modal-head"><h3>Cargo o crédito manual</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -2736,7 +2882,7 @@ function ajuste(uid, despues) {
       <label class="campo">Monto ($)<input id="a-monto" name="monto" inputmode="numeric"></label>
       <label class="campo full">Concepto<input id="a-concepto" name="concepto" placeholder="Ej: Bonificación, material de estudio, examen"></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="a-ok">Guardar</button></div>`);
-  $('#a-ok', m.el).onclick = () => { if (hacer(() => { Store.ajusteCuenta(uid, Object.fromEntries(new FormData($('#f-aj', m.el)))); return true; }, 'Movimiento registrado')) { m.cerrar(); despues(); } };
+  $('#a-ok', m.el).onclick = async () => { if (await hacer(async () => { await Store.ajusteCuenta(uid, Object.fromEntries(new FormData($('#f-aj', m.el)))); return true; }, 'Movimiento registrado')) { m.cerrar(); despues(); } };
 }
 function editarTarifas(t, despues) {
   const m = modal(`<div class="modal-head"><h3>Tarifas</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -2748,55 +2894,14 @@ function editarTarifas(t, despues) {
       <label class="campo">Aviso mínimo sin cargo (horas)<input id="t-hs" name="horas_aviso" type="number" min="0" value="${t.horas_aviso}"></label>
       <p class="muted full" style="margin:0">Los cambios rigen para lo que se cargue de acá en adelante. Lo ya cargado no cambia.</p>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="t-ok">Guardar tarifas</button></div>`);
-  $('#t-ok', m.el).onclick = () => { if (hacer(() => { Store.guardarTarifas(Object.fromEntries(new FormData($('#f-tar', m.el)))); return true; }, 'Tarifas actualizadas')) { m.cerrar(); despues(); } };
+  $('#t-ok', m.el).onclick = async () => { if (await hacer(async () => { await Store.guardarTarifas(Object.fromEntries(new FormData($('#f-tar', m.el)))); return true; }, 'Tarifas actualizadas')) { m.cerrar(); despues(); } };
 }
 
 
 /* Flight Center · interfaz (parte 5: avisos por email y WhatsApp) */
 
-const fechaLarga = (f) => { const t = fmtFecha(f, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return t[0].toUpperCase() + t.slice(1); };
-const fechaCorta = (f) => f.split('-').reverse().join('/');
+const datosAviso = contenidoAviso;
 const saludo = (n) => `Estimado/a ${n.nombre} ${n.apellido}`;
-
-// ---------- contenido de cada aviso ----------
-function datosAviso(n) {
-  if (n.tipo === 'reserva') {
-    const rs = n.datos.reservas; const r = rs[0]; const bl = rs.map((x) => x.bloque).sort((a, b) => a - b);
-    const sim = r.tipo === 'simulador';
-    return {
-      asunto: `Reserva confirmada · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(r.fecha)} · ${codigoReserva(r.id, sim ? 'SIM' : 'FC')}`,
-      titulo: sim ? 'Turno de simulador confirmado' : 'Reserva de vuelo confirmada',
-      intro: `Le confirmamos su reserva de ${sim ? 'simulador' : 'vuelo'} en Flight Center. A continuación encontrará el detalle.`,
-      filas: [['Código de reserva', codigoReserva(r.id, sim ? 'SIM' : 'FC')], ['Fecha', fechaLarga(r.fecha)], ['Horario', `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs (${rs.length} bloque${rs.length > 1 ? 's' : ''})`],
-        ['Presentación', `${String(bl[0] - 1).padStart(2, '0')}:45 hs`], [sim ? 'Simulador' : 'Aeronave', `${r.recurso} · ${r.modelo}`], ['Instructor', r.instructor || 'Sin instructor'],
-        ...(sim ? [] : [['Ruta', `MOR → ${r.destino && r.destino !== 'MOR' ? r.destino : 'MOR (vuelo local)'}`]]), ...(n.datos.leccion ? [['Lección del syllabus', n.datos.leccion]] : [])],
-      notas: ['Preséntese 15 minutos antes con su CMA vigente y documentación.', 'Antes del vuelo consulte METAR, TAF y NOTAM en las fuentes oficiales.',
-        'Cancelación sin cargo hasta 24 horas antes. Con menos aviso se cobra el 20% del valor de cada bloque.'],
-      wpp: [`✈️ *Flight Center* · ${sim ? 'Simulador confirmado' : 'Reserva confirmada'}`, '', `Hola ${n.nombre}, tu ${sim ? 'turno de simulador' : 'vuelo'} quedó confirmado.`, '',
-        `📅 *${fechaLarga(r.fecha)}*`, `🕗 ${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs · presentación ${String(bl[0] - 1).padStart(2, '0')}:45`, `${sim ? '🖥️' : '🛩️'} ${r.recurso} · ${r.modelo}`,
-        `👨‍✈️ ${r.instructor || 'Sin instructor'}`, ...(sim ? [] : [`🛫 MOR → ${r.destino && r.destino !== 'MOR' ? r.destino : 'MOR (local)'}`]), ...(n.datos.leccion ? [`📘 Lección ${n.datos.leccion}`] : []),
-        `🔖 Código ${codigoReserva(r.id, sim ? 'SIM' : 'FC')}`, '', '_Cancelación sin cargo hasta 24 h antes; después se cobra el 20% del bloque._', '', '¡Buen vuelo!'],
-    };
-  }
-  if (n.tipo === 'clase') {
-    const k = n.datos.clase;
-    return {
-      asunto: `Inscripción confirmada · Clase ${k.teo} del ${fechaCorta(k.fecha)}`, titulo: 'Inscripción a clase teórica confirmada',
-      intro: 'Le confirmamos su inscripción a la siguiente clase teórica.',
-      filas: [['Clase', `${k.teo} · ${k.titulo}`], ['Fecha', fechaLarga(k.fecha)], ['Horario', `${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`], ['Aula', k.aula], ['Instructor', k.instructor]],
-      notas: ['Traiga leídos los contenidos de la clase del syllabus.', 'Baja sin cargo hasta 24 horas antes. Con menos aviso se cobra el 20% del valor de la clase.'],
-      wpp: ['📚 *Flight Center* · Inscripción confirmada', '', `Hola ${n.nombre}, quedaste inscripto/a en la clase *${k.teo} · ${k.titulo}*.`, '', `📅 *${fechaLarga(k.fecha)}*`, `🕗 ${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`, `🏫 ${k.aula} · ${k.instructor}`, '', '_Baja sin cargo hasta 24 h antes._'],
-    };
-  }
-  const d = n.datos;
-  return {
-    asunto: `Recordatorio de saldo pendiente · ${pesos(d.saldo)}`, titulo: 'Recordatorio de saldo pendiente',
-    intro: `Le recordamos que al día de la fecha su cuenta en Flight Center registra un saldo pendiente de pago de ${pesos(d.saldo)}.`,
-    filas: [['Saldo a pagar', pesos(d.saldo)], ...d.ultimos.map((m) => [`${fechaCorta(m.fecha)} · ${m.concepto}`, pesos(m.importe)])],
-    notas: ['Puede abonar en la oficina de la escuela en efectivo, con tarjeta o por transferencia bancaria / Mercado Pago.', 'Si ya realizó el pago, por favor desestime este mensaje.', 'Este recordatorio se envía una vez por día mientras haya saldo pendiente.'],
-    wpp: ['💳 *Flight Center* · Recordatorio de pago', '', `Hola ${n.nombre}, tu cuenta registra un saldo pendiente de *${pesos(d.saldo)}*.`, '', 'Podés abonar en la oficina de la escuela en efectivo, tarjeta, transferencia o Mercado Pago.', '', '_Si ya pagaste, desestimá este mensaje. ¡Gracias!_'],
-  };
-}
 
 function emailHTML(n) {
   const a = datosAviso(n);
@@ -2823,16 +2928,17 @@ function verMensajes(lista) {
   if (!lista.length) return toast('No hay mensajes para mostrar. Revisá tus preferencias de aviso en Mi perfil.', 'error');
   const mail = lista.find((x) => x.canal === 'email'); const wpp = lista.find((x) => x.canal === 'whatsapp');
   modal(`<div class="modal-head"><div><h3>${esc(datosAviso(lista[0]).titulo)}</h3><div class="muted">${[mail ? 'Email' : '', wpp ? 'WhatsApp' : ''].filter(Boolean).join(' y ')} · ${esc(lista[0].fecha)} hs</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
-    <div class="modal-body"><div class="aviso" style="margin-bottom:16px"><div><strong>Vista previa de la demo</strong>Así le llega el aviso al alumno o piloto. En la versión con servidor se envía solo, al email y al WhatsApp cargados en su perfil.</div></div>
+    <div class="modal-body">${MODO === 'demo' ? '<div class="aviso" style="margin-bottom:16px"><div><strong>Vista previa de la demo</strong>Así le llega el aviso al alumno o piloto. En la versión con servidor se envía solo, al email y al WhatsApp cargados en su perfil.</div></div>' : `<div class="aviso" style="margin-bottom:16px"><div>${lista.map((x) => `<div><strong>${x.canal === 'email' ? 'Email' : 'WhatsApp'}:</strong> ${ESTADO_ENVIO[x.estado] || x.estado}${x.detalle ? ` · ${esc(x.detalle)}` : ''}</div>`).join('')}</div></div>`}
       <div class="msj-grid">${mail ? `<div><div class="msj-canal">Email</div>${emailHTML(mail)}</div>` : ''}${wpp ? `<div><div class="msj-canal">WhatsApp</div>${whatsappHTML(wpp)}</div>` : ''}</div></div>`, { ancho: true });
   $('#modal-root .modal:last-of-type')?.style.setProperty('width', 'min(1080px, 100%)');
 }
 
 // ---------- vista de avisos ----------
+const ESTADO_ENVIO = { enviado: 'Enviado ✓', pendiente: 'En cola de envío', error: 'No se pudo enviar', sin_configurar: 'No enviado: el canal todavía no está configurado en el servidor', demo: 'Demo' };
 const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago' };
-VISTAS.avisos = function vistaAvisos(v) {
+VISTAS.avisos = async function vistaAvisos(v) {
   const esAdmin = state.user.rol === 'admin';
-  const l = esAdmin ? Store.notificaciones() : Store.misNotificaciones();
+  const l = esAdmin ? await Store.notificaciones() : await Store.misNotificaciones();
   // agrupa email + WhatsApp del mismo aviso
   const grupos = []; const idx = new Map();
   for (const n of l) { const k = `${n.usuario_id}|${n.tipo}|${n.fecha}`; if (!idx.has(k)) { idx.set(k, grupos.length); grupos.push([]); } grupos[idx.get(k)].push(n); }
@@ -2840,38 +2946,41 @@ VISTAS.avisos = function vistaAvisos(v) {
   const deudasHoy = esAdmin ? grupos.filter((g) => g[0].tipo === 'deuda' && g[0].dia === hoyD).length : 0;
   v.innerHTML = hero('Avisos', esAdmin ? 'Todos los emails y WhatsApp que envía el sistema: confirmaciones de reserva y el recordatorio diario a quienes tienen saldo pendiente.' : 'Las confirmaciones de tus reservas y los recordatorios que te enviamos por email y WhatsApp.') + `
     ${esAdmin ? `<div class="stats"><div class="stat dest anim" style="--i:1"><div class="lbl">Recordatorios de deuda hoy</div><div class="val">${deudasHoy}</div></div>
-      <div class="stat anim" style="--i:2"><div class="lbl">Avisos enviados</div><div class="val">${grupos.length}</div></div></div>` : ''}
+      <div class="stat anim" style="--i:2"><div class="lbl">Avisos enviados</div><div class="val">${grupos.length}</div></div></div>
+      <div class="aviso anim" style="--i:2"><div style="flex:1"><strong>Recordatorio diario de deuda</strong>${MODO === 'servidor' ? 'Sale solo todos los días a las 9:00 a quienes tienen saldo a pagar.' : 'En la demo se genera al iniciar sesión.'} Si hoy ya salió, no se repite.</div><button class="btn sec sm" id="rec-ahora">Enviar ahora</button></div>` : ''}
     <div class="card anim" style="--i:3"><div class="card-head"><h3>${esAdmin ? 'Historial de avisos' : 'Mis avisos'}</h3><span class="badge">${grupos.length}</span></div>
       ${grupos.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th>${esAdmin ? '<th>Destinatario</th>' : ''}<th>Aviso</th><th>Canales</th><th></th></tr></thead><tbody>
         ${grupos.map((g, i) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(g[0].dia))} ${esc(g[0].fecha.slice(11, 16))}</td>${esAdmin ? `<td>${esc(g[0].nombre)} ${esc(g[0].apellido)}</td>` : ''}
           <td><span class="badge ${g[0].tipo === 'deuda' ? 'warn' : 'ok'}">${TIPO_AVISO[g[0].tipo]}</span> <span class="muted">${esc(datosAviso(g[0]).asunto)}</span></td>
-          <td>${g.map((x) => `<span class="badge gris">${x.canal === 'email' ? 'Email' : 'WhatsApp'}</span>`).join(' ')}</td>
+          <td>${g.map((x) => `<span class="badge ${x.estado === 'enviado' ? 'ok' : x.estado === 'error' ? 'danger' : 'gris'}" title="${esc(ESTADO_ENVIO[x.estado] || '')}">${x.canal === 'email' ? 'Email' : 'WhatsApp'}${MODO === 'servidor' ? ` · ${x.estado === 'enviado' ? '✓' : x.estado === 'error' ? 'error' : x.estado === 'pendiente' ? '…' : 'sin enviar'}` : ''}</span>`).join(' ')}</td>
           <td><button class="btn sec sm" data-g="${i}">Ver</button></td></tr>`).join('')}</tbody></table></div>` : vacio('Todavía no hay avisos.')}</div>`;
   $$('[data-g]', v).forEach((b) => b.onclick = () => verMensajes(grupos[Number(b.dataset.g)]));
+  const ra = $('#rec-ahora', v);
+  if (ra) ra.onclick = async () => { const n = await hacer(() => Store.enviarRecordatoriosAhora()); if (n !== undefined) { toast(n ? `Se enviaron ${n} recordatorio(s)` : 'Hoy ya se enviaron todos los recordatorios', 'ok'); VISTAS.avisos(v); } };
 };
 
 // ---------- preferencias en el perfil ----------
 {
   const perfil = VISTAS.perfil;
-  VISTAS.perfil = function (v) {
-    perfil(v);
+  VISTAS.perfil = async function (v) {
+    await perfil(v);
     if (!['alumno', 'ppa'].includes(state.user.rol)) return;
-    const u = Store.yo(); const p = u.notif || { email: true, whatsapp: true };
+    const u = await Store.yo(); const p = u.notif || { email: true, whatsapp: true };
     const card = document.createElement('div'); card.className = 'card anim';
     card.innerHTML = `<div class="card-head"><h3>Avisos</h3><span class="muted">Confirmaciones de reserva y recordatorios de pago</span></div>
       <div class="flujo"><label class="marca"><input type="checkbox" id="nt-email" ${p.email ? 'checked' : ''}> Por email (${esc(u.email)})</label>
       <label class="marca"><input type="checkbox" id="nt-wpp" ${p.whatsapp ? 'checked' : ''}> Por WhatsApp (${esc(u.telefono || 'sin teléfono cargado')})</label></div>`;
     $$('.card', v)[0].after(card);
-    const g = () => { state.user = Store.guardarPreferencias({ email: $('#nt-email', v).checked, whatsapp: $('#nt-wpp', v).checked }); toast('Preferencias de aviso guardadas', 'ok'); };
+    const g = async () => { state.user = await Store.guardarPreferencias({ email: $('#nt-email', v).checked, whatsapp: $('#nt-wpp', v).checked }); toast('Preferencias de aviso guardadas', 'ok'); };
     $('#nt-email', v).onchange = g; $('#nt-wpp', v).onchange = g;
   };
 }
 // ---------- aviso en el estado de cuenta ----------
 {
   const cuenta = VISTAS.cuenta;
-  VISTAS.cuenta = function (v) {
-    cuenta(v);
-    const r = Store.misNotificaciones().filter((x) => x.tipo === 'deuda' && x.dia === isoLocal(new Date()));
+  VISTAS.cuenta = async function (v) {
+    await cuenta(v);
+    const r = (await Store.misNotificaciones()).filter((x) => x.tipo === 'deuda' && x.dia === isoLocal(new Date()));
     if (!r.length) return;
     const d = document.createElement('div'); d.className = 'aviso warn anim';
     d.innerHTML = `<div style="flex:1"><strong>Tenés un saldo pendiente</strong>Hoy te enviamos el recordatorio por ${r.map((x) => x.canal === 'email' ? 'email' : 'WhatsApp').join(' y ')}. Se envía una vez por día hasta que la cuenta quede al día.</div><button class="btn sec sm" id="ver-rec">Ver recordatorio</button>`;
@@ -2881,9 +2990,11 @@ VISTAS.avisos = function vistaAvisos(v) {
 }
 
 // ---------- inicio ----------
-state.user = Store.yo();
-if (state.user) Store.recordatoriosDeuda();
-render();
+(async () => {
+  state.user = await Store.yo();
+  if (state.user && MODO === 'demo') await Store.recordatoriosDeuda();
+  await render();
+})();
 
 </script>
 </body>

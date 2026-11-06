@@ -1,0 +1,22 @@
+{
+  "name": "flight-center-servidor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor del sistema de reservas de la escuela de vuelo Flight Center",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "DEMO=1 node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-session": "^2.1.0",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1"
+  }
+}

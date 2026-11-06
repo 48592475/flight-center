@@ -191,3 +191,13 @@
 .sin-red { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: linear-gradient(160deg, var(--navy), var(--azul)); }
 .sin-red-caja { background: #fff; border-radius: 22px; padding: 28px 24px; max-width: 380px; width: 100%; text-align: center; display: grid; gap: 10px; justify-items: center; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .5); }
 .sin-red-caja h2 { color: var(--navy); margin-top: 6px; }
+
+/* ausencias */
+.btn.warn-btn { background: #fff4e0; color: #8a5300; border: 1px solid #f3cf8c; box-shadow: none; }
+.btn.warn-btn:hover { background: #ffe9c2; }
+.opciones-aus { display: grid; gap: 8px; }
+.op-aus { display: flex; gap: 10px; align-items: flex-start; border: 1px solid var(--borde); border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+.op-aus:has(input:checked) { border-color: var(--azul-2); background: #f4f9ff; }
+.op-aus input { margin-top: 3px; width: auto; flex: none; box-shadow: none; }
+.op-aus span { display: grid; gap: 2px; }
+.op-aus small { color: var(--muted); }

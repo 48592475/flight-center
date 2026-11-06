@@ -193,7 +193,8 @@ async function fichaPiloto(id) {
       <div><h3>${esc(p.nombre)} ${esc(p.apellido)}</h3><span class="badge">${esc(ROLES[p.rol])}</span></div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body">
       <div class="stats" style="margin-bottom:18px"><div class="stat dest"><div class="lbl">Horas totales</div><div class="val">${fmtHoras(p.horas_totales)}<small>hs</small></div></div>
-        <div class="stat"><div class="lbl">En Flight Center</div><div class="val">${fmtHoras(p.horas_centro)}<small>hs</small></div></div></div>
+        <div class="stat"><div class="lbl">En Flight Center</div><div class="val">${fmtHoras(p.horas_centro)}<small>hs</small></div></div>
+        <div class="stat"><div class="lbl">Ausencias sin aviso</div><div class="val" ${p.ausencias ? 'style="color:var(--danger)"' : ''}>${p.ausencias}</div></div></div>
       <div class="ficha">
         <div><small>Email</small><span>${esc(p.email)}</span></div><div><small>Teléfono</small><span>${esc(p.telefono || '—')}</span></div>
         <div><small>DNI</small><span>${esc(p.dni || '—')}</span></div><div><small>Fecha de nacimiento</small><span>${p.fecha_nacimiento ? esc(fmtCorta(p.fecha_nacimiento)) : '—'}</span></div>
@@ -227,7 +228,7 @@ VISTAS.agenda = async function vistaAgenda(v, mes = isoLocal(new Date()).slice(0
   v.innerHTML = hero(`Hola, ${esc(state.user.nombre)}`, 'Tus vuelos, simuladores y clases. Al cerrar cada vuelo con un alumno calificás su lección del syllabus.',
     `<div style="margin-top:14px;max-width:220px"><select id="mes" aria-label="Mes">${opMes}</select></div>`) + `
     <div class="stats">${stat('Vuelos realizados en el mes', r.vuelos_mes, { dest: true, i: 1 })}${stat('Horas voladas', r.horas_mes, { dec: 1, suf: 'hs', i: 2 })}
-      ${stat('Simuladores', r.sims_mes, { i: 3 })}${stat('Clases dictadas', r.clases_mes, { i: 4 })}${stat('Pendientes', r.pendientes.length, { i: 5 })}${stat('Pilotos del mes', r.pilotos_mes, { i: 6 })}</div>
+      ${stat('Simuladores', r.sims_mes, { i: 3 })}${stat('Clases dictadas', r.clases_mes, { i: 4 })}${stat('Pendientes', r.pendientes.length, { i: 5 })}${stat('Ausencias del mes', r.ausencias_mes, { i: 6 })}${stat('Pilotos del mes', r.pilotos_mes, { i: 6 })}</div>
     <div class="card anim" style="--i:6"><div class="card-head"><h3>Vuelos y simuladores pendientes</h3><span class="muted">Con quién volás y cómo contactarlo</span></div>
       ${r.pendientes.length ? r.pendientes.map((f, i) => filaPendiente(f, i)).join('') : vacio('No tenés vuelos pendientes.')}</div>
     <div class="grid-2">
@@ -238,7 +239,7 @@ VISTAS.agenda = async function vistaAgenda(v, mes = isoLocal(new Date()).slice(0
     <div class="card anim" style="--i:9"><div class="card-head"><h3>Actividad del mes</h3></div>
       ${r.del_mes.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Horario</th><th>Piloto</th><th>Equipo</th><th>Lección</th><th>Estado</th></tr></thead><tbody>
         ${r.del_mes.map((f) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(f.fecha))}</td><td>${badgeTipo(f.tipo)}</td><td class="mono">${rango(f.bloque)}</td>
-          <td><a href="#" data-piloto="${f.piloto_id}">${esc(f.piloto)}</a></td><td class="mono">${esc(f.recurso)}</td><td>${esc(f.leccion || '—')}</td><td>${badgeEstado(f)}</td></tr>`).join('')}
+          <td><a href="#" data-piloto="${f.piloto_id}">${esc(f.piloto)}</a></td><td class="mono">${esc(f.recurso)}</td><td>${esc(f.leccion || '—')}</td><td>${badgeEstado(f)}${f.estado === 'ausente' ? ` <button class="link-btn" data-desaus="${f.id}">Deshacer</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('Sin actividad este mes.')}</div>`;
   animarNumeros(v);
   await gridDisponibilidad($('#mi-dispo', v), lunesDe(), { editable: false, inst: state.user.id });
@@ -246,11 +247,40 @@ VISTAS.agenda = async function vistaAgenda(v, mes = isoLocal(new Date()).slice(0
   $$('[data-piloto]', v).forEach((a) => a.onclick = async (e) => { e.preventDefault(); await fichaPiloto(a.dataset.piloto); });
   $$('[data-completar]', v).forEach((b) => b.onclick = () => completarReserva(r.pendientes.find((f) => f.id == b.dataset.completar), async () => await VISTAS.agenda(v, mes)));
   $$('[data-syl]', v).forEach((b) => b.onclick = async () => await abrirLibro(Number(b.dataset.syl), b.dataset.lec));
+  $$('[data-ausente]', v).forEach((b) => b.onclick = () => marcarAusente(r.pendientes.find((f) => f.id == b.dataset.ausente), async () => await VISTAS.agenda(v, mes)));
+  $$('[data-desaus]', v).forEach((b) => b.onclick = () => deshacerAusencia(b.dataset.desaus, async () => await VISTAS.agenda(v, mes)));
   $$('[data-cancelar-i]', v).forEach((b) => b.onclick = async () => {
     if (await confirmar('Cancelar', '¿Seguro que querés cancelar? Avisale al piloto.', 'Cancelar')) { await hacer(async () => await Store.cancelarReserva(b.dataset.cancelarI), 'Reserva cancelada'); await VISTAS.agenda(v, mes); }
   });
 };
+const turnoEmpezo = (f) => { const h = isoLocal(new Date()); return f.fecha < h || (f.fecha === h && new Date().getHours() >= f.bloque); };
+async function marcarAusente(f, despues) {
+  const t = await Store.tarifas(); const valor = (f.tipo === 'vuelo' ? t.vuelo : t.simulador) * 2 * (t.ausencia ?? 100) / 100;
+  const m = modal(`<div class="modal-head"><h3>Marcar ausente</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <div class="modal-body">
+      <p style="margin-top:0"><b>${esc(f.piloto)}</b> no se presentó a su ${f.tipo === 'vuelo' ? 'vuelo' : 'turno de simulador'} del ${esc(fmtCorta(f.fecha))}, ${rango(f.bloque)} (${esc(f.recurso)}).</p>
+      <div class="opciones-aus">
+        <label class="op-aus"><input type="radio" name="aus" value="cargo" checked><span><b>Ausencia sin aviso</b><small>Se cobra el ${t.ausencia ?? 100}% del bloque: ${pesos(valor)}</small></span></label>
+        <label class="op-aus"><input type="radio" name="aus" value="just"><span><b>Ausencia justificada</b><small>Sin cargo. Por ejemplo, enfermedad o un problema avisado tarde.</small></span></label>
+      </div>
+      <label class="campo" style="margin-top:12px"><span>Motivo <span class="muted" id="aus-opc">(opcional)</span></span><textarea id="aus-mot" rows="2" maxlength="300" placeholder="Ej: no avisó, no atendió el teléfono"></textarea></label>
+      <p class="muted" style="margin-bottom:0">Le llega un aviso por email. Si fue un error, se puede deshacer desde la actividad del mes.</p>
+    </div><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn danger" id="aus-ok">Marcar ausente</button></div>`);
+  const just = () => $('input[name=aus]:checked', m.el).value === 'just';
+  $$('input[name=aus]', m.el).forEach((x) => x.onchange = () => { $('#aus-opc', m.el).textContent = just() ? '(obligatorio)' : '(opcional)'; $('#aus-ok', m.el).textContent = just() ? 'Marcar ausente sin cargo' : `Marcar ausente y cobrar ${pesos(valor)}`; });
+  $('#aus-ok', m.el).textContent = `Marcar ausente y cobrar ${pesos(valor)}`;
+  $('#aus-ok', m.el).onclick = async () => {
+    const r = await hacer(async () => await Store.marcarAusente(f.id, { justificada: just(), motivo: $('#aus-mot', m.el).value }));
+    if (r === undefined) return;
+    toast(r ? `Ausencia registrada. Se cargó ${pesos(r)} a su estado de cuenta.` : 'Ausencia justificada registrada, sin cargo', 'ok'); m.cerrar(); await despues();
+  };
+}
+async function deshacerAusencia(id, despues) {
+  if (!(await confirmar('Deshacer ausencia', 'La reserva vuelve a quedar pendiente y se quita el cargo del estado de cuenta.', 'Deshacer'))) return;
+  if (await hacer(async () => { await Store.anularAusencia(id); return true; }, 'Ausencia anulada')) await despues();
+}
 function badgeLlegada(f) {
+  if (f.fecha < isoLocal(new Date()) && f.estado === 'pendiente') return '<span class="badge warn">Sin cerrar</span>';
   if (f.fecha !== isoLocal(new Date())) return '';
   if (f.llegada) return `<span class="badge ok llegada">✓ Presente · ${esc(f.llegada)}</span>`;
   const empezo = new Date().getHours() >= f.bloque;
@@ -266,7 +296,7 @@ function filaPendiente(f, i) {
         <a href="mailto:${esc(f.piloto_email)}">${ICON.mail} ${esc(f.piloto_email)}</a></div></div>
     <div class="vuelo-acc"><button class="btn sec sm" data-piloto="${f.piloto_id}">Ficha</button>
       ${f.piloto_rol === 'alumno' ? `<button class="btn sec sm" data-syl="${f.piloto_id}" data-lec="${esc(f.leccion_sugerida || '')}">Syllabus</button>` : ''}
-      <button class="btn ok sm" data-completar="${f.id}">Cerrar ${f.tipo === 'vuelo' ? 'vuelo' : 'turno'}</button><button class="btn danger sm" data-cancelar-i="${f.id}">Cancelar</button></div></div>`;
+      <button class="btn ok sm" data-completar="${f.id}">Cerrar ${f.tipo === 'vuelo' ? 'vuelo' : 'turno'}</button>${turnoEmpezo(f) && !f.llegada ? `<button class="btn warn-btn sm" data-ausente="${f.id}">Marcar ausente</button>` : ''}<button class="btn danger sm" data-cancelar-i="${f.id}">Cancelar</button></div></div>`;
 }
 
 function completarReserva(f, despues) {
@@ -523,15 +553,17 @@ VISTAS.todas = async function vistaTodas(v, filtros = state.filtrosRes || { desd
     <div class="card anim" style="--i:1"><div class="filtro">
       <label class="campo">Desde<input id="fd" type="date" value="${filtros.desde}"></label><label class="campo">Hasta<input id="fh" type="date" value="${filtros.hasta}"></label>
       <label class="campo">Tipo<select id="ft"><option value="">Todos</option><option value="vuelo" ${filtros.tipo === 'vuelo' ? 'selected' : ''}>Vuelo</option><option value="simulador" ${filtros.tipo === 'simulador' ? 'selected' : ''}>Simulador</option></select></label>
-      <label class="campo">Estado<select id="fe"><option value="">Todos</option>${['pendiente', 'completado', 'cancelado'].map((e) => `<option ${filtros.estado === e ? 'selected' : ''}>${e}</option>`).join('')}</select></label></div>
+      <label class="campo">Estado<select id="fe"><option value="">Todos</option>${['pendiente', 'completado', 'ausente', 'cancelado'].map((e) => `<option ${filtros.estado === e ? 'selected' : ''}>${e}</option>`).join('')}</select></label></div>
       ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Horario</th><th>Tipo</th><th>Piloto</th><th>Instructor</th><th>Equipo</th><th>Estado</th><th></th></tr></thead><tbody>
         ${l.map((r) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(r.fecha))}</td><td class="mono">${rango(r.bloque)}</td><td>${badgeTipo(r.tipo)}</td>
           <td><a href="#" data-piloto="${r.piloto_id}">${esc(r.piloto)}</a><div class="muted">${r.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</div></td><td>${esc(r.instructor || '—')}</td>
-          <td class="mono">${esc(r.recurso)}</td><td>${badgeEstado(r)}</td><td>${r.estado === 'pendiente' ? `<button class="btn danger sm" data-c="${r.id}">Cancelar</button>` : ''}</td></tr>`).join('')}
+          <td class="mono">${esc(r.recurso)}</td><td>${badgeEstado(r)}</td><td style="white-space:nowrap">${r.estado === 'pendiente' && turnoEmpezo(r) && !r.llegada ? `<button class="btn warn-btn sm" data-aus="${r.id}">Ausente</button> ` : ''}${r.estado === 'pendiente' ? `<button class="btn danger sm" data-c="${r.id}">Cancelar</button>` : ''}${r.estado === 'ausente' ? `<button class="btn sec sm" data-desaus="${r.id}">Deshacer ausencia</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('No hay reservas con esos filtros.')}</div>`;
   const leer = async () => await VISTAS.todas(v, { desde: $('#fd', v).value, hasta: $('#fh', v).value, tipo: $('#ft', v).value, estado: $('#fe', v).value });
   $$('.filtro input, .filtro select', v).forEach((x) => x.onchange = leer);
   $$('[data-piloto]', v).forEach((a) => a.onclick = async (e) => { e.preventDefault(); await fichaPiloto(a.dataset.piloto); });
+  $$('[data-aus]', v).forEach((b) => b.onclick = () => marcarAusente(l.find((r) => r.id == b.dataset.aus), leer));
+  $$('[data-desaus]', v).forEach((b) => b.onclick = () => deshacerAusencia(b.dataset.desaus, leer));
   $$('[data-c]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Cancelar reserva', 'Avisale al piloto que su reserva fue cancelada.', 'Cancelar reserva')) { await hacer(async () => await Store.cancelarReserva(b.dataset.c), 'Reserva cancelada'); await leer(); } });
 };
 

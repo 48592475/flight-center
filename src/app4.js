@@ -4,7 +4,7 @@ const pesos = (n) => `$ ${Math.round(n || 0).toLocaleString('es-AR')}`;
 async function politicaTxt(tipo) {
   const t = await Store.tarifas();
   const base = tipo === 'teorica' ? t.teorica : t[tipo] * 2;
-  return `Cancelación sin cargo hasta ${t.horas_aviso} hs antes. Después se cobra el ${t.recargo}% del valor del bloque (${pesos(base * t.recargo / 100)} por bloque).`;
+  return `Cancelación sin cargo hasta ${t.horas_aviso} hs antes. Después se cobra el ${t.recargo}% del valor del bloque (${pesos(base * t.recargo / 100)} por bloque).${tipo === 'teorica' ? '' : ` Si no te presentás sin avisar, se cobra el ${t.ausencia ?? 100}% (${pesos(base * (t.ausencia ?? 100) / 100)} por bloque).`}`;
 }
 function textoCargo(info) {
   const h = Math.floor(info.horas);
@@ -100,6 +100,7 @@ function editarTarifas(t, despues) {
       <label class="campo">Clase teórica ($)<input id="t-teo" name="teorica" inputmode="numeric" value="${t.teorica}"></label>
       <label class="campo">Recargo por cancelación tardía (%)<input id="t-rec" name="recargo" type="number" min="0" max="100" value="${t.recargo}"></label>
       <label class="campo">Aviso mínimo sin cargo (horas)<input id="t-hs" name="horas_aviso" type="number" min="0" value="${t.horas_aviso}"></label>
+      <label class="campo">Cargo por ausencia sin aviso (%)<input id="t-aus" name="ausencia" type="number" min="0" max="100" value="${t.ausencia ?? 100}"></label>
       <p class="muted full" style="margin:0">Los cambios rigen para lo que se cargue de acá en adelante. Lo ya cargado no cambia.</p>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="t-ok">Guardar tarifas</button></div>`);
   $('#t-ok', m.el).onclick = async () => { if (await hacer(async () => { await Store.guardarTarifas(Object.fromEntries(new FormData($('#f-tar', m.el)))); return true; }, 'Tarifas actualizadas')) { m.cerrar(); despues(); } };

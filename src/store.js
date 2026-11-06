@@ -74,6 +74,8 @@ function crearStore(opts = {}) {
     res('vuelo', juan, martin, fca, dia(1), 10, 'pendiente');
     // Valentina: arrancando
     res('vuelo', vale, sofia, fcb, dia(3), 8, 'pendiente');
+    res('vuelo', vale, martin, fca, dia(-1), 12, 'pendiente');
+    res('simulador', vale, sofia, frasca, dia(-9), 10, 'ausente', { ausencia: { por: sofia, fecha: dia(-9) + ' 11:00', justificada: false, motivo: null } });
     // Lucía (PPA)
     res('vuelo', lucia, sofia, fcc, dia(-33), 12, 'completado', { horas: 1.2, observaciones: 'Readaptación PA-28.' });
     res('vuelo', lucia, martin, fcb, dia(-2), 10, 'completado', { horas: 1.9, destino: 'SPD', observaciones: 'Navegación a San Pedro.' });
@@ -153,7 +155,7 @@ function crearStore(opts = {}) {
     return db;
   }
   // ---------- cuentas: tarifas y movimientos ----------
-  const TARIFAS_INICIALES = { vuelo: 196000, simulador: 36000, teorica: 26000, recargo: 20, horas_aviso: 24 };
+  const TARIFAS_INICIALES = { vuelo: 196000, simulador: 36000, teorica: 26000, recargo: 20, horas_aviso: 24, ausencia: 100 };
   function reconstruirCuentas(d) {
     d.tarifas = d.tarifas || { ...TARIFAS_INICIALES };
     d.movimientos = []; d.seq.m = 0;
@@ -162,6 +164,9 @@ function crearStore(opts = {}) {
     for (const r of d.reservas.filter((x) => x.estado === 'completado')) {
       const rec = d.recursos.find((x) => x.id === r.recurso_id);
       mov(r.piloto_id, r.fecha, `${r.tipo === 'vuelo' ? 'Vuelo' : 'Simulador'} ${rec?.nombre || ''} · ${String(r.horas).replace('.', ',')} h${r.leccion ? ` · ${r.leccion}` : ''}`, 'cargo', (r.horas || 0) * T[r.tipo], `res:${r.id}`);
+    }
+    for (const r of d.reservas.filter((x) => x.estado === 'ausente' && !x.ausencia?.justificada)) {
+      mov(r.piloto_id, r.fecha, `Ausencia sin aviso · ${r.tipo === 'vuelo' ? 'vuelo' : 'simulador'} ${r.fecha.split('-').reverse().join('/')} ${String(r.bloque).padStart(2, '0')}:00 (${T.ausencia ?? 100}% del bloque)`, 'cargo', (r.tipo === 'teorica' ? T.teorica : T[r.tipo] * 2) * (T.ausencia ?? 100) / 100, `aus:${r.id}`);
     }
     for (const i of d.inscripciones.filter((x) => x.estado === 'presente')) {
       const c = d.clases.find((x) => x.id === i.clase_id);
@@ -181,6 +186,7 @@ function crearStore(opts = {}) {
   function migrar(d) {
     for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
     for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
+    if (d.tarifas && d.tarifas.ausencia == null) d.tarifas.ausencia = 100;
     for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
@@ -436,6 +442,7 @@ function crearStore(opts = {}) {
       if (!r) fail('Reserva no encontrada');
       if (!(r.piloto_id === u.id || r.instructor_id === u.id || u.rol === 'admin')) fail('No podés cancelar esta reserva');
       if (r.estado !== 'pendiente') fail('Solo se pueden cancelar reservas pendientes');
+      if (r.piloto_id === u.id && yaEmpezo(r.fecha, r.bloque)) fail('Tu turno ya empezó y no se puede cancelar. Si no pudiste venir, avisale a tu instructor o a la escuela.');
       r.estado = 'cancelado';
       // solo se cobra cuando cancela el propio piloto con menos de 24 hs de aviso
       let cargo = 0;
@@ -444,6 +451,30 @@ function crearStore(opts = {}) {
         if (cargo) movimiento(u.id, `Cancelación con menos de ${db.tarifas.horas_aviso} hs · ${r.tipo === 'vuelo' ? 'vuelo' : 'simulador'} ${r.fecha.split('-').reverse().join('/')} ${hh(r.bloque)} (${db.tarifas.recargo}% del bloque)`, 'cargo', cargo, `canc:${r.id}`);
       }
       guardar(); return cargo;
+    },
+    marcarAusente(id, { justificada = false, motivo = '' } = {}) {
+      const u = exigir('instructor', 'admin'); const r = db.reservas.find((x) => x.id === Number(id));
+      if (!r) fail('Reserva no encontrada');
+      if (u.rol === 'instructor' && r.instructor_id !== u.id) fail('Solo podés marcar ausencias en tus propios vuelos');
+      if (r.estado !== 'pendiente') fail('Esta reserva ya fue cerrada');
+      if (!yaEmpezo(r.fecha, r.bloque)) fail('El turno todavía no empezó');
+      if (r.llegada) fail(`Registró su llegada con el QR a las ${r.llegada}: no se puede marcar como ausente`);
+      const m = String(motivo || '').trim().slice(0, 300);
+      if (justificada && !m) fail('Escribí el motivo de la ausencia justificada');
+      r.estado = 'ausente'; r.ausencia = { por: u.id, fecha: ahora(), justificada: !!justificada, motivo: m || null };
+      const cargo = justificada ? 0 : Math.round(valorBloque(r.tipo) * (db.tarifas.ausencia ?? 100) / 100);
+      if (cargo) movimiento(r.piloto_id, `Ausencia sin aviso · ${r.tipo === 'vuelo' ? 'vuelo' : 'simulador'} ${r.fecha.split('-').reverse().join('/')} ${hh(r.bloque)} (${db.tarifas.ausencia ?? 100}% del bloque)`, 'cargo', cargo, `aus:${r.id}`, r.fecha);
+      const p = usuario(r.piloto_id);
+      if (p?.activo) notificar(p, 'ausencia', { reserva: expandir(r), cargo, justificada: !!justificada, motivo: m || null }, { soloEmail: true });
+      guardar(); return cargo;
+    },
+    anularAusencia(id) {
+      const u = exigir('instructor', 'admin'); const r = db.reservas.find((x) => x.id === Number(id));
+      if (!r || r.estado !== 'ausente') fail('La reserva no está marcada como ausente');
+      if (u.rol === 'instructor' && r.instructor_id !== u.id) fail('Solo podés corregir tus propios vuelos');
+      r.estado = 'pendiente'; delete r.ausencia;
+      db.movimientos = db.movimientos.filter((m) => m.ref !== `aus:${r.id}`);
+      guardar();
     },
     infoCancelacion(ids, tipo) {
       yo(); const l = (Array.isArray(ids) ? ids : [ids]);
@@ -535,7 +566,7 @@ function crearStore(opts = {}) {
         .map((r) => ({ ...r, leccion_sugerida: usuario(r.piloto_id).rol === 'alumno' ? leccionActual(r.piloto_id, r.tipo)?.id || null : null }));
       const clases = clasesActivas().filter((c) => c.instructor_id === me.id);
       return { vuelos_mes: comp.filter((r) => r.tipo === 'vuelo').length, horas_mes: comp.filter((r) => r.tipo === 'vuelo').reduce((s, r) => s + (r.horas || 0), 0),
-        sims_mes: comp.filter((r) => r.tipo === 'simulador').length, clases_mes: clases.filter((c) => c.fecha.slice(0, 7) === mes && c.estado === 'dictada').length,
+        sims_mes: comp.filter((r) => r.tipo === 'simulador').length, ausencias_mes: delMes.filter((r) => r.estado === 'ausente').length, clases_mes: clases.filter((c) => c.fecha.slice(0, 7) === mes && c.estado === 'dictada').length,
         pilotos_mes: new Set(delMes.map((r) => r.piloto_id)).size, pendientes, del_mes: delMes,
         clases_proximas: clases.filter((c) => c.estado === 'programada').sort(ord).map(expandirClase) };
     },
@@ -551,7 +582,7 @@ function crearStore(opts = {}) {
       const res = activas().filter((r) => r.piloto_id === p.id).sort(ord).reverse().map(expandir);
       const horas = res.filter((r) => r.estado === 'completado' && r.tipo === 'vuelo').reduce((s, r) => s + (r.horas || 0), 0);
       const veSyllabus = p.rol === 'alumno' && (me.rol === 'admin' || res.some((r) => r.instructor_id === me.id));
-      return { ...pub(p), horas_centro: horas, horas_totales: (p.horas_previas || 0) + horas, reservas: res, veSyllabus };
+      return { ...pub(p), horas_centro: horas, horas_totales: (p.horas_previas || 0) + horas, reservas: res, veSyllabus, ausencias: res.filter((r) => r.estado === 'ausente' && !r.ausencia?.justificada).length };
     },
     completarReserva(id, { horas, observaciones, leccion, notas }) {
       const me = exigir('instructor'); const r = db.reservas.find((x) => x.id === Number(id) && x.instructor_id === me.id);
@@ -721,7 +752,8 @@ function crearStore(opts = {}) {
   api.guardarTarifas = (t) => {
     exigir('admin');
     const n = (v) => Math.round(Number(String(v).replace(/\./g, '').replace(',', '.')));
-    const nt = { vuelo: n(t.vuelo), simulador: n(t.simulador), teorica: n(t.teorica), recargo: Number(t.recargo), horas_aviso: Number(t.horas_aviso) };
+    const nt = { vuelo: n(t.vuelo), simulador: n(t.simulador), teorica: n(t.teorica), recargo: Number(t.recargo), horas_aviso: Number(t.horas_aviso), ausencia: Number(t.ausencia ?? db.tarifas.ausencia ?? 100) };
+    if (nt.recargo > 100 || nt.ausencia > 100) fail('Los porcentajes no pueden superar el 100%');
     if (Object.values(nt).some((v) => !(v >= 0)) || !nt.vuelo) fail('Revisá los valores de las tarifas');
     db.tarifas = nt; guardar();
   };

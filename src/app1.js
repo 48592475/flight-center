@@ -161,7 +161,8 @@ function hero(titulo, texto, extra = '') {
     <h2>${titulo}</h2><p>${texto}</p>${extra}</section>`;
 }
 const badgeEstado = (r) => r.estado === 'completado' ? `<span class="badge ok">Completado${r.horas ? ` · ${fmtHoras(r.horas)} h` : ''}</span>`
-  : r.estado === 'cancelado' ? '<span class="badge gris">Cancelado</span>' : '<span class="badge warn">Pendiente</span>';
+  : r.estado === 'cancelado' ? '<span class="badge gris">Cancelado</span>'
+  : r.estado === 'ausente' ? `<span class="badge danger" ${r.ausencia?.motivo ? `title="${esc(r.ausencia.motivo)}"` : ''}>Ausente${r.ausencia?.justificada ? ' · justificado' : ''}</span>` : '<span class="badge warn">Pendiente</span>';
 const badgeTipo = (t) => `<span class="badge ${t === 'simulador' ? 'gris' : ''}">${TIPO_RES[t]}</span>`;
 
 // =====================================================================
@@ -328,7 +329,7 @@ function paseDeClase(k) {
     extraLbl: 'Clase', extra: k.teo, instructor: k.instructor, bloques: '1 × 2 hs', estado: 'pendiente', titulo: k.titulo };
 }
 function boardingPass(p, { celebrar = false } = {}) {
-  const sello = p.estado === 'completado' ? 'COMPLETADO' : p.estado === 'cancelado' ? 'CANCELADO' : 'CONFIRMADO';
+  const sello = p.estado === 'completado' ? 'COMPLETADO' : p.estado === 'cancelado' ? 'CANCELADO' : p.estado === 'ausente' ? 'AUSENTE' : 'CONFIRMADO';
   const embarque = `${String(p.salida - 1).padStart(2, '0')}:45`;
   const e = document.createElement('div'); e.className = 'bp-escena';
   e.innerHTML = `<div class="bp-wrap">
@@ -380,13 +381,14 @@ VISTAS.reservas = async function vistaMisReservas(v) {
   for (const r of todas.filter((x) => x.estado === 'pendiente' && x.fecha >= hoy)) {
     const k = `${r.tipo}|${r.fecha}|${r.recurso_id}|${r.instructor_id}`; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r);
   }
+  const empezo = (f, b) => f < hoy || (f === hoy && new Date().getHours() >= b);
   const prox = [...grupos.values()].map((g) => g.sort((a, b) => a.bloque - b.bloque)).sort((a, b) => (a[0].fecha + hh(a[0].bloque)).localeCompare(b[0].fecha + hh(b[0].bloque)));
   const clases = state.user.rol === 'alumno' ? await Store.misClases() : [];
   const clasesProx = clases.filter((k) => k.estado === 'programada' && k.inscripcion.estado === 'inscripto');
   const pasados = todas.filter((r) => !(r.estado === 'pendiente' && r.fecha >= hoy));
   v.innerHTML = hero('Mis reservas', 'Tus próximos vuelos, turnos de simulador y clases, cada uno con su pase. Tocá un pase para verlo completo.') + `
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Próximas</h3><span class="badge">${prox.length + clasesProx.length}</span></div>
-      ${prox.length || clasesProx.length ? `<div class="mini-grid">${prox.map((g, i) => miniPass(paseDeReservas(g), i, `g${i}`)).join('')}${clasesProx.map((k, i) => miniPass(paseDeClase(k), prox.length + i, `c${k.id}`)).join('')}</div>` : vacio('No tenés reservas próximas.')}</div>
+      ${prox.length || clasesProx.length ? `<div class="mini-grid">${prox.map((g, i) => miniPass({ ...paseDeReservas(g), empezo: empezo(g[0].fecha, g[0].bloque) }, i, `g${i}`)).join('')}${clasesProx.map((k, i) => miniPass(paseDeClase(k), prox.length + i, `c${k.id}`)).join('')}</div>` : vacio('No tenés reservas próximas.')}</div>
     <div class="card anim" style="--i:2"><div class="card-head"><h3>Anteriores y canceladas</h3></div>
       ${pasados.length || clases.length - clasesProx.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Horario</th><th>Equipo</th><th>Instructor</th><th>Lección</th><th>Estado</th></tr></thead><tbody>
       ${pasados.map((r) => `<tr><td>${esc(fmtCorta(r.fecha))}</td><td>${badgeTipo(r.tipo)}</td><td class="mono">${rango(r.bloque)}</td><td class="mono">${esc(r.recurso)}</td>
@@ -398,7 +400,7 @@ VISTAS.reservas = async function vistaMisReservas(v) {
     const id = el.dataset.g;
     const pase = id.startsWith('g') ? paseDeReservas(prox[Number(id.slice(1))]) : paseDeClase(clasesProx.find((k) => `c${k.id}` === id));
     el.onclick = (e) => { if (!e.target.closest('[data-cancelar]')) boardingPass(pase); };
-    $('[data-cancelar]', el).onclick = async () => {
+    const bc = $('[data-cancelar]', el); if (bc) bc.onclick = async () => {
       const grupo = id.startsWith('g') ? prox[Number(id.slice(1))] : null;
       const info = grupo ? await Store.infoCancelacion(grupo.map((r) => r.id)) : await Store.infoCancelacion(id.slice(1), 'teorica');
       if (!(await confirmar('Cancelar reserva', `¿Cancelar ${TIPO_RES[pase.tipo].toLowerCase()} del ${fmtFecha(pase.fecha)} (${pase.horario})? ${textoCargo(info)}`, info.cargo ? `Cancelar y pagar ${pesos(info.cargo)}` : 'Sí, cancelar'))) return;
@@ -416,7 +418,7 @@ function miniPass(p, i, key) {
         <div><small>${p.recursoLbl}</small><span class="mono">${esc(p.recurso)}</span></div>
         <div><small>${p.extraLbl}</small><span>${esc(p.extra)}</span></div>
         <div style="grid-column:span 2"><small>Instructor</small><span>${esc(p.instructor)}</span></div>
-        <div style="grid-column:span 2"><button class="btn danger sm" data-cancelar>Cancelar</button></div>
+        ${p.empezo ? '' : '<div style="grid-column:span 2"><button class="btn danger sm" data-cancelar>Cancelar</button></div>'}
       </div></div>
     <div class="stub">${p.llegada ? `<span class="badge ok">✓ Presente ${esc(p.llegada)}</span>` : ''}<small class="muted" style="font-size:10px;font-weight:800;letter-spacing:.1em">SALIDA</small><div class="hora">${hh(p.salida)}</div><small class="muted">${p.bloques}</small>${barcode(p.codigo, 22)}</div></div>`;
 }

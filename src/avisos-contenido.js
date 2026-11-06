@@ -45,6 +45,15 @@ const contenidoAviso = (() => {
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
     }
+    if (n.tipo === 'ausencia') {
+      const r = n.datos.reserva; const sim = r.tipo === 'simulador';
+      return { asunto: `Ausencia registrada · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(r.fecha)}`, titulo: 'Registramos tu ausencia',
+        intro: `${saludo(n)}, no te presentaste a tu ${sim ? 'turno de simulador' : 'vuelo'} y la reserva quedó registrada como ausente${n.datos.justificada ? ' (justificada)' : ''}.`,
+        filas: [['Código de reserva', codigoReserva(r.id, sim ? 'SIM' : 'FC')], ['Fecha', fechaLarga(r.fecha)], ['Horario', `${hh(r.bloque)} a ${hh(r.bloque + 2)} hs`],
+          [sim ? 'Simulador' : 'Aeronave', `${r.recurso} · ${r.modelo}`], ['Instructor', r.instructor || 'Sin instructor'],
+          ...(n.datos.motivo ? [['Motivo', n.datos.motivo]] : []), ['Cargo', n.datos.cargo ? pesos(n.datos.cargo) : 'Sin cargo']],
+        notas: ['Si no podés venir, cancelá con anticipación desde Mis reservas para evitar el cargo por ausencia.', 'Si creés que es un error, comunicate con la escuela.'], wpp: [] };
+    }
     if (n.tipo === 'foro_respuesta') {
       const f = n.datos;
       return { asunto: `Nueva respuesta en el foro · ${f.tema.titulo}`, titulo: 'Respondieron tu consulta en el foro', intro: `${f.quien}${f.docente ? ' (instructor)' : ''} respondió tu consulta en el foro del campus de Flight Center.`,

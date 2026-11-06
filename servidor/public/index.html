@@ -898,7 +898,12 @@ const Store = (() => {
     } catch { throw new Error('No hay conexión con el servidor. Revisá tu internet y probá de nuevo.'); }
     const d = await r.json().catch(() => ({}));
     if (r.status === 401 && m !== 'login' && m !== 'yo') { setTimeout(() => { state.user = null; render(); }, 0); }
-    if (!r.ok) throw new Error(d.error || 'Ocurrió un error en el servidor');
+    if (!r.ok) {
+      if (d.error) throw new Error(d.error);
+      if (r.status === 413) throw new Error('El archivo es demasiado grande. El máximo es 20 MB por archivo.');
+      if ([502, 503, 504].includes(r.status)) throw new Error('El servidor se está iniciando o no responde. Esperá un minuto y probá de nuevo.');
+      throw new Error(`Ocurrió un error en el servidor (código ${r.status}). Probá de nuevo en un momento.`);
+    }
     return d.r;
   }
   return new Proxy(local, { get: (t, k) => (k in t ? t[k] : (...a) => llamar(k, a)) });
@@ -4760,8 +4765,10 @@ const ESTADO_TP = { pendiente: ['Pendiente', 'warn'], entregado: ['Entregado · 
 const nombreLeccion = (id) => id === 'GENERAL' ? 'Material general' : `${id} · ${Store.LECCIONES[id]?.titulo || ''}`;
 const fmtTam = (b) => b > 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 const youtubeId = (u) => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/) || [])[1] || null;
+const MAX_MB = () => (MODO === 'servidor' ? 20 : 2);
 const leerArchivo = (file) => new Promise((ok, mal) => {
   if (!file) return ok(null);
+  if (file.size > MAX_MB() * 1048576) return mal(new Error(`"${file.name}" pesa ${(file.size / 1048576).toFixed(1).replace('.', ',')} MB. El máximo es ${MAX_MB()} MB por archivo${MODO === 'servidor' ? '. Podés comprimir el PDF (por ejemplo en ilovepdf.com) o dividirlo en partes' : ' en la demo'}.`));
   const fr = new FileReader(); fr.onload = () => ok({ nombre: file.name, tam: file.size, tipo: file.type, data: fr.result }); fr.onerror = mal; fr.readAsDataURL(file);
 });
 async function abrirArchivo(id) {
@@ -4868,15 +4875,18 @@ function formMaterial(m, leccion, despues) {
       <label class="campo">Tipo<select id="mt-tipo" name="tipo">${Object.entries({ archivo: 'Archivo (PDF, Word, PowerPoint, imagen)', video: 'Video de YouTube', link: 'Link a otra página', texto: 'Texto' }).map(([k, t]) => `<option value="${k}" ${(m?.tipo || 'archivo') === k ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <label class="campo">Título<input id="mt-tit" name="titulo" value="${esc(m?.titulo || '')}" placeholder="Ej: Apunte de meteorología"></label>
       <label class="campo full">Descripción <span class="op">(opcional)</span><input id="mt-desc" name="descripcion" value="${esc(m?.descripcion || '')}"></label>
-      <label class="campo full" data-t="archivo">Archivo <span class="op">(máx. ${MODO === 'servidor' ? 10 : 2} MB${m?.archivo ? ` · actual: ${esc(m.archivo.nombre)}` : ''})</span><input id="mt-arch" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip"></label>
+      <label class="campo full" data-t="archivo">Archivo <span class="op">(máx. ${MAX_MB()} MB${m?.archivo ? ` · actual: ${esc(m.archivo.nombre)}` : ''})</span><input id="mt-arch" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.zip"></label>
       <label class="campo full" data-t="video link">Link <span class="op" data-t="video">(el video de YouTube puede ser "no listado")</span><input id="mt-url" name="url" value="${esc(m?.url || '')}" placeholder="https://"></label>
       <label class="campo full" data-t="texto">Contenido<textarea id="mt-texto" name="texto" rows="8">${esc(m?.texto || '')}</textarea></label>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="mt-ok">Guardar</button></div>`, { ancho: true });
   const ajustar = () => { const t = $('#mt-tipo', md.el).value; $$('[data-t]', md.el).forEach((el) => { el.hidden = !el.dataset.t.split(' ').includes(t); }); };
   $('#mt-tipo', md.el).onchange = ajustar; ajustar();
+  $('#mt-arch', md.el).onchange = (e) => { const f = e.target.files[0]; const t = $('#mt-tit', md.el); if (f && !t.value.trim()) t.value = f.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim(); };
   $('#mt-ok', md.el).onclick = async (e) => {
     const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Subiendo…';
     const d = Object.fromEntries(new FormData($('#f-mat', md.el)));
+    const f0 = $('#mt-arch', md.el).files[0];
+    if (!String(d.titulo || '').trim() && d.tipo === 'archivo' && f0) d.titulo = f0.name.replace(/\.[^.]+$/, '').replace(/[_]+/g, ' ').trim();
     const r = await hacer(async () => { const archivo = d.tipo === 'archivo' ? await leerArchivo($('#mt-arch', md.el).files[0]) : null; return Store.guardarMaterial({ ...d, id: m?.id, archivo }); }, 'Material guardado');
     btn.disabled = false; btn.textContent = 'Guardar';
     if (r) { md.cerrar(); state.campusLec = r.leccion; despues(); }
@@ -4941,7 +4951,7 @@ function entregarTP(t, despues) {
         ${e.comentario ? `<div style="margin-top:6px"><b>${esc(e.corrector || 'Instructor')}:</b> ${esc(e.comentario)}</div>` : ''}</div></div>` : ''}
       ${puede ? `<form id="f-ent" style="display:grid;gap:12px;margin-top:16px">
         <label class="campo">Tu respuesta<textarea id="en-texto" rows="7" placeholder="Escribí tu respuesta acá">${esc(e?.texto || '')}</textarea></label>
-        <label class="campo">Adjuntar archivo <span class="op">(opcional · máx. ${MODO === 'servidor' ? 10 : 2} MB${e?.archivo ? ` · actual: ${esc(e.archivo.nombre)}` : ''})</span><input id="en-arch" type="file"></label>
+        <label class="campo">Adjuntar archivo <span class="op">(opcional · máx. ${MAX_MB()} MB${e?.archivo ? ` · actual: ${esc(e.archivo.nombre)}` : ''})</span><input id="en-arch" type="file"></label>
       </form>` : `${e?.texto ? `<h4 style="margin:16px 0 6px">Tu respuesta</h4><div class="consigna">${esc(e.texto).replace(/\n/g, '<br>')}</div>` : ''}${e?.archivo ? `<div style="margin-top:8px">${botonArchivo(e.archivo, 'Tu archivo')}</div>` : ''}`}
     </div>
     <div class="modal-foot"><button class="btn sec" data-cerrar>${puede ? 'Volver' : 'Cerrar'}</button>${puede ? `<button class="btn" id="en-ok">${e ? 'Volver a entregar' : 'Entregar'}</button>` : ''}</div>`, { ancho: true });

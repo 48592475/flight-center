@@ -16,6 +16,8 @@ async function iniciar() {
     pool = new Pool({ connectionString: URL_DB, ssl: local ? false : { rejectUnauthorized: false }, max: 5 });
     await pool.query(`CREATE TABLE IF NOT EXISTS fc_estado (id INT PRIMARY KEY, datos JSONB NOT NULL, actualizado TIMESTAMPTZ NOT NULL DEFAULT now())`);
     await pool.query(`CREATE TABLE IF NOT EXISTS fc_archivos (id INT PRIMARY KEY, data TEXT NOT NULL, creado TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    // archivos del campus en binario: ocupan un 25% menos que en texto
+    await pool.query(`CREATE TABLE IF NOT EXISTS fc_archivos_bin (id INT PRIMARY KEY, data BYTEA NOT NULL, creado TIMESTAMPTZ NOT NULL DEFAULT now())`);
     await pool.query(`CREATE TABLE IF NOT EXISTS fc_documentos (usuario_id INT NOT NULL, tipo TEXT NOT NULL, data TEXT NOT NULL, actualizado TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (usuario_id, tipo))`);
     console.log('Base de datos: PostgreSQL');
   } else {
@@ -67,20 +69,29 @@ const docs = {
 };
 
 // archivos del campus (materiales, consignas y entregas)
-const archivoCampus = (id) => path.join(DIR, 'archivos', `${Number(id)}.txt`);
+// se reciben como "data URL" (texto base64) y se guardan en binario; leer() devuelve un Buffer
+const archivoCampus = (id) => path.join(DIR, 'archivos', `${Number(id)}.bin`);
+const aBuffer = (data) => Buffer.from(String(data).slice(String(data).indexOf(',') + 1), 'base64');
 const archivos = {
   guardar(id, data) {
-    const p = pool ? pool.query('INSERT INTO fc_archivos (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data', [id, data])
-      : Promise.resolve(fs.writeFileSync(archivoCampus(id), data));
+    const buf = aBuffer(data);
+    const p = pool ? pool.query('INSERT INTO fc_archivos_bin (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data', [id, buf])
+      : Promise.resolve(fs.writeFileSync(archivoCampus(id), buf));
     p.catch((e) => console.error('Error al guardar un archivo del campus:', e.message));
   },
   borrar(id) {
-    const p = pool ? pool.query('DELETE FROM fc_archivos WHERE id = $1', [id]) : Promise.resolve(fs.rmSync(archivoCampus(id), { force: true }));
+    const p = pool ? Promise.all([pool.query('DELETE FROM fc_archivos_bin WHERE id = $1', [id]), pool.query('DELETE FROM fc_archivos WHERE id = $1', [id])])
+      : Promise.resolve(fs.rmSync(archivoCampus(id), { force: true }));
     p.catch((e) => console.error('Error al borrar un archivo del campus:', e.message));
   },
   async leer(id) {
-    if (pool) { const r = await pool.query('SELECT data FROM fc_archivos WHERE id = $1', [id]); return r.rows[0]?.data || null; }
-    try { return fs.readFileSync(archivoCampus(id), 'utf8'); } catch { return null; }
+    if (pool) {
+      const r = await pool.query('SELECT data FROM fc_archivos_bin WHERE id = $1', [id]);
+      if (r.rows[0]) return r.rows[0].data;
+      const v = await pool.query('SELECT data FROM fc_archivos WHERE id = $1', [id]); // archivos subidos antes del cambio
+      return v.rows[0] ? aBuffer(v.rows[0].data) : null;
+    }
+    try { return fs.readFileSync(archivoCampus(id)); } catch { return null; }
   },
 };
 

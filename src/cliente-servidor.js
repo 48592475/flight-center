@@ -18,7 +18,12 @@ const Store = (() => {
     } catch { throw new Error('No hay conexión con el servidor. Revisá tu internet y probá de nuevo.'); }
     const d = await r.json().catch(() => ({}));
     if (r.status === 401 && m !== 'login' && m !== 'yo') { setTimeout(() => { state.user = null; render(); }, 0); }
-    if (!r.ok) throw new Error(d.error || 'Ocurrió un error en el servidor');
+    if (!r.ok) {
+      if (d.error) throw new Error(d.error);
+      if (r.status === 413) throw new Error('El archivo es demasiado grande. El máximo es 20 MB por archivo.');
+      if ([502, 503, 504].includes(r.status)) throw new Error('El servidor se está iniciando o no responde. Esperá un minuto y probá de nuevo.');
+      throw new Error(`Ocurrió un error en el servidor (código ${r.status}). Probá de nuevo en un momento.`);
+    }
     return d.r;
   }
   return new Proxy(local, { get: (t, k) => (k in t ? t[k] : (...a) => llamar(k, a)) });

@@ -44,7 +44,7 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
     if (PRODUCCION && req.headers['x-forwarded-proto'] === 'http') return res.redirect(301, `https://${req.headers.host}${req.originalUrl}`);
     next();
   });
-  app.use(express.json({ limit: '16mb' }));
+  app.use(express.json({ limit: '40mb' }));
   app.use(cookieSession({
     name: 'fc_sesion', keys: [process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')],
     maxAge: 12 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax', secure: PRODUCCION,
@@ -103,10 +103,8 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
     let meta = null;
     try { Store._como(uid); meta = Store._archivoPermitido(Number(req.params.id)); } catch { meta = null; } finally { Store._como(null); }
     if (!meta) return res.status(404).send('Archivo no disponible.');
-    const data = await persistencia.archivos.leer(meta.id);
-    if (!data) return res.status(404).send('Archivo no disponible.');
-    const coma = data.indexOf(',');
-    const buf = Buffer.from(data.slice(coma + 1), 'base64');
+    const buf = await persistencia.archivos.leer(meta.id);
+    if (!buf) return res.status(404).send('Archivo no disponible.');
     const inline = /^(application\/pdf|image\/|text\/plain)/.test(meta.tipo);
     res.set({ 'Content-Type': meta.tipo || 'application/octet-stream', 'Content-Length': buf.length, 'Cache-Control': 'private, max-age=300',
       'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(meta.nombre)}` });
@@ -116,6 +114,15 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
   app.get('/api/meteo', async (req, res) => {
     if (!req.session?.uid) return res.status(401).json({ error: 'Sesión no iniciada' });
     try { res.json(await meteo.consultar(req.query.id)); } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // errores al leer el pedido (por ejemplo, un archivo demasiado grande): respuesta clara en JSON
+  app.use((err, req, res, next) => {
+    if (!err) return next();
+    if (err.type === 'entity.too.large' || err.status === 413) return res.status(413).json({ error: 'El archivo es demasiado grande. El máximo es 20 MB por archivo.' });
+    if (err.type === 'entity.parse.failed') return res.status(400).json({ error: 'No se pudo leer lo que se envió. Probá de nuevo.' });
+    console.error('Error en el pedido:', err.message);
+    return res.status(500).json({ error: 'Ocurrió un error en el servidor. Probá de nuevo en un momento.' });
   });
 
   app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: 'index.html' }));

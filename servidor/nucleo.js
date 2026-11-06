@@ -796,7 +796,7 @@ function crearStore(opts = {}) {
   // ---------- campus: materiales, trabajos prácticos y entregas ----------
   const DOCENTES = ['instructor', 'admin'];
   const leccionValida = (l) => l === 'GENERAL' || !!LECCIONES[l];
-  const MAX_ARCHIVO = () => (navegador ? 2 : 10) * 1024 * 1024;
+  const MAX_ARCHIVO = () => (navegador ? 2 : 20) * 1024 * 1024;
   function guardarArchivo(archivo, autor, ambito) {
     if (!archivo || !archivo.data) return null;
     if (Number(archivo.tam) > MAX_ARCHIVO()) fail(`El archivo supera los ${MAX_ARCHIVO() / 1048576} MB permitidos${navegador ? ' en la demo' : ''}.`);

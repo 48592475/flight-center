@@ -554,7 +554,7 @@ const ROL_INFO = {
   admin: ['Administración', 'Acceso completo: usuarios, instructores, clases, reservas y flota.'],
 };
 const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, admin: 'ADM' };
-function editarUsuario(u, despues, rolElegido) {
+async function editarUsuario(u, despues, rolElegido) {
   if (!u && !rolElegido) {
     const m = modal(`<div class="modal-head"><div><h3>Nuevo usuario</h3><div class="muted">¿Qué tipo de usuario vas a crear?</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
       <div class="modal-body"><div class="roles-grid">${Object.entries(ROL_INFO).map(([k, [t, d]], i) => `<button class="opcion rol-op anim" style="--i:${i}" data-rol="${k}">
@@ -563,6 +563,7 @@ function editarUsuario(u, despues, rolElegido) {
     return;
   }
   const rol = u?.rol || rolElegido;
+  const aviones = await Store.recursos('avion');
   const yoMismo = u && u.id === state.user.id;
   const c = (n, l, t = 'text', roles = '', extra = '') => `<label class="campo ${extra}" ${roles ? `data-roles="${roles}"` : ''}>${l}<input id="u-${n}" type="${t}" name="${n}" value="${esc(u?.[n] ?? '')}"></label>`;
   const m = modal(`<div class="modal-head"><div><h3>${u ? `${esc(u.nombre)} ${esc(u.apellido)}` : `Nuevo usuario · ${ROL_INFO[rol][0]}`}</h3><div class="muted" id="u-desc">${ROL_INFO[rol][1]}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -574,6 +575,15 @@ function editarUsuario(u, despues, rolElegido) {
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
       ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${c('contacto_emergencia', 'Contacto de emergencia')}
       <label class="campo full">${u ? 'Nueva contraseña <span class="op">(dejar vacío para no cambiarla)</span>' : 'Contraseña inicial <span class="op">(se la pasás al usuario para que ingrese)</span>'}<input id="u-password" type="text" name="password" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
+      <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Habilitaciones</legend>
+        <div class="marcas">
+          <label class="marca"><input type="checkbox" id="h-solo" ${u?.hab?.solo ? 'checked' : ''}> Vuelo solo (reservar sin instructor)</label>
+          <label class="marca"><input type="checkbox" id="h-sim" ${u?.hab?.sim_solo ? 'checked' : ''}> Simulador sin instructor</label>
+          <label class="marca"><input type="checkbox" id="h-trav" ${u?.hab?.travesia ? 'checked' : ''}> Travesías (destino distinto de MOR)</label>
+        </div>
+        <small class="lbl" style="margin-top:12px">Aeronaves habilitadas</small>
+        <div class="marcas" id="h-aviones">${aviones.map((a) => `<label class="marca"><input type="checkbox" value="${a.id}" ${!Array.isArray(u?.hab?.aeronaves) || u.hab.aeronaves.includes(a.id) ? 'checked' : ''}> <b>${esc(a.nombre)}</b> ${esc(a.modelo)}</label>`).join('')}</div>
+      </fieldset>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="u-ok">${u ? 'Guardar' : 'Crear usuario'}</button></div>`, { ancho: true });
   const LIC = { alumno: 'N° de licencia <span class="op">(si tiene)</span>', ppa: 'N° de licencia PPA', instructor: 'N° de licencia de instructor', mecanico: 'N° de licencia de mecánico' };
   const ajustar = () => {
@@ -589,7 +599,16 @@ function editarUsuario(u, despues, rolElegido) {
     if (yoMismo) d.rol = u.rol;
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
-    if (await hacer(async () => u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d), u ? 'Usuario actualizado' : `Usuario creado: ${ROL_INFO[d.rol][0]}`)) { m.cerrar(); despues(); }
+    const guardado = await hacer(async () => {
+      const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);
+      if (['alumno', 'ppa'].includes(d.rol || r.rol)) {
+        const todos = $$('#h-aviones input', m.el); const marcados = todos.filter((x) => x.checked).map((x) => Number(x.value));
+        await Store.guardarHabilitaciones(r.id, { solo: $('#h-solo', m.el).checked, sim_solo: $('#h-sim', m.el).checked, travesia: $('#h-trav', m.el).checked,
+          aeronaves: marcados.length === todos.length ? null : marcados });
+      }
+      return r;
+    }, u ? 'Usuario actualizado' : `Usuario creado: ${ROL_INFO[d.rol][0]}`);
+    if (guardado) { m.cerrar(); despues(); }
   };
 }
 

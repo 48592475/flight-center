@@ -113,6 +113,22 @@ function vigilar(v, vista, inicial, cada = 30000) {
   };
 }
 
+// ---------- habilitaciones: las ve el alumno o piloto en su perfil ----------
+{
+  const perfil = VISTAS.perfil;
+  VISTAS.perfil = async function (v, ...a) {
+    await perfil(v, ...a);
+    const u = state.user; if (!['alumno', 'ppa'].includes(u?.rol)) return;
+    const h = u.hab || {}; const aviones = await Store.recursos('avion');
+    const item = (ok, t) => `<span class="badge ${ok ? 'ok' : 'gris'}">${ok ? '✓' : '✗'} ${t}</span>`;
+    const card = document.createElement('div'); card.className = 'card anim';
+    card.innerHTML = `<div class="card-head"><h3>Mis habilitaciones</h3><span class="muted">Las otorga la administración</span></div>
+      <div class="flujo">${item(h.solo, 'Vuelo solo')}${item(h.sim_solo, 'Simulador sin instructor')}${item(h.travesia, 'Travesías')}</div>
+      <p class="muted" style="margin:10px 0 0">Aeronaves: ${Array.isArray(h.aeronaves) ? (h.aeronaves.length ? aviones.filter((a) => h.aeronaves.includes(a.id)).map((a) => esc(a.nombre)).join(', ') : 'ninguna') : 'todas las de la escuela'}.</p>`;
+    $$('.card', v)[0].after(card);
+  };
+}
+
 // ---------- inicio ----------
 (async () => {
   const q = new URLSearchParams(location.search);

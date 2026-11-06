@@ -44,7 +44,7 @@ function crearStore(opts = {}) {
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
     const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
-    const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58 });
+    const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
     void admin;
 
     const R = (tipo, nombre, modelo, estado = 'operativa') => { db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado, ...(tipo === 'avion' ? datosModelo(modelo) : {}) }); return db.seq.rec; };
@@ -151,8 +151,12 @@ function crearStore(opts = {}) {
   // configuración del QR de asistencia: código impreso + ubicación de la escuela (Aeródromo de Morón)
   const nuevoCodigo = () => { const b = new Uint8Array(12); globalThis.crypto.getRandomValues(b); return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join(''); };
   const configInicial = () => ({ qr: nuevoCodigo(), lat: -34.6761, lon: -58.6428, radio: 1500 });
+  // habilitaciones que da la administración a cada alumno o piloto
+  const HAB_VACIA = () => ({ solo: false, sim_solo: false, travesia: false, aeronaves: null }); // aeronaves: null = todas
+  const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
+    for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
     if (!d.movimientos) reconstruirCuentas(d);
     if (!d.notificaciones) { d.notificaciones = []; d.seq.nt = 0; }
@@ -206,7 +210,7 @@ function crearStore(opts = {}) {
   const yo = () => { const u = sesion && usuario(sesion); if (!u || !u.activo) fail('Sesión no iniciada'); return u; };
   const exigir = (...roles) => { const u = yo(); if (!roles.includes(u.rol)) fail('No tenés permiso para esta acción'); return u; };
   const nombre = (u) => (u ? `${u.nombre} ${u.apellido}` : '');
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -363,14 +367,19 @@ function crearStore(opts = {}) {
       // todos los vuelos salen de Morón; los de alumnos son siempre locales (MOR - MOR)
       destino = tipo === 'vuelo' && esPPA ? String(destino || 'MOR').trim().toUpperCase() : 'MOR';
       if (!/^[A-Z0-9]{3,4}$/.test(destino)) fail('El destino debe ser un código de aeródromo de 3 o 4 letras (ej: MOR, SAN, SADF)');
+      const hab = habDe(u);
+      if (!inst && tipo === 'vuelo' && !hab.solo) fail('No tenés habilitación para volar solo. Elegí un instructor o pedile la habilitación a la administración.');
+      if (!inst && tipo === 'simulador' && !hab.sim_solo) fail('No tenés habilitación para usar el simulador sin instructor. Elegí un instructor o pedile la habilitación a la administración.');
+      if (destino !== 'MOR' && !hab.travesia) fail('No tenés habilitación para travesías: solo podés reservar vuelos locales (MOR – MOR).');
+      const avionPermitido = (id) => tipo !== 'vuelo' || !Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id);
       if (!esPPA) {
         if (bloques.length > 1) fail('Como alumno podés reservar un solo bloque por día');
-        if (!inst) fail('Elegí un instructor');
         if (activas().some((r) => r.piloto_id === u.id && r.fecha === fecha && r.tipo === tipo)) fail(`Ya tenés ${tipo === 'vuelo' ? 'un vuelo' : 'un turno de simulador'} ese día. Los alumnos pueden reservar un bloque por día.`);
       }
       if ((esPPA || tipo === 'simulador') && !recurso_id) fail(tipo === 'vuelo' ? 'Elegí una aeronave' : 'Elegí un simulador');
       const rec = recurso_id ? recurso(recurso_id) : null;
       if (rec && (rec.tipo !== tipoRec || rec.estado !== 'operativa')) fail(`${rec.nombre} no está disponible (fuera de servicio)`);
+      if (rec && !avionPermitido(rec.id)) fail(`No estás habilitado/a para volar el ${rec.nombre}. Consultá con la administración.`);
       const plan = bloques.map((b) => {
         if (ocupacionPersona(u.id, fecha, b)) fail(`Ya tenés otra actividad a las ${hh(b)}`);
         if (inst && !disponibleAdmin(inst.id, fecha, b)) fail(`${nombre(inst)} no está asignado a volar a las ${hh(b)}`);
@@ -378,8 +387,8 @@ function crearStore(opts = {}) {
         let r = rec;
         if (r && activas().some((x) => x.recurso_id === r.id && x.fecha === fecha && x.bloque === b)) fail(`${r.nombre} ya está reservado a las ${hh(b)}`);
         if (!r) {
-          r = db.recursos.find((x) => x.tipo === tipoRec && x.estado === 'operativa' && !activas().some((y) => y.recurso_id === x.id && y.fecha === fecha && y.bloque === b));
-          if (!r) fail(`No hay aeronaves disponibles a las ${hh(b)}`);
+          r = db.recursos.find((x) => x.tipo === tipoRec && x.estado === 'operativa' && avionPermitido(x.id) && !activas().some((y) => y.recurso_id === x.id && y.fecha === fecha && y.bloque === b));
+          if (!r) fail(`No hay aeronaves disponibles (en las que estés habilitado/a) a las ${hh(b)}`);
         }
         return { b, r };
       });
@@ -744,6 +753,14 @@ function crearStore(opts = {}) {
     if (!items.length) fail('No tenés ningún vuelo, simulador ni clase en este horario. Podés registrar tu llegada desde 1 h 30 min antes del turno.');
     guardar();
     return { hora, items, nombre: u.nombre };
+  };
+  api.guardarHabilitaciones = (uid, h) => {
+    exigir('admin'); const u = usuario(uid);
+    if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Las habilitaciones son para alumnos y pilotos');
+    const ids = new Set(db.recursos.filter((r) => r.tipo === 'avion').map((r) => r.id));
+    u.hab = { solo: !!h.solo, sim_solo: !!h.sim_solo, travesia: !!h.travesia,
+      aeronaves: Array.isArray(h.aeronaves) ? [...new Set(h.aeronaves.map(Number))].filter((x) => ids.has(x)) : null };
+    guardar(); return pub(u);
   };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };

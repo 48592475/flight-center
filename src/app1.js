@@ -198,15 +198,18 @@ async function reservarTurno(c, tipo) {
   const instructores = await Store.instructores();
   const recursos = await Store.recursos(esSim ? 'simulador' : 'avion');
   const eligeRecurso = esPPA || esSim;
+  const hab = u.hab || {};
+  const puedeSolo = esSim ? !!hab.sim_solo : !!hab.solo;
+  const avionOk = (id) => esSim || !Array.isArray(hab.aeronaves) || hab.aeronaves.includes(id);
   c.innerHTML = await avisoLeccion(tipo) + `
     <div class="card anim" style="--i:3"><div class="card-head"><div class="paso" id="p1"><span class="paso-num">1</span><h3>Elegí el día</h3></div></div><div class="dias" id="dias"></div></div>
     <div class="card anim" style="--i:4"><div class="card-head"><div class="paso" id="p2"><span class="paso-num">2</span><h3>Bloque horario</h3></div>
       <span class="muted">${esPPA ? 'Podés elegir varios bloques' : 'Un bloque por día'} · 08:00 a 18:00</span></div><div id="bloques" class="bloques"></div></div>
     <div class="card anim" style="--i:5"><div class="card-head"><div class="paso" id="p3"><span class="paso-num">3</span><h3>Instructor</h3></div>
-      <span class="muted">${esPPA ? 'Opcional' : 'Solo aparecen los instructores asignados para ese horario'}</span></div><div id="instructores" class="opciones"></div></div>
+      <span class="muted">${puedeSolo ? 'Opcional: estás habilitado/a para ' + (esSim ? 'usar el simulador' : 'volar') + ' sin instructor' : 'Solo aparecen los instructores asignados para ese horario'}</span></div><div id="instructores" class="opciones"></div></div>
     ${eligeRecurso ? `<div class="card anim" style="--i:6"><div class="card-head"><div class="paso" id="p4"><span class="paso-num">4</span><h3>${esSim ? 'Simulador' : 'Aeronave'}</h3></div></div><div id="recursos" class="opciones"></div></div>` : ''}
     ${esPPA && !esSim ? `<div class="card anim" style="--i:7"><div class="card-head"><div class="paso hecho"><span class="paso-num">5</span><h3>Ruta</h3></div><span class="muted">Todos los vuelos salen de Morón</span></div>
-      <div class="form-grid"><label class="campo">Salida<input value="MOR · Morón" disabled></label><label class="campo">Destino <span class="op">(MOR = vuelo local)</span><input id="destino" maxlength="4" value="MOR" style="text-transform:uppercase"></label></div></div>` : ''}
+      <div class="form-grid"><label class="campo">Salida<input value="MOR · Morón" disabled></label><label class="campo">Destino <span class="op">${hab.travesia ? '(MOR = vuelo local)' : '(sin habilitación de travesía: solo vuelo local)'}</span><input id="destino" maxlength="4" value="MOR" style="text-transform:uppercase" ${hab.travesia ? '' : 'disabled'}></label></div></div>` : ''}
     <div class="collapse" id="confirmar-wrap"><div><div class="resumen-reserva" id="resumen"></div></div></div>`;
   const s = { fecha: null, bloques: [], instructor: null, recurso: null, disp: [] };
   const hoy = new Date();
@@ -228,7 +231,7 @@ async function reservarTurno(c, tipo) {
       let est = `${d.instructores.length} instr. · ${d.recursos.length} ${esSim ? 'simul.' : 'aviones'}`; let dis = false;
       if (d.ocupadoYo) { est = 'Ya tenés actividad'; dis = true; }
       else if (d.pasado) { est = 'No disponible'; dis = true; }
-      else if (!d.recursos.length || (!esPPA && !d.instructores.length)) { est = !d.instructores.length && !esPPA ? 'Sin instructores' : 'Completo'; dis = true; }
+      else if (!d.recursos.filter(avionOk).length || (!puedeSolo && !d.instructores.length)) { est = !d.instructores.length && !puedeSolo ? 'Sin instructores' : 'Completo'; dis = true; }
       else if (yaTengo) { est = `Ya reservaste ${esSim ? 'simulador' : 'vuelo'} este día`; dis = true; }
       const sel = s.bloques.includes(d.bloque);
       return `<button class="bloque anim ${sel ? 'sel' : ''} ${d.ocupadoYo ? 'mio' : ''}" style="--i:${i}" data-b="${d.bloque}" ${dis ? 'disabled' : ''}>
@@ -241,7 +244,7 @@ async function reservarTurno(c, tipo) {
     });
     const il = interseccion('instructores');
     if (s.instructor && il && !il.includes(s.instructor)) s.instructor = null;
-    $('#instructores', c).innerHTML = (esPPA ? `<button class="opcion ${s.instructor === 0 ? 'sel' : ''}" data-i="0" ${!il ? 'disabled' : ''}><span class="ico">${avionIco(20, 0)}</span><span><strong>Sin instructor</strong><small>${esSim ? 'Práctica libre' : 'Vuelo solo (PPA)'}</small></span></button>` : '') +
+    $('#instructores', c).innerHTML = `<button class="opcion ${s.instructor === 0 ? 'sel' : ''}" data-i="0" ${!il || !puedeSolo ? 'disabled' : ''}><span class="ico">${avionIco(20, 0)}</span><span><strong>Sin instructor</strong><small>${!puedeSolo ? 'Requiere habilitación de la administración' : esSim ? 'Práctica libre' : 'Vuelo solo'}</small></span></button>` +
       instructores.map((ins) => { const ok = il && il.includes(ins.id);
         return `<button class="opcion ${s.instructor === ins.id ? 'sel' : ''}" data-i="${ins.id}" ${ok ? '' : 'disabled'}><span class="ico">${esc(iniciales(ins))}</span><span><strong>${esc(ins.nombre)} ${esc(ins.apellido)}</strong>
           <small>${!il ? 'Elegí un bloque primero' : ok ? 'Disponible' : 'No vuela en ese horario'}</small></span></button>`; }).join('');
@@ -250,8 +253,8 @@ async function reservarTurno(c, tipo) {
       const rl = interseccion('recursos');
       if (s.recurso && rl && !rl.includes(s.recurso)) s.recurso = null;
       $('#recursos', c).innerHTML = recursos.map((r) => {
-        const ok = r.estado === 'operativa' && rl && rl.includes(r.id);
-        const sub = r.estado !== 'operativa' ? 'Fuera de servicio' : !rl ? 'Elegí un bloque primero' : ok ? r.modelo : 'Ocupado en ese horario';
+        const ok = r.estado === 'operativa' && avionOk(r.id) && rl && rl.includes(r.id);
+        const sub = !avionOk(r.id) ? 'No habilitado/a' : r.estado !== 'operativa' ? 'Fuera de servicio' : !rl ? 'Elegí un bloque primero' : ok ? r.modelo : 'Ocupado en ese horario';
         return `<button class="opcion ${s.recurso === r.id ? 'sel' : ''}" data-r="${r.id}" ${ok ? '' : 'disabled'}><span class="ico">${esSim ? ICON.sim : avionIco()}</span>
           <span><strong class="${esSim ? '' : 'mono'}">${esc(r.nombre)}</strong><small>${esc(sub)}</small></span></button>`;
       }).join('');
@@ -259,7 +262,7 @@ async function reservarTurno(c, tipo) {
     }
     $('#p1', c).classList.toggle('hecho', !!s.fecha); $('#p2', c).classList.toggle('hecho', s.bloques.length > 0);
     $('#p3', c).classList.toggle('hecho', s.instructor !== null); if (eligeRecurso) $('#p4', c).classList.toggle('hecho', !!s.recurso);
-    const listo = s.fecha && s.bloques.length && (esPPA ? s.instructor !== null : s.instructor) && (!eligeRecurso || s.recurso);
+    const listo = s.fecha && s.bloques.length && (puedeSolo ? s.instructor !== null : s.instructor) && (!eligeRecurso || s.recurso);
     const inst = instructores.find((x) => x.id === s.instructor); const rec = recursos.find((x) => x.id === s.recurso);
     $('#confirmar-wrap', c).classList.toggle('open', !!(s.fecha && s.bloques.length));
     $('#resumen', c).innerHTML = `<div><strong class="cap">${s.fecha ? esc(fmtFecha(s.fecha)) : ''}</strong>

@@ -160,3 +160,25 @@
 .corregir { display: grid; grid-template-columns: 150px 110px minmax(0, 1fr) auto; gap: 8px; margin-top: 10px; align-items: center; }
 .corregir select, .corregir input { padding: 8px 10px; }
 @media (max-width: 760px) { .corregir { grid-template-columns: 1fr 1fr; } .corregir input:nth-of-type(2), .corregir button { grid-column: 1 / -1; } }
+
+/* asistente IA */
+.chat-card { display: flex; flex-direction: column; }
+.chat { min-height: 320px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 2px 12px; }
+.chat-vacio { margin: auto; text-align: center; color: var(--muted); padding: 30px 10px; }
+.chat-ico { width: 54px; height: 54px; margin: 0 auto 10px; border-radius: 16px; background: linear-gradient(135deg, var(--azul), var(--celeste)); color: #fff; display: grid; place-items: center; }
+.chat-ico svg { width: 30px; }
+.burbuja { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.55; word-break: break-word; animation: fadeUp .3s var(--ease) both; }
+.burbuja.yo { align-self: flex-end; background: linear-gradient(135deg, var(--azul), var(--azul-2)); color: #fff; border-bottom-right-radius: 4px; }
+.burbuja.ia { align-self: flex-start; background: var(--celeste-claro); color: var(--text); border-bottom-left-radius: 4px; }
+.burbuja.ia p { margin: 0 0 8px; } .burbuja.ia p:last-child { margin-bottom: 0; }
+.burbuja.ia ul, .burbuja.ia ol { margin: 4px 0 8px; padding-left: 20px; }
+.burbuja.ia h4 { margin: 10px 0 4px; font-size: 15px; }
+.burbuja.ia code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #fff; padding: 1px 5px; border-radius: 5px; }
+.escribiendo { display: flex; gap: 5px; padding: 14px 16px; }
+.escribiendo span { width: 8px; height: 8px; border-radius: 50%; background: var(--azul-2); opacity: .4; animation: punto 1.2s infinite; }
+.escribiendo span:nth-child(2) { animation-delay: .2s; } .escribiendo span:nth-child(3) { animation-delay: .4s; }
+@keyframes punto { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
+.chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; border-top: 1px solid var(--borde); padding-top: 12px; }
+.chat-form textarea { resize: none; min-height: 52px; }
+.ia-tema { font-size: 13.5px; background: var(--papel); border: 1px solid var(--regla); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; }
+@media (max-width: 640px) { .chat-form { grid-template-columns: 1fr; } .burbuja { max-width: 92%; } }

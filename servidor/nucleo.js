@@ -115,7 +115,7 @@ function crearStore(opts = {}) {
     const mat = (leccion, titulo, tipo, extra, autor, dias) => db.materiales.push({ id: ++db.seq.mat, leccion, titulo, tipo, descripcion: '', url: '', texto: '', archivo_id: null, autor_id: autor, fecha: dia(dias) + ' 10:00', ...extra });
     mat('GENERAL', 'Bienvenida al curso de Piloto Privado', 'texto', { texto: 'Bienvenidos al campus de Flight Center. Acá van a encontrar el material de cada clase teórica, de los simuladores y de las lecciones de vuelo, ordenado según el syllabus. Antes de cada vuelo revisen el material de la lección que les toca y traigan estudiados los temas indicados.' }, martin, -60);
     mat('TEO 2', 'Resumen: fuerzas que actúan sobre el avión', 'texto', { texto: 'Sustentación, peso, empuje y resistencia. En vuelo recto, nivelado y no acelerado, la sustentación equilibra el peso y el empuje equilibra la resistencia. Repasar: ángulo de ataque, pérdida, factor de carga en virajes.' }, diego, -45);
-    mat('FL 3', 'Escapes: puntos clave', 'texto', { texto: 'Potencia máxima, actitud de ascenso, flaps de a etapas según el POH, compensar y comunicar. Practicar la secuencia en tierra antes del vuelo.' }, martin, -13);
+    mat('VUELO', 'Escapes: puntos clave', 'texto', { texto: 'Potencia máxima, actitud de ascenso, flaps de a etapas según el POH, compensar y comunicar. Practicar la secuencia en tierra antes del vuelo.' }, martin, -13);
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
@@ -173,6 +173,7 @@ function crearStore(opts = {}) {
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
     for (const k of ['materiales', 'tps', 'entregas', 'archivos']) if (!d[k]) d[k] = [];
+    for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
@@ -795,7 +796,8 @@ function crearStore(opts = {}) {
   api.pilotosPPA = () => { exigir('admin', 'instructor'); return db.usuarios.filter((u) => u.rol === 'ppa' && u.activo).map(pub).sort((a, b) => a.apellido.localeCompare(b.apellido)); };
   // ---------- campus: materiales, trabajos prácticos y entregas ----------
   const DOCENTES = ['instructor', 'admin'];
-  const leccionValida = (l) => l === 'GENERAL' || !!LECCIONES[l];
+  // teoría por clase (TEO 1 a 8); simulador y vuelo son una sección cada uno
+  const leccionValida = (l) => ['GENERAL', 'SIMULADOR', 'VUELO'].includes(l) || LECCIONES[l]?.track === 'teorica';
   const MAX_ARCHIVO = () => (navegador ? 2 : 20) * 1024 * 1024;
   function guardarArchivo(archivo, autor, ambito) {
     if (!archivo || !archivo.data) return null;

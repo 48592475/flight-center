@@ -1,10 +1,10 @@
 /* Flight Center · interfaz (parte 7: campus — materiales, trabajos prácticos y entregas) */
 
 const TABS_CAMPUS = {
-  alumno: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['perfil', 'Mi perfil']],
-  ppa: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['perfil', 'Mi perfil']],
-  instructor: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['perfil', 'Mi perfil']],
-  admin: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['perfil', 'Mi perfil']],
+  alumno: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
+  ppa: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
+  instructor: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
+  admin: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
 };
 const esDocente = () => ['instructor', 'admin'].includes(state.user?.rol);
 const ICON_CAMPUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>';
@@ -17,7 +17,8 @@ const ICON_TIPO = {
 };
 const TIPO_MAT = { archivo: 'Archivo', video: 'Video', link: 'Link', texto: 'Texto' };
 const ESTADO_TP = { pendiente: ['Pendiente', 'warn'], entregado: ['Entregado · falta corregir', ''], aprobado: ['Aprobado', 'ok'], rehacer: ['A rehacer', 'danger'], vencido: ['Vencido', 'gris'] };
-const nombreLeccion = (id) => id === 'GENERAL' ? 'Material general' : `${id} · ${Store.LECCIONES[id]?.titulo || ''}`;
+const SECCIONES = { GENERAL: 'Material general', SIMULADOR: 'Simulador', VUELO: 'Vuelo y maniobras' };
+const nombreLeccion = (id) => SECCIONES[id] || `${id} · ${Store.LECCIONES[id]?.titulo || ''}`;
 const fmtTam = (b) => b > 1048576 ? `${(b / 1048576).toFixed(1).replace('.', ',')} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 const youtubeId = (u) => (String(u).match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/))([\w-]{11})/) || [])[1] || null;
 const MAX_MB = () => (MODO === 'servidor' ? 20 : 2);
@@ -63,12 +64,13 @@ function renderPortal(u) {
 VISTAS['c-inicio'] = async function (v) {
   const u = state.user;
   const [tps, resumen, generales] = await Promise.all([u.rol === 'alumno' ? Store.trabajos() : [], Store.campusResumen(), Store.materiales('GENERAL')]);
-  const proximas = u.rol === 'alumno' ? await Promise.all(['teorica', 'vuelo', 'simulador'].map((t) => Store.leccionActual(u.id, t))) : [];
+  const teo = u.rol === 'alumno' ? await Store.leccionActual(u.id, 'teorica') : null;
+  const proximas = [...(teo ? [{ id: teo.id, codigo: teo.id, titulo: teo.titulo }] : []), { id: 'VUELO', codigo: 'FL', titulo: 'Vuelo y maniobras' }, { id: 'SIMULADOR', codigo: 'SIM', titulo: 'Simulador' }];
   const pendientes = tps.filter((t) => ['pendiente', 'rehacer'].includes(t.estado));
   const corregidos = tps.filter((t) => ['aprobado', 'rehacer'].includes(t.estado) && t.entrega?.fecha_correccion).sort((a, b) => b.entrega.fecha_correccion.localeCompare(a.entrega.fecha_correccion)).slice(0, 3);
   v.innerHTML = hero('Campus Flight Center', u.rol === 'alumno' ? 'Material de estudio ordenado según tu syllabus y tus trabajos prácticos.' : 'Material de estudio de la escuela, ordenado por lección.') + `
-    ${proximas.length ? `<div class="card anim" style="--i:1"><div class="card-head"><h3>Tus próximas lecciones</h3><span class="muted">Estudiá antes de cada clase y vuelo</span></div>
-      <div class="prox-grid">${proximas.filter(Boolean).map((l) => `<button class="prox-lec" data-lec="${esc(l.id)}"><span class="codigo-lec">${esc(l.id)}</span>
+    ${proximas.length ? `<div class="card anim" style="--i:1"><div class="card-head"><h3>${teo ? 'Para estudiar' : 'Secciones'}</h3><span class="muted">${teo ? 'Tu próxima clase teórica y el material de vuelo y simulador' : 'Material de vuelo y simulador'}</span></div>
+      <div class="prox-grid">${proximas.map((l) => `<button class="prox-lec" data-lec="${esc(l.id)}"><span class="codigo-lec">${esc(l.codigo)}</span>
         <span><strong>${esc(l.titulo)}</strong><small>${(resumen[l.id]?.materiales || 0)} material(es) · ${(resumen[l.id]?.tps || 0)} trabajo(s)</small></span></button>`).join('')}</div></div>` : ''}
     ${u.rol === 'alumno' ? `<div class="card anim" style="--i:2"><div class="card-head"><h3>Trabajos pendientes</h3><span class="badge ${pendientes.length ? 'warn' : 'ok'}">${pendientes.length}</span></div>
       ${pendientes.length ? pendientes.map((t, i) => filaTP(t, i)).join('') : vacio('No tenés trabajos pendientes.')}</div>
@@ -98,18 +100,18 @@ function tarjetaMaterial(m, i) {
 VISTAS['c-materiales'] = async function (v) {
   const sel = state.campusLec || 'GENERAL';
   const [resumen, mats, tps] = await Promise.all([Store.campusResumen(), Store.materiales(sel), state.user.rol === 'ppa' ? [] : Store.trabajos(sel)]);
-  const grupo = (t, titulo) => `<div class="indice-grupo"><span>${titulo}</span></div>${Store.TRACKS[t].map((l) => { const c = resumen[l.id] || {};
-    return `<button class="indice-item ${l.id === sel ? 'on' : ''}" data-l="${l.id}"><span class="punto ${c.materiales || c.tps ? 'aprobada' : ''}"></span><span class="cod">${esc(l.id)}</span><span class="tit">${esc(l.titulo)}</span></button>`; }).join('')}`;
-  const g = resumen.GENERAL || {};
+  const item = (id, cod, tit) => { const c = resumen[id] || {};
+    return `<button class="indice-item ${id === sel ? 'on' : ''}" data-l="${id}"><span class="punto ${c.materiales || c.tps ? 'aprobada' : ''}"></span><span class="cod">${esc(cod)}</span><span class="tit">${esc(tit)}</span></button>`; };
   v.innerHTML = hero('Materiales', esDocente() ? 'Subí apuntes, videos, links y trabajos prácticos a cada lección del syllabus.' : 'El material de cada clase teórica, simulador y lección de vuelo.') + `
     <div class="libro">
-      <aside class="indice anim"><div class="indice-head"><h3>Lecciones</h3><div class="muted">Con punto verde: tienen material</div></div>
-        <div class="indice-select"><select id="lec-sel" aria-label="Elegir lección"><option value="GENERAL">Material general</option>${['teorica', 'vuelo', 'simulador'].map((t) => Store.TRACKS[t].map((l) => `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${l.id} · ${esc(l.titulo)}</option>`).join('')).join('')}</select></div>
-        <div class="indice-lista"><button class="indice-item ${sel === 'GENERAL' ? 'on' : ''}" data-l="GENERAL"><span class="punto ${g.materiales || g.tps ? 'aprobada' : ''}"></span><span class="cod">—</span><span class="tit">Material general</span></button>
-          ${grupo('teorica', 'Teoría')}${grupo('simulador', 'Simulador')}${grupo('vuelo', 'Vuelo y maniobras')}</div></aside>
+      <aside class="indice anim"><div class="indice-head"><h3>Secciones</h3><div class="muted">Con punto verde: tienen material</div></div>
+        <div class="indice-select"><select id="lec-sel" aria-label="Elegir sección">${opcionesLeccion(sel)}</select></div>
+        <div class="indice-lista">${item('GENERAL', '—', 'Material general')}
+          <div class="indice-grupo"><span>Teoría</span></div>${Store.TRACKS.teorica.map((l) => item(l.id, l.id, l.titulo)).join('')}
+          <div class="indice-grupo"><span>Práctica</span></div>${item('VUELO', 'FL', 'Vuelo y maniobras')}${item('SIMULADOR', 'SIM', 'Simulador')}</div></aside>
       <div>
-        <div class="card anim"><div class="card-head"><div><h3>${esc(nombreLeccion(sel))}</h3>${sel !== 'GENERAL' && Store.LECCIONES[sel]?.estudiar?.length ? `<div class="muted" style="margin-top:4px">Temas a traer estudiados: ${Store.LECCIONES[sel].estudiar.slice(0, 5).map(esc).join(' · ')}</div>` : ''}</div>
-          ${esDocente() ? `<div class="flujo"><button class="btn sm" id="nuevo-mat">+ Material</button><button class="btn sec sm" id="nuevo-tp">+ Trabajo práctico</button></div>` : ''}</div>
+        <div class="card anim"><div class="card-head"><div><h3>${esc(nombreLeccion(sel))}</h3>${Store.LECCIONES[sel]?.contenidos?.length ? `<div class="muted" style="margin-top:4px">Contenidos: ${Store.LECCIONES[sel].contenidos.slice(0, 6).map(esc).join(' · ')}</div>` : ''}${Store.LECCIONES[sel]?.estudiar?.length ? `<div class="muted" style="margin-top:4px">Temas a traer estudiados: ${Store.LECCIONES[sel].estudiar.slice(0, 5).map(esc).join(' · ')}</div>` : ''}</div>
+          <div class="flujo">${MODO === 'servidor' && sel !== 'GENERAL' ? `<button class="btn sec sm" id="preguntar-ia">Preguntarle a la IA sobre ${esc(sel.startsWith('TEO') ? sel : nombreLeccion(sel).toLowerCase())}</button>` : ''}${esDocente() ? `<button class="btn sm" id="nuevo-mat">+ Material</button><button class="btn sec sm" id="nuevo-tp">+ Trabajo práctico</button>` : ''}</div></div>
           ${mats.length ? mats.map((m, i) => tarjetaMaterial(m, i)).join('') : vacio(esDocente() ? 'Todavía no hay material en esta lección. Tocá "+ Material" para subir el primero.' : 'Todavía no hay material en esta lección.')}</div>
         ${tps.length ? `<div class="card anim" style="--i:1"><div class="card-head"><h3>Trabajos prácticos</h3></div>${tps.map((t, i) => filaTP(t, i)).join('')}</div>` : ''}
       </div></div>`;
@@ -117,12 +119,15 @@ VISTAS['c-materiales'] = async function (v) {
   $$('[data-l]', v).forEach((b) => b.onclick = () => ir(b.dataset.l));
   $('#lec-sel', v).value = sel; $('#lec-sel', v).onchange = (e) => ir(e.target.value);
   const re = () => VISTAS['c-materiales'](v);
+  const pia = $('#preguntar-ia', v); if (pia) pia.onclick = () => { state.iaLeccion = Store.LECCIONES[sel] ? sel : null; state.iaTema = nombreLeccion(sel); irA('c-ia'); };
   if ($('#nuevo-mat', v)) { $('#nuevo-mat', v).onclick = () => formMaterial(null, sel, re); $('#nuevo-tp', v).onclick = () => formTP(null, sel, re); }
   $$('[data-edmat]', v).forEach((b) => b.onclick = () => formMaterial(mats.find((m) => m.id == b.dataset.edmat), sel, re));
   $$('[data-bmat]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Borrar material', 'El material se borra para todos.', 'Borrar')) { await hacer(() => Store.borrarMaterial(b.dataset.bmat), 'Material borrado'); re(); } });
   activarTPs(v, re, tps);
 };
-const opcionesLeccion = (sel) => `<option value="GENERAL" ${sel === 'GENERAL' ? 'selected' : ''}>Material general</option>${[['teorica', 'Teoría'], ['simulador', 'Simulador'], ['vuelo', 'Vuelo y maniobras']].map(([t, n]) => `<optgroup label="${n}">${Store.TRACKS[t].map((l) => `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${l.id} · ${esc(l.titulo)}</option>`).join('')}</optgroup>`).join('')}`;
+const opcionesLeccion = (sel) => `<option value="GENERAL" ${sel === 'GENERAL' ? 'selected' : ''}>Material general</option>
+  <optgroup label="Teoría">${Store.TRACKS.teorica.map((l) => `<option value="${l.id}" ${l.id === sel ? 'selected' : ''}>${l.id} · ${esc(l.titulo)}</option>`).join('')}</optgroup>
+  <optgroup label="Práctica"><option value="VUELO" ${sel === 'VUELO' ? 'selected' : ''}>Vuelo y maniobras</option><option value="SIMULADOR" ${sel === 'SIMULADOR' ? 'selected' : ''}>Simulador</option></optgroup>`;
 function formMaterial(m, leccion, despues) {
   const md = modal(`<div class="modal-head"><h3>${m ? 'Editar material' : 'Nuevo material'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <form class="modal-body form-grid" id="f-mat">
@@ -155,7 +160,7 @@ function filaTP(t, i) {
   const vence = t.fecha_limite ? `Entrega hasta el ${fmtCorta(t.fecha_limite)}` : 'Sin fecha límite';
   return `<div class="tp anim" style="--i:${i}">
     <div class="tp-info"><strong>${esc(t.titulo)}</strong> <span class="badge ${cls}">${txt}</span>${!docente && t.entrega?.nota != null ? ` <span class="badge ok">Nota ${t.entrega.nota}</span>` : ''}
-      <div class="muted">${esc(t.leccion === 'GENERAL' ? 'General' : t.leccion)} · ${esc(vence)} · ${esc(t.autor)}</div>
+      <div class="muted">${esc(SECCIONES[t.leccion] || t.leccion)} · ${esc(vence)} · ${esc(t.autor)}</div>
       ${!docente && t.entrega?.comentario ? `<div class="tp-comentario"><b>${esc(t.entrega.corrector || 'Instructor')}:</b> ${esc(t.entrega.comentario)}</div>` : ''}</div>
     <div class="flujo">${docente ? `<button class="btn sm" data-entregas="${t.id}">Ver entregas</button><button class="btn sec sm" data-edtp="${t.id}">Editar</button><button class="btn danger sm" data-btp="${t.id}">Borrar</button>`
       : state.user.rol === 'alumno' ? `<button class="btn ${['pendiente', 'rehacer', 'vencido'].includes(t.estado) ? '' : 'sec'} sm" data-tp="${t.id}">${t.estado === 'aprobado' || t.estado === 'entregado' ? 'Ver' : t.estado === 'rehacer' ? 'Volver a entregar' : 'Entregar'}</button>` : ''}</div></div>`;
@@ -235,4 +240,82 @@ async function verEntregas(t, despues) {
     const r = await hacer(() => Store.corregirEntrega(c.dataset.en, { estado: sel.value, nota: nota.value, comentario: com.value }), 'Corrección guardada. El alumno recibe un aviso.');
     if (r) { md.cerrar(); despues(); setTimeout(() => verEntregas(t, despues), 250); }
   }; });
+}
+
+// ---------- asistente de IA ----------
+// texto con formato simple (negritas, listas, títulos) de forma segura
+function formatoIA(t) {
+  const lineas = esc(t).split('\n'); let html = ''; let lista = null;
+  const cerrar = () => { if (lista) { html += `</${lista}>`; lista = null; } };
+  for (const l of lineas) {
+    const inl = (x) => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+    let m;
+    if ((m = /^\s*[-*•]\s+(.*)$/.exec(l))) { if (lista !== 'ul') { cerrar(); html += '<ul>'; lista = 'ul'; } html += `<li>${inl(m[1])}</li>`; }
+    else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) { if (lista !== 'ol') { cerrar(); html += '<ol>'; lista = 'ol'; } html += `<li>${inl(m[1])}</li>`; }
+    else if ((m = /^#{1,4}\s+(.*)$/.exec(l))) { cerrar(); html += `<h4>${inl(m[1])}</h4>`; }
+    else if (!l.trim()) { cerrar(); }
+    else { cerrar(); html += `<p>${inl(l)}</p>`; }
+  }
+  cerrar(); return html;
+}
+const SUGERENCIAS = ['¿Cómo se decodifica un METAR? Dame un ejemplo', '¿Qué es la pérdida y cómo se recupera?', 'Explicame el circuito de tránsito', '¿Qué diferencia hay entre QNH, QNE y QFE?', '¿Qué tengo que estudiar para mi próxima clase?'];
+const chatIA = () => { try { return JSON.parse(sessionStorage.getItem('fc-ia') || '[]'); } catch { return []; } };
+const guardarChatIA = (m) => { try { sessionStorage.setItem('fc-ia', JSON.stringify(m.slice(-30))); } catch { /* sin storage */ } };
+
+VISTAS['c-ia'] = async function (v) {
+  if (MODO !== 'servidor') {
+    v.innerHTML = hero('Asistente IA', 'Un asistente para sacarse dudas del curso a cualquier hora.') + `<div class="card anim">${vacio('El asistente funciona en la versión publicada con servidor. En esta demo no está disponible.')}</div>`;
+    return;
+  }
+  let estado = { activo: false };
+  try { estado = await (await fetch('/api/asistente/estado', { credentials: 'same-origin' })).json(); } catch { /* sin conexión */ }
+  const mensajes = chatIA();
+  const leccion = state.iaLeccion || null; const tema = state.iaTema || null;
+  v.innerHTML = hero('Asistente IA', 'Preguntale lo que no te quedó claro: teoría, meteorología, reglamentación, maniobras. Responde según el temario del curso.') + `
+    <div class="card anim chat-card">
+      <div class="aviso" style="margin:0 0 14px"><div>Las respuestas las genera una inteligencia artificial y pueden tener errores. Ante cualquier duda, consultá con tu instructor. <b>No la uses para decidir si un vuelo real se puede hacer.</b></div></div>
+      ${!estado.activo ? `<div class="aviso warn"><div><strong>El asistente todavía no está activado</strong>La administración tiene que cargar la clave de Anthropic en el servidor.</div></div>` : ''}
+      ${tema ? `<div class="ia-tema">Preguntando sobre: <b>${esc(tema)}</b> <button class="link-btn" id="ia-sin-tema">Quitar</button></div>` : ''}
+      <div class="chat" id="chat" aria-live="polite">${mensajes.length ? mensajes.map((m) => burbuja(m)).join('') : `<div class="chat-vacio"><div class="chat-ico">${ICON_CAMPUS}</div><p>¿En qué te ayudo?</p>
+        <div class="flujo" style="justify-content:center">${SUGERENCIAS.map((x) => `<button class="chip-ad" data-sug="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`}</div>
+      <form id="f-ia" class="chat-form"><textarea id="ia-texto" rows="2" placeholder="Escribí tu pregunta…" ${estado.activo ? '' : 'disabled'}></textarea>
+        <div class="flujo" style="flex-direction:column;align-items:stretch"><button class="btn" type="submit" id="ia-enviar" ${estado.activo ? '' : 'disabled'}>Enviar</button>
+        ${mensajes.length ? '<button class="btn sec sm" type="button" id="ia-nuevo">Nueva conversación</button>' : ''}</div></form>
+      ${estado.activo ? `<div class="muted" style="font-size:12px;margin-top:6px" id="ia-cupo">Te quedan ${estado.quedan} de ${estado.limite} preguntas por hoy.</div>` : ''}
+    </div>`;
+  const chat = $('#chat', v); const txt = $('#ia-texto', v);
+  const abajo = () => { chat.scrollTop = chat.scrollHeight; };
+  abajo();
+  const st = $('#ia-sin-tema', v); if (st) st.onclick = () => { state.iaLeccion = null; state.iaTema = null; VISTAS['c-ia'](v); };
+  const nv = $('#ia-nuevo', v); if (nv) nv.onclick = () => { guardarChatIA([]); state.iaLeccion = null; state.iaTema = null; VISTAS['c-ia'](v); };
+  $$('[data-sug]', v).forEach((b) => b.onclick = () => { txt.value = b.dataset.sug; enviar(); });
+  txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } };
+  $('#f-ia', v).onsubmit = (e) => { e.preventDefault(); enviar(); };
+  let enviando = false;
+  async function enviar() {
+    const q = txt.value.trim(); if (!q || enviando || !estado.activo) return;
+    enviando = true; txt.value = ''; $('#ia-enviar', v).disabled = true;
+    const conTema = tema && !mensajes.length ? `[Consulta sobre ${tema}] ${q}` : q;
+    mensajes.push({ role: 'user', content: conTema });
+    if ($('.chat-vacio', chat)) chat.innerHTML = '';
+    chat.insertAdjacentHTML('beforeend', burbuja({ role: 'user', content: conTema }) + '<div class="burbuja ia escribiendo"><span></span><span></span><span></span></div>');
+    abajo();
+    const caja = chat.lastElementChild; let resp = '';
+    try {
+      const r = await fetch('/api/asistente', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensajes, leccion }) });
+      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || (r.status === 413 ? 'La pregunta es demasiado larga.' : 'El asistente no respondió. Probá de nuevo.')); }
+      const lector = r.body.getReader(); const dec = new TextDecoder();
+      caja.classList.remove('escribiendo');
+      for (;;) { const { value, done } = await lector.read(); if (done) break; resp += dec.decode(value, { stream: true }); caja.innerHTML = formatoIA(resp); abajo(); }
+      if (!resp.trim()) throw new Error('El asistente no respondió. Probá de nuevo.');
+      mensajes.push({ role: 'assistant', content: resp }); guardarChatIA(mensajes);
+      const c = $('#ia-cupo', v); if (c && estado.quedan > 0) { estado.quedan--; c.textContent = `Te quedan ${estado.quedan} de ${estado.limite} preguntas por hoy.`; }
+    } catch (e) {
+      mensajes.pop(); caja.remove(); chat.lastElementChild?.remove(); txt.value = q; toast(e.message, 'error');
+    }
+    enviando = false; $('#ia-enviar', v).disabled = false; txt.focus();
+  }
+};
+function burbuja(m) {
+  return m.role === 'user' ? `<div class="burbuja yo">${esc(m.content.replace(/^\[Consulta sobre [^\]]+\]\s*/, '')).replace(/\n/g, '<br>')}</div>` : `<div class="burbuja ia">${formatoIA(m.content)}</div>`;
 }

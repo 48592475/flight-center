@@ -161,24 +161,28 @@
 .corregir select, .corregir input { padding: 8px 10px; }
 @media (max-width: 760px) { .corregir { grid-template-columns: 1fr 1fr; } .corregir input:nth-of-type(2), .corregir button { grid-column: 1 / -1; } }
 
-/* asistente IA */
-.chat-card { display: flex; flex-direction: column; }
-.chat { min-height: 320px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 2px 12px; }
-.chat-vacio { margin: auto; text-align: center; color: var(--muted); padding: 30px 10px; }
-.chat-ico { width: 54px; height: 54px; margin: 0 auto 10px; border-radius: 16px; background: linear-gradient(135deg, var(--azul), var(--celeste)); color: #fff; display: grid; place-items: center; }
-.chat-ico svg { width: 30px; }
-.burbuja { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.55; word-break: break-word; animation: fadeUp .3s var(--ease) both; }
-.burbuja.yo { align-self: flex-end; background: linear-gradient(135deg, var(--azul), var(--azul-2)); color: #fff; border-bottom-right-radius: 4px; }
-.burbuja.ia { align-self: flex-start; background: var(--celeste-claro); color: var(--text); border-bottom-left-radius: 4px; }
-.burbuja.ia p { margin: 0 0 8px; } .burbuja.ia p:last-child { margin-bottom: 0; }
-.burbuja.ia ul, .burbuja.ia ol { margin: 4px 0 8px; padding-left: 20px; }
-.burbuja.ia h4 { margin: 10px 0 4px; font-size: 15px; }
-.burbuja.ia code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #fff; padding: 1px 5px; border-radius: 5px; }
-.escribiendo { display: flex; gap: 5px; padding: 14px 16px; }
-.escribiendo span { width: 8px; height: 8px; border-radius: 50%; background: var(--azul-2); opacity: .4; animation: punto 1.2s infinite; }
-.escribiendo span:nth-child(2) { animation-delay: .2s; } .escribiendo span:nth-child(3) { animation-delay: .4s; }
-@keyframes punto { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-.chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; border-top: 1px solid var(--borde); padding-top: 12px; }
-.chat-form textarea { resize: none; min-height: 52px; }
-.ia-tema { font-size: 13.5px; background: var(--papel); border: 1px solid var(--regla); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; }
-@media (max-width: 640px) { .chat-form { grid-template-columns: 1fr; } .burbuja { max-width: 92%; } }
+
+/* foro */
+.tema { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid #edf2f7; padding: 14px 6px; cursor: pointer; transition: background .2s; }
+.tema:first-of-type { border-top: 0; }
+.tema:hover { background: #f7fbff; }
+.tema.fijado { background: var(--papel); border-radius: 12px; }
+.tema-cuerpo { flex: 1; min-width: 0; }
+.tema-cuerpo strong { font-size: 15.5px; color: var(--navy); }
+.tema-n { text-align: center; min-width: 70px; color: var(--muted); }
+.tema-n b { display: block; font-size: 22px; color: var(--navy); }
+.tema-n small { font-size: 11.5px; }
+.foro-volver { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.tema-titulo { font-size: 24px; margin-bottom: 14px; text-wrap: balance; }
+.post { border: 1px solid var(--borde); border-radius: 14px; padding: 14px 16px; }
+.post + .post { margin-top: 10px; }
+.post.docente { border-left: 4px solid var(--azul-2); }
+.post.mejor { border-color: #9fdcc4; background: #f3fbf7; box-shadow: 0 0 0 3px rgba(18, 163, 122, .1); }
+.post-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.post-texto { margin-top: 10px; font-size: 15px; line-height: 1.6; word-break: break-word; }
+.post-acc { margin-top: 10px; gap: 14px; }
+.link-btn.peligro { color: var(--danger); }
+.responder { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--borde); display: grid; gap: 10px; }
+.foro-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px) auto; gap: 10px; align-items: center; margin-bottom: 12px; }
+.foro-filtro > * { min-width: 0; width: 100%; }
+@media (max-width: 760px) { .foro-filtro { grid-template-columns: minmax(0, 1fr); } .foro-filtro .segmento { display: flex; } .foro-filtro .segmento button { flex: 1; } }

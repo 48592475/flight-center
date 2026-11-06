@@ -45,6 +45,11 @@ const contenidoAviso = (() => {
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
     }
+    if (n.tipo === 'foro_respuesta') {
+      const f = n.datos;
+      return { asunto: `Nueva respuesta en el foro · ${f.tema.titulo}`, titulo: 'Respondieron tu consulta en el foro', intro: `${f.quien}${f.docente ? ' (instructor)' : ''} respondió tu consulta en el foro del campus de Flight Center.`,
+        filas: [['Consulta', f.tema.titulo], ['Respuesta', f.texto]], notas: ['Ingresá al campus para ver la respuesta completa y, si te resolvió la duda, marcala como destacada.'], wpp: [] };
+    }
     if (n.tipo === 'correccion') {
       const c = n.datos;
       return { asunto: `Trabajo corregido · ${c.tp.titulo}`, titulo: 'Tu trabajo práctico fue corregido', intro: `${c.corrector} corrigió tu entrega en el campus de Flight Center.`,

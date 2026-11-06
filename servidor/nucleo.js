@@ -119,6 +119,15 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // foro: ejemplos de la demo
+    db.foro_temas = []; db.foro_respuestas = []; db.seq.ft = 0; db.seq.fr = 0;
+    const tema = (autor, titulo, cuerpo, seccion, dias, extra = {}) => { db.foro_temas.push({ id: ++db.seq.ft, autor_id: autor, titulo, cuerpo, seccion, fecha: dia(dias) + ' 19:30', actividad: dia(dias) + ' 19:30', resuelto: false, fijado: false, ...extra }); return db.seq.ft; };
+    const resp = (tId, autor, cuerpo, dias, mejor = false) => { db.foro_respuestas.push({ id: ++db.seq.fr, tema_id: tId, autor_id: autor, cuerpo, fecha: dia(dias) + ' 21:10', mejor }); const t = db.foro_temas.find((x) => x.id === tId); t.actividad = dia(dias) + ' 21:10'; if (mejor) t.resuelto = true; };
+    tema(martin, 'Normas del foro', 'Este espacio es para consultas del curso: teoría, maniobras, simulador y dudas generales. Respondan con respeto y, si alguna respuesta les resolvió la duda, márquenla como destacada. Ante dudas sobre un vuelo concreto, consulten siempre con su instructor.', 'GENERAL', -30, { fijado: true });
+    const t1 = tema(vale, '¿Cuál es la diferencia entre QNH y QFE?', 'En la clase vimos los reglajes altimétricos pero no me queda claro cuándo se usa cada uno.', 'TEO 3', -6);
+    resp(t1, juan, 'Con QNH el altímetro marca la altitud sobre el nivel del mar; con QFE marca la altura sobre el aeródromo (en tierra marca cero).', -6);
+    resp(t1, sofia, 'Exacto. En Argentina se opera con QNH por debajo de la altitud de transición; el QFE casi no se usa en la práctica. Repasen la parte de altimetría de la TEO 3.', -5, true);
+    tema(juan, '¿Cómo practican la secuencia del escape en casa?', 'Me cuesta acordarme el orden de los pasos del escape en la FL 3. ¿Alguno tiene un truco?', 'VUELO', -2);
     db.entregas.push({ id: ++db.seq.en, tp_id: tp1, alumno_id: juan, texto: '1) Viento 030° 8 kt, visibilidad mayor a 10 km, pocas nubes a 3000 ft: VFR. 2) Ráfagas de 22 kt y techo a 1200 ft: marginal, no recomendable. 3) Visibilidad 3 km y techo a 500 ft: IFR, no se puede volar VFR.', archivo_id: null, fecha: dia(-1) + ' 20:15', tardia: false, estado: 'aprobado', nota: 9, comentario: 'Muy bien. En el 2 revisá el viento cruzado para la pista 20.', corrector_id: diego, fecha_correccion: dia(0) + ' 08:30' });
     db.notificaciones = []; db.seq.nt = 0;
     const mov = reconstruirCuentas(db);
@@ -138,8 +147,8 @@ function crearStore(opts = {}) {
       movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
       usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
         password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
-      recursos: [], materiales: [], tps: [], entregas: [], archivos: [] };
-    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0 });
+      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [] };
+    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0 });
     const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
     R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
     R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
@@ -172,7 +181,8 @@ function crearStore(opts = {}) {
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
-    for (const k of ['materiales', 'tps', 'entregas', 'archivos']) if (!d[k]) d[k] = [];
+    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
+    for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
@@ -903,6 +913,61 @@ function crearStore(opts = {}) {
   // en la demo los archivos viven en el navegador; en el servidor se descargan por /api/archivo/:id
   api.archivo = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); if (!puedeVerArchivo(me, a)) fail('Archivo no disponible'); return a; };
   api._archivoPermitido = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); return puedeVerArchivo(me, a) ? metaArchivo(a.id) : null; };
+  // ---------- foro de consultas ----------
+  const EN_FORO = ['alumno', 'ppa', 'instructor', 'admin'];
+  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol } : { autor: 'Usuario eliminado', autor_rol: '' }; };
+  const textoForo = (t, min, max, que) => { t = String(t || '').trim(); if (t.length < min) fail(`${que} es muy corto`); if (t.length > max) fail(`${que} es muy largo (máximo ${max} caracteres)`); return t; };
+  const temaPub = (t) => { const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id);
+    return { ...t, ...autorForo(t.autor_id), respuestas: rs.length, responde_instructor: rs.some((r) => DOCENTES.includes(usuario(r.autor_id)?.rol)) }; };
+  api.foroTemas = ({ seccion, q, filtro } = {}) => {
+    exigir(...EN_FORO); const b = String(q || '').trim().toLowerCase();
+    return db.foro_temas.filter((t) => (!seccion || t.seccion === seccion)
+      && (!b || `${t.titulo} ${t.cuerpo} ${db.foro_respuestas.filter((r) => r.tema_id === t.id).map((r) => r.cuerpo).join(' ')}`.toLowerCase().includes(b)))
+      .map(temaPub).filter((t) => !filtro || (filtro === 'sin_respuesta' ? !t.respuestas && !t.fijado : filtro === 'resueltas' ? t.resuelto : true))
+      .sort((a, b2) => (b2.fijado - a.fijado) || b2.actividad.localeCompare(a.actividad));
+  };
+  api.foroTema = (id) => {
+    const me = exigir(...EN_FORO); const t = db.foro_temas.find((x) => x.id === Number(id)); if (!t) fail('La consulta ya no existe');
+    const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id).sort((a, b) => (b.mejor - a.mejor) || a.fecha.localeCompare(b.fecha) || a.id - b.id)
+      .map((r) => ({ ...r, ...autorForo(r.autor_id), mia: r.autor_id === me.id }));
+    return { ...temaPub(t), mio: t.autor_id === me.id, puede_moderar: DOCENTES.includes(me.rol), puede_destacar: t.autor_id === me.id || DOCENTES.includes(me.rol), respuestas_lista: rs };
+  };
+  api.foroCrearTema = ({ titulo, cuerpo, seccion }) => {
+    const me = exigir(...EN_FORO);
+    if (!leccionValida(seccion)) fail('Elegí la sección');
+    const t = { id: ++db.seq.ft, autor_id: me.id, titulo: textoForo(titulo, 5, 140, 'El título'), cuerpo: textoForo(cuerpo, 2, 8000, 'El texto de la consulta'), seccion, fecha: ahora(), actividad: ahora(), resuelto: false, fijado: false };
+    db.foro_temas.push(t); guardar(); return temaPub(t);
+  };
+  api.foroResponder = (temaId, cuerpo) => {
+    const me = exigir(...EN_FORO); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe');
+    const r = { id: ++db.seq.fr, tema_id: t.id, autor_id: me.id, cuerpo: textoForo(cuerpo, 2, 8000, 'El texto de la respuesta'), fecha: ahora(), mejor: false };
+    db.foro_respuestas.push(r); t.actividad = r.fecha;
+    const autor = usuario(t.autor_id);
+    if (autor && autor.id !== me.id && autor.activo) notificar(autor, 'foro_respuesta', { tema: { titulo: t.titulo }, quien: nombre(me), docente: DOCENTES.includes(me.rol), texto: r.cuerpo.slice(0, 400) }, { soloEmail: true });
+    guardar(); return r;
+  };
+  api.foroEditar = (tipo, id, { titulo, cuerpo }) => {
+    const me = exigir(...EN_FORO);
+    const x = (tipo === 'tema' ? db.foro_temas : db.foro_respuestas).find((y) => y.id === Number(id)); if (!x) fail('El mensaje ya no existe');
+    if (x.autor_id !== me.id) fail('Solo podés editar tus propios mensajes');
+    if (tipo === 'tema') x.titulo = textoForo(titulo, 5, 140, 'El título');
+    x.cuerpo = textoForo(cuerpo, 2, 8000, 'El mensaje'); x.editado = ahora(); guardar();
+  };
+  api.foroBorrar = (tipo, id) => {
+    const me = exigir(...EN_FORO);
+    const lista = tipo === 'tema' ? db.foro_temas : db.foro_respuestas; const x = lista.find((y) => y.id === Number(id)); if (!x) fail('El mensaje ya no existe');
+    if (x.autor_id !== me.id && !DOCENTES.includes(me.rol)) fail('Solo podés borrar tus propios mensajes');
+    if (tipo === 'tema') { db.foro_temas = db.foro_temas.filter((y) => y !== x); db.foro_respuestas = db.foro_respuestas.filter((r) => r.tema_id !== x.id); }
+    else { db.foro_respuestas = db.foro_respuestas.filter((y) => y !== x); const t = db.foro_temas.find((y) => y.id === x.tema_id); if (t) t.resuelto = db.foro_respuestas.some((r) => r.tema_id === t.id && r.mejor); }
+    guardar();
+  };
+  api.foroDestacar = (respId) => {
+    const me = exigir(...EN_FORO); const r = db.foro_respuestas.find((x) => x.id === Number(respId)); if (!r) fail('La respuesta ya no existe');
+    const t = db.foro_temas.find((x) => x.id === r.tema_id);
+    if (t.autor_id !== me.id && !DOCENTES.includes(me.rol)) fail('Solo quien preguntó o un instructor puede destacar una respuesta');
+    r.mejor = !r.mejor; t.resuelto = db.foro_respuestas.some((x) => x.tema_id === t.id && x.mejor); guardar(); return r.mejor;
+  };
+  api.foroFijar = (temaId) => { exigir(...DOCENTES); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe'); t.fijado = !t.fijado; guardar(); return t.fijado; };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
@@ -961,6 +1026,11 @@ const contenidoAviso = (() => {
       return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'foro_respuesta') {
+      const f = n.datos;
+      return { asunto: `Nueva respuesta en el foro · ${f.tema.titulo}`, titulo: 'Respondieron tu consulta en el foro', intro: `${f.quien}${f.docente ? ' (instructor)' : ''} respondió tu consulta en el foro del campus de Flight Center.`,
+        filas: [['Consulta', f.tema.titulo], ['Respuesta', f.texto]], notas: ['Ingresá al campus para ver la respuesta completa y, si te resolvió la duda, marcala como destacada.'], wpp: [] };
     }
     if (n.tipo === 'correccion') {
       const c = n.datos;

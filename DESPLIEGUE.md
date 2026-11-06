@@ -100,20 +100,6 @@ Más adelante, con un dominio propio (por ejemplo @flightcenter.com.ar), se camb
 
 El METAR y el TAF funcionan sin clave (Aviation Weather Center, NOAA).
 
-## 5b. Asistente IA del campus
-
-El asistente responde dudas de los alumnos con Claude, la IA de Anthropic. Se paga por uso.
-
-1. Entrá a https://console.anthropic.com, creá una cuenta y cargá crédito en **Billing** (se puede poner un límite de gasto mensual en **Limits**).
-2. En **API Keys** creá una clave llamada "Flight Center" y copiala (empieza con `sk-ant-`).
-3. En Render: servicio **flight-center → Environment**, agregá `ANTHROPIC_API_KEY` con esa clave y guardá.
-
-Opciones (también en **Environment**, todas opcionales):
-- `ASISTENTE_LIMITE_DIARIO`: preguntas por persona por día (40 si no se carga).
-- `ASISTENTE_MODELO`: modelo de Claude. Por defecto `claude-opus-5-5` (el más capaz para explicar). `claude-haiku-5-5` es mucho más barato y más simple en las explicaciones.
-
-Costo aproximado con el modelo por defecto: entre 2 y 4 centavos de dólar por pregunta (unos USD 20 a 40 cada 1000 preguntas). Con `claude-haiku-5-5`, bastante menos de 1 centavo. Los precios pueden cambiar: ver https://www.anthropic.com/pricing.
-
 ## 6. Recordatorio diario de deuda
 
 Sale todos los días a las 9:00 (hora de Argentina) a cada alumno o piloto con saldo a pagar, por email y WhatsApp, gracias a la tarea de cron-job.org del paso 2b. La administración también puede enviarlo en el momento desde **Avisos → Enviar ahora**. Nunca se manda más de uno por día a la misma persona.

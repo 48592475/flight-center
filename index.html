@@ -867,27 +867,31 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .corregir select, .corregir input { padding: 8px 10px; }
 @media (max-width: 760px) { .corregir { grid-template-columns: 1fr 1fr; } .corregir input:nth-of-type(2), .corregir button { grid-column: 1 / -1; } }
 
-/* asistente IA */
-.chat-card { display: flex; flex-direction: column; }
-.chat { min-height: 320px; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 6px 2px 12px; }
-.chat-vacio { margin: auto; text-align: center; color: var(--muted); padding: 30px 10px; }
-.chat-ico { width: 54px; height: 54px; margin: 0 auto 10px; border-radius: 16px; background: linear-gradient(135deg, var(--azul), var(--celeste)); color: #fff; display: grid; place-items: center; }
-.chat-ico svg { width: 30px; }
-.burbuja { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.55; word-break: break-word; animation: fadeUp .3s var(--ease) both; }
-.burbuja.yo { align-self: flex-end; background: linear-gradient(135deg, var(--azul), var(--azul-2)); color: #fff; border-bottom-right-radius: 4px; }
-.burbuja.ia { align-self: flex-start; background: var(--celeste-claro); color: var(--text); border-bottom-left-radius: 4px; }
-.burbuja.ia p { margin: 0 0 8px; } .burbuja.ia p:last-child { margin-bottom: 0; }
-.burbuja.ia ul, .burbuja.ia ol { margin: 4px 0 8px; padding-left: 20px; }
-.burbuja.ia h4 { margin: 10px 0 4px; font-size: 15px; }
-.burbuja.ia code { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 13px; background: #fff; padding: 1px 5px; border-radius: 5px; }
-.escribiendo { display: flex; gap: 5px; padding: 14px 16px; }
-.escribiendo span { width: 8px; height: 8px; border-radius: 50%; background: var(--azul-2); opacity: .4; animation: punto 1.2s infinite; }
-.escribiendo span:nth-child(2) { animation-delay: .2s; } .escribiendo span:nth-child(3) { animation-delay: .4s; }
-@keyframes punto { 0%, 100% { opacity: .3; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-4px); } }
-.chat-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: end; border-top: 1px solid var(--borde); padding-top: 12px; }
-.chat-form textarea { resize: none; min-height: 52px; }
-.ia-tema { font-size: 13.5px; background: var(--papel); border: 1px solid var(--regla); border-radius: 10px; padding: 8px 12px; margin-bottom: 10px; }
-@media (max-width: 640px) { .chat-form { grid-template-columns: 1fr; } .burbuja { max-width: 92%; } }
+
+/* foro */
+.tema { display: flex; gap: 14px; align-items: center; width: 100%; text-align: left; background: #fff; border: 0; border-top: 1px solid #edf2f7; padding: 14px 6px; cursor: pointer; transition: background .2s; }
+.tema:first-of-type { border-top: 0; }
+.tema:hover { background: #f7fbff; }
+.tema.fijado { background: var(--papel); border-radius: 12px; }
+.tema-cuerpo { flex: 1; min-width: 0; }
+.tema-cuerpo strong { font-size: 15.5px; color: var(--navy); }
+.tema-n { text-align: center; min-width: 70px; color: var(--muted); }
+.tema-n b { display: block; font-size: 22px; color: var(--navy); }
+.tema-n small { font-size: 11.5px; }
+.foro-volver { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.tema-titulo { font-size: 24px; margin-bottom: 14px; text-wrap: balance; }
+.post { border: 1px solid var(--borde); border-radius: 14px; padding: 14px 16px; }
+.post + .post { margin-top: 10px; }
+.post.docente { border-left: 4px solid var(--azul-2); }
+.post.mejor { border-color: #9fdcc4; background: #f3fbf7; box-shadow: 0 0 0 3px rgba(18, 163, 122, .1); }
+.post-head { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.post-texto { margin-top: 10px; font-size: 15px; line-height: 1.6; word-break: break-word; }
+.post-acc { margin-top: 10px; gap: 14px; }
+.link-btn.peligro { color: var(--danger); }
+.responder { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--borde); display: grid; gap: 10px; }
+.foro-filtro { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 220px) auto; gap: 10px; align-items: center; margin-bottom: 12px; }
+.foro-filtro > * { min-width: 0; width: 100%; }
+@media (max-width: 760px) { .foro-filtro { grid-template-columns: minmax(0, 1fr); } .foro-filtro .segmento { display: flex; } .foro-filtro .segmento button { flex: 1; } }
 
 </style>
 </head>
@@ -1019,6 +1023,15 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // foro: ejemplos de la demo
+    db.foro_temas = []; db.foro_respuestas = []; db.seq.ft = 0; db.seq.fr = 0;
+    const tema = (autor, titulo, cuerpo, seccion, dias, extra = {}) => { db.foro_temas.push({ id: ++db.seq.ft, autor_id: autor, titulo, cuerpo, seccion, fecha: dia(dias) + ' 19:30', actividad: dia(dias) + ' 19:30', resuelto: false, fijado: false, ...extra }); return db.seq.ft; };
+    const resp = (tId, autor, cuerpo, dias, mejor = false) => { db.foro_respuestas.push({ id: ++db.seq.fr, tema_id: tId, autor_id: autor, cuerpo, fecha: dia(dias) + ' 21:10', mejor }); const t = db.foro_temas.find((x) => x.id === tId); t.actividad = dia(dias) + ' 21:10'; if (mejor) t.resuelto = true; };
+    tema(martin, 'Normas del foro', 'Este espacio es para consultas del curso: teoría, maniobras, simulador y dudas generales. Respondan con respeto y, si alguna respuesta les resolvió la duda, márquenla como destacada. Ante dudas sobre un vuelo concreto, consulten siempre con su instructor.', 'GENERAL', -30, { fijado: true });
+    const t1 = tema(vale, '¿Cuál es la diferencia entre QNH y QFE?', 'En la clase vimos los reglajes altimétricos pero no me queda claro cuándo se usa cada uno.', 'TEO 3', -6);
+    resp(t1, juan, 'Con QNH el altímetro marca la altitud sobre el nivel del mar; con QFE marca la altura sobre el aeródromo (en tierra marca cero).', -6);
+    resp(t1, sofia, 'Exacto. En Argentina se opera con QNH por debajo de la altitud de transición; el QFE casi no se usa en la práctica. Repasen la parte de altimetría de la TEO 3.', -5, true);
+    tema(juan, '¿Cómo practican la secuencia del escape en casa?', 'Me cuesta acordarme el orden de los pasos del escape en la FL 3. ¿Alguno tiene un truco?', 'VUELO', -2);
     db.entregas.push({ id: ++db.seq.en, tp_id: tp1, alumno_id: juan, texto: '1) Viento 030° 8 kt, visibilidad mayor a 10 km, pocas nubes a 3000 ft: VFR. 2) Ráfagas de 22 kt y techo a 1200 ft: marginal, no recomendable. 3) Visibilidad 3 km y techo a 500 ft: IFR, no se puede volar VFR.', archivo_id: null, fecha: dia(-1) + ' 20:15', tardia: false, estado: 'aprobado', nota: 9, comentario: 'Muy bien. En el 2 revisá el viento cruzado para la pista 20.', corrector_id: diego, fecha_correccion: dia(0) + ' 08:30' });
     db.notificaciones = []; db.seq.nt = 0;
     const mov = reconstruirCuentas(db);
@@ -1038,8 +1051,8 @@ function crearStore(opts = {}) {
       movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
       usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
         password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
-      recursos: [], materiales: [], tps: [], entregas: [], archivos: [] };
-    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0 });
+      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [] };
+    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0 });
     const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
     R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
     R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
@@ -1072,7 +1085,8 @@ function crearStore(opts = {}) {
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
-    for (const k of ['materiales', 'tps', 'entregas', 'archivos']) if (!d[k]) d[k] = [];
+    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
+    for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
@@ -1803,6 +1817,61 @@ function crearStore(opts = {}) {
   // en la demo los archivos viven en el navegador; en el servidor se descargan por /api/archivo/:id
   api.archivo = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); if (!puedeVerArchivo(me, a)) fail('Archivo no disponible'); return a; };
   api._archivoPermitido = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); return puedeVerArchivo(me, a) ? metaArchivo(a.id) : null; };
+  // ---------- foro de consultas ----------
+  const EN_FORO = ['alumno', 'ppa', 'instructor', 'admin'];
+  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol } : { autor: 'Usuario eliminado', autor_rol: '' }; };
+  const textoForo = (t, min, max, que) => { t = String(t || '').trim(); if (t.length < min) fail(`${que} es muy corto`); if (t.length > max) fail(`${que} es muy largo (máximo ${max} caracteres)`); return t; };
+  const temaPub = (t) => { const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id);
+    return { ...t, ...autorForo(t.autor_id), respuestas: rs.length, responde_instructor: rs.some((r) => DOCENTES.includes(usuario(r.autor_id)?.rol)) }; };
+  api.foroTemas = ({ seccion, q, filtro } = {}) => {
+    exigir(...EN_FORO); const b = String(q || '').trim().toLowerCase();
+    return db.foro_temas.filter((t) => (!seccion || t.seccion === seccion)
+      && (!b || `${t.titulo} ${t.cuerpo} ${db.foro_respuestas.filter((r) => r.tema_id === t.id).map((r) => r.cuerpo).join(' ')}`.toLowerCase().includes(b)))
+      .map(temaPub).filter((t) => !filtro || (filtro === 'sin_respuesta' ? !t.respuestas && !t.fijado : filtro === 'resueltas' ? t.resuelto : true))
+      .sort((a, b2) => (b2.fijado - a.fijado) || b2.actividad.localeCompare(a.actividad));
+  };
+  api.foroTema = (id) => {
+    const me = exigir(...EN_FORO); const t = db.foro_temas.find((x) => x.id === Number(id)); if (!t) fail('La consulta ya no existe');
+    const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id).sort((a, b) => (b.mejor - a.mejor) || a.fecha.localeCompare(b.fecha) || a.id - b.id)
+      .map((r) => ({ ...r, ...autorForo(r.autor_id), mia: r.autor_id === me.id }));
+    return { ...temaPub(t), mio: t.autor_id === me.id, puede_moderar: DOCENTES.includes(me.rol), puede_destacar: t.autor_id === me.id || DOCENTES.includes(me.rol), respuestas_lista: rs };
+  };
+  api.foroCrearTema = ({ titulo, cuerpo, seccion }) => {
+    const me = exigir(...EN_FORO);
+    if (!leccionValida(seccion)) fail('Elegí la sección');
+    const t = { id: ++db.seq.ft, autor_id: me.id, titulo: textoForo(titulo, 5, 140, 'El título'), cuerpo: textoForo(cuerpo, 2, 8000, 'El texto de la consulta'), seccion, fecha: ahora(), actividad: ahora(), resuelto: false, fijado: false };
+    db.foro_temas.push(t); guardar(); return temaPub(t);
+  };
+  api.foroResponder = (temaId, cuerpo) => {
+    const me = exigir(...EN_FORO); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe');
+    const r = { id: ++db.seq.fr, tema_id: t.id, autor_id: me.id, cuerpo: textoForo(cuerpo, 2, 8000, 'El texto de la respuesta'), fecha: ahora(), mejor: false };
+    db.foro_respuestas.push(r); t.actividad = r.fecha;
+    const autor = usuario(t.autor_id);
+    if (autor && autor.id !== me.id && autor.activo) notificar(autor, 'foro_respuesta', { tema: { titulo: t.titulo }, quien: nombre(me), docente: DOCENTES.includes(me.rol), texto: r.cuerpo.slice(0, 400) }, { soloEmail: true });
+    guardar(); return r;
+  };
+  api.foroEditar = (tipo, id, { titulo, cuerpo }) => {
+    const me = exigir(...EN_FORO);
+    const x = (tipo === 'tema' ? db.foro_temas : db.foro_respuestas).find((y) => y.id === Number(id)); if (!x) fail('El mensaje ya no existe');
+    if (x.autor_id !== me.id) fail('Solo podés editar tus propios mensajes');
+    if (tipo === 'tema') x.titulo = textoForo(titulo, 5, 140, 'El título');
+    x.cuerpo = textoForo(cuerpo, 2, 8000, 'El mensaje'); x.editado = ahora(); guardar();
+  };
+  api.foroBorrar = (tipo, id) => {
+    const me = exigir(...EN_FORO);
+    const lista = tipo === 'tema' ? db.foro_temas : db.foro_respuestas; const x = lista.find((y) => y.id === Number(id)); if (!x) fail('El mensaje ya no existe');
+    if (x.autor_id !== me.id && !DOCENTES.includes(me.rol)) fail('Solo podés borrar tus propios mensajes');
+    if (tipo === 'tema') { db.foro_temas = db.foro_temas.filter((y) => y !== x); db.foro_respuestas = db.foro_respuestas.filter((r) => r.tema_id !== x.id); }
+    else { db.foro_respuestas = db.foro_respuestas.filter((y) => y !== x); const t = db.foro_temas.find((y) => y.id === x.tema_id); if (t) t.resuelto = db.foro_respuestas.some((r) => r.tema_id === t.id && r.mejor); }
+    guardar();
+  };
+  api.foroDestacar = (respId) => {
+    const me = exigir(...EN_FORO); const r = db.foro_respuestas.find((x) => x.id === Number(respId)); if (!r) fail('La respuesta ya no existe');
+    const t = db.foro_temas.find((x) => x.id === r.tema_id);
+    if (t.autor_id !== me.id && !DOCENTES.includes(me.rol)) fail('Solo quien preguntó o un instructor puede destacar una respuesta');
+    r.mejor = !r.mejor; t.resuelto = db.foro_respuestas.some((x) => x.tema_id === t.id && x.mejor); guardar(); return r.mejor;
+  };
+  api.foroFijar = (temaId) => { exigir(...DOCENTES); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe'); t.fijado = !t.fijado; guardar(); return t.fijado; };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
@@ -1877,6 +1946,11 @@ const contenidoAviso = (() => {
       return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'foro_respuesta') {
+      const f = n.datos;
+      return { asunto: `Nueva respuesta en el foro · ${f.tema.titulo}`, titulo: 'Respondieron tu consulta en el foro', intro: `${f.quien}${f.docente ? ' (instructor)' : ''} respondió tu consulta en el foro del campus de Flight Center.`,
+        filas: [['Consulta', f.tema.titulo], ['Respuesta', f.texto]], notas: ['Ingresá al campus para ver la respuesta completa y, si te resolvió la duda, marcala como destacada.'], wpp: [] };
     }
     if (n.tipo === 'correccion') {
       const c = n.datos;
@@ -5610,7 +5684,7 @@ function verMensajes(lista) {
 
 // ---------- vista de avisos ----------
 const ESTADO_ENVIO = { enviado: 'Enviado ✓', pendiente: 'En cola de envío', error: 'No se pudo enviar', sin_configurar: 'No enviado: el canal todavía no está configurado en el servidor', demo: 'Demo' };
-const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido' };
+const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido', foro_respuesta: 'Respuesta en el foro' };
 VISTAS.avisos = async function vistaAvisos(v) {
   const esAdmin = state.user.rol === 'admin';
   const l = esAdmin ? await Store.notificaciones() : await Store.misNotificaciones();
@@ -5668,10 +5742,10 @@ VISTAS.avisos = async function vistaAvisos(v) {
 /* Flight Center · interfaz (parte 7: campus — materiales, trabajos prácticos y entregas) */
 
 const TABS_CAMPUS = {
-  alumno: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
-  ppa: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
-  instructor: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
-  admin: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-ia', 'Asistente IA'], ['perfil', 'Mi perfil']],
+  alumno: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-foro', 'Foro'], ['perfil', 'Mi perfil']],
+  ppa: [['c-inicio', 'Inicio'], ['c-materiales', 'Materiales'], ['c-foro', 'Foro'], ['perfil', 'Mi perfil']],
+  instructor: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-foro', 'Foro'], ['perfil', 'Mi perfil']],
+  admin: [['c-materiales', 'Materiales'], ['c-tps', 'Trabajos prácticos'], ['c-foro', 'Foro'], ['perfil', 'Mi perfil']],
 };
 const esDocente = () => ['instructor', 'admin'].includes(state.user?.rol);
 const ICON_CAMPUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>';
@@ -5730,7 +5804,8 @@ function renderPortal(u) {
 // ---------- inicio del campus (alumno y piloto) ----------
 VISTAS['c-inicio'] = async function (v) {
   const u = state.user;
-  const [tps, resumen, generales] = await Promise.all([u.rol === 'alumno' ? Store.trabajos() : [], Store.campusResumen(), Store.materiales('GENERAL')]);
+  const [tps, resumen, generales, foroTodos] = await Promise.all([u.rol === 'alumno' ? Store.trabajos() : [], Store.campusResumen(), Store.materiales('GENERAL'), Store.foroTemas()]);
+  const foroRec = foroTodos.filter((t) => !t.fijado).slice(0, 3);
   const teo = u.rol === 'alumno' ? await Store.leccionActual(u.id, 'teorica') : null;
   const proximas = [...(teo ? [{ id: teo.id, codigo: teo.id, titulo: teo.titulo }] : []), { id: 'VUELO', codigo: 'FL', titulo: 'Vuelo y maniobras' }, { id: 'SIMULADOR', codigo: 'SIM', titulo: 'Simulador' }];
   const pendientes = tps.filter((t) => ['pendiente', 'rehacer'].includes(t.estado));
@@ -5742,10 +5817,14 @@ VISTAS['c-inicio'] = async function (v) {
     ${u.rol === 'alumno' ? `<div class="card anim" style="--i:2"><div class="card-head"><h3>Trabajos pendientes</h3><span class="badge ${pendientes.length ? 'warn' : 'ok'}">${pendientes.length}</span></div>
       ${pendientes.length ? pendientes.map((t, i) => filaTP(t, i)).join('') : vacio('No tenés trabajos pendientes.')}</div>
       ${corregidos.length ? `<div class="card anim" style="--i:3"><div class="card-head"><h3>Últimas correcciones</h3></div>${corregidos.map((t, i) => filaTP(t, i)).join('')}</div>` : ''}` : ''}
+    <div class="card anim" style="--i:3"><div class="card-head"><h3>Últimas consultas del foro</h3><button class="btn sec sm" id="ir-foro">Ir al foro</button></div>
+      ${foroRec.length ? foroRec.map((t, i) => filaTema(t, i)).join('') : vacio('Todavía no hay consultas. ¡Hacé la primera!')}</div>
     <div class="card anim" style="--i:4"><div class="card-head"><h3>Material general</h3><button class="btn sec sm" id="ver-todo">Ver todo el material</button></div>
       ${generales.length ? generales.map((m, i) => tarjetaMaterial(m, i)).join('') : vacio('Todavía no hay material general.')}</div>`;
   $$('[data-lec]', v).forEach((b) => b.onclick = () => { state.campusLec = b.dataset.lec; irA('c-materiales'); });
   $('#ver-todo', v).onclick = () => { state.campusLec = 'GENERAL'; irA('c-materiales'); };
+  $('#ir-foro', v).onclick = () => { state.foroTema = null; irA('c-foro'); };
+  $$('[data-tema]', v).forEach((b) => b.onclick = () => { state.foroTema = Number(b.dataset.tema); irA('c-foro'); });
   activarTPs(v, () => VISTAS['c-inicio'](v));
 };
 
@@ -5778,7 +5857,7 @@ VISTAS['c-materiales'] = async function (v) {
           <div class="indice-grupo"><span>Práctica</span></div>${item('VUELO', 'FL', 'Vuelo y maniobras')}${item('SIMULADOR', 'SIM', 'Simulador')}</div></aside>
       <div>
         <div class="card anim"><div class="card-head"><div><h3>${esc(nombreLeccion(sel))}</h3>${Store.LECCIONES[sel]?.contenidos?.length ? `<div class="muted" style="margin-top:4px">Contenidos: ${Store.LECCIONES[sel].contenidos.slice(0, 6).map(esc).join(' · ')}</div>` : ''}${Store.LECCIONES[sel]?.estudiar?.length ? `<div class="muted" style="margin-top:4px">Temas a traer estudiados: ${Store.LECCIONES[sel].estudiar.slice(0, 5).map(esc).join(' · ')}</div>` : ''}</div>
-          <div class="flujo">${MODO === 'servidor' && sel !== 'GENERAL' ? `<button class="btn sec sm" id="preguntar-ia">Preguntarle a la IA sobre ${esc(sel.startsWith('TEO') ? sel : nombreLeccion(sel).toLowerCase())}</button>` : ''}${esDocente() ? `<button class="btn sm" id="nuevo-mat">+ Material</button><button class="btn sec sm" id="nuevo-tp">+ Trabajo práctico</button>` : ''}</div></div>
+          <div class="flujo">${esDocente() ? `<button class="btn sm" id="nuevo-mat">+ Material</button><button class="btn sec sm" id="nuevo-tp">+ Trabajo práctico</button>` : ''}</div></div>
           ${mats.length ? mats.map((m, i) => tarjetaMaterial(m, i)).join('') : vacio(esDocente() ? 'Todavía no hay material en esta lección. Tocá "+ Material" para subir el primero.' : 'Todavía no hay material en esta lección.')}</div>
         ${tps.length ? `<div class="card anim" style="--i:1"><div class="card-head"><h3>Trabajos prácticos</h3></div>${tps.map((t, i) => filaTP(t, i)).join('')}</div>` : ''}
       </div></div>`;
@@ -5786,7 +5865,6 @@ VISTAS['c-materiales'] = async function (v) {
   $$('[data-l]', v).forEach((b) => b.onclick = () => ir(b.dataset.l));
   $('#lec-sel', v).value = sel; $('#lec-sel', v).onchange = (e) => ir(e.target.value);
   const re = () => VISTAS['c-materiales'](v);
-  const pia = $('#preguntar-ia', v); if (pia) pia.onclick = () => { state.iaLeccion = Store.LECCIONES[sel] ? sel : null; state.iaTema = nombreLeccion(sel); irA('c-ia'); };
   if ($('#nuevo-mat', v)) { $('#nuevo-mat', v).onclick = () => formMaterial(null, sel, re); $('#nuevo-tp', v).onclick = () => formTP(null, sel, re); }
   $$('[data-edmat]', v).forEach((b) => b.onclick = () => formMaterial(mats.find((m) => m.id == b.dataset.edmat), sel, re));
   $$('[data-bmat]', v).forEach((b) => b.onclick = async () => { if (await confirmar('Borrar material', 'El material se borra para todos.', 'Borrar')) { await hacer(() => Store.borrarMaterial(b.dataset.bmat), 'Material borrado'); re(); } });
@@ -5909,82 +5987,98 @@ async function verEntregas(t, despues) {
   }; });
 }
 
-// ---------- asistente de IA ----------
-// texto con formato simple (negritas, listas, títulos) de forma segura
-function formatoIA(t) {
-  const lineas = esc(t).split('\n'); let html = ''; let lista = null;
-  const cerrar = () => { if (lista) { html += `</${lista}>`; lista = null; } };
-  for (const l of lineas) {
-    const inl = (x) => x.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
-    let m;
-    if ((m = /^\s*[-*•]\s+(.*)$/.exec(l))) { if (lista !== 'ul') { cerrar(); html += '<ul>'; lista = 'ul'; } html += `<li>${inl(m[1])}</li>`; }
-    else if ((m = /^\s*\d+[.)]\s+(.*)$/.exec(l))) { if (lista !== 'ol') { cerrar(); html += '<ol>'; lista = 'ol'; } html += `<li>${inl(m[1])}</li>`; }
-    else if ((m = /^#{1,4}\s+(.*)$/.exec(l))) { cerrar(); html += `<h4>${inl(m[1])}</h4>`; }
-    else if (!l.trim()) { cerrar(); }
-    else { cerrar(); html += `<p>${inl(l)}</p>`; }
-  }
-  cerrar(); return html;
-}
-const SUGERENCIAS = ['¿Cómo se decodifica un METAR? Dame un ejemplo', '¿Qué es la pérdida y cómo se recupera?', 'Explicame el circuito de tránsito', '¿Qué diferencia hay entre QNH, QNE y QFE?', '¿Qué tengo que estudiar para mi próxima clase?'];
-const chatIA = () => { try { return JSON.parse(sessionStorage.getItem('fc-ia') || '[]'); } catch { return []; } };
-const guardarChatIA = (m) => { try { sessionStorage.setItem('fc-ia', JSON.stringify(m.slice(-30))); } catch { /* sin storage */ } };
 
-VISTAS['c-ia'] = async function (v) {
-  if (MODO !== 'servidor') {
-    v.innerHTML = hero('Asistente IA', 'Un asistente para sacarse dudas del curso a cualquier hora.') + `<div class="card anim">${vacio('El asistente funciona en la versión publicada con servidor. En esta demo no está disponible.')}</div>`;
-    return;
-  }
-  let estado = { activo: false };
-  try { estado = await (await fetch('/api/asistente/estado', { credentials: 'same-origin' })).json(); } catch { /* sin conexión */ }
-  const mensajes = chatIA();
-  const leccion = state.iaLeccion || null; const tema = state.iaTema || null;
-  v.innerHTML = hero('Asistente IA', 'Preguntale lo que no te quedó claro: teoría, meteorología, reglamentación, maniobras. Responde según el temario del curso.') + `
-    <div class="card anim chat-card">
-      <div class="aviso" style="margin:0 0 14px"><div>Las respuestas las genera una inteligencia artificial y pueden tener errores. Ante cualquier duda, consultá con tu instructor. <b>No la uses para decidir si un vuelo real se puede hacer.</b></div></div>
-      ${!estado.activo ? `<div class="aviso warn"><div><strong>El asistente todavía no está activado</strong>La administración tiene que cargar la clave de Anthropic en el servidor.</div></div>` : ''}
-      ${tema ? `<div class="ia-tema">Preguntando sobre: <b>${esc(tema)}</b> <button class="link-btn" id="ia-sin-tema">Quitar</button></div>` : ''}
-      <div class="chat" id="chat" aria-live="polite">${mensajes.length ? mensajes.map((m) => burbuja(m)).join('') : `<div class="chat-vacio"><div class="chat-ico">${ICON_CAMPUS}</div><p>¿En qué te ayudo?</p>
-        <div class="flujo" style="justify-content:center">${SUGERENCIAS.map((x) => `<button class="chip-ad" data-sug="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`}</div>
-      <form id="f-ia" class="chat-form"><textarea id="ia-texto" rows="2" placeholder="Escribí tu pregunta…" ${estado.activo ? '' : 'disabled'}></textarea>
-        <div class="flujo" style="flex-direction:column;align-items:stretch"><button class="btn" type="submit" id="ia-enviar" ${estado.activo ? '' : 'disabled'}>Enviar</button>
-        ${mensajes.length ? '<button class="btn sec sm" type="button" id="ia-nuevo">Nueva conversación</button>' : ''}</div></form>
-      ${estado.activo ? `<div class="muted" style="font-size:12px;margin-top:6px" id="ia-cupo">Te quedan ${estado.quedan} de ${estado.limite} preguntas por hoy.</div>` : ''}
+// ---------- foro de consultas ----------
+const ROL_FORO = { alumno: 'Alumno', ppa: 'Piloto PPA', instructor: 'Instructor', admin: 'Administración' };
+const textoPost = (t) => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
+const cuando = (f) => { const d = f.slice(0, 10); const h = isoLocal(new Date()); return d === h ? `hoy ${f.slice(11, 16)}` : fmtCorta(d); };
+function filaTema(t, i) {
+  return `<button class="tema anim ${t.fijado ? 'fijado' : ''}" style="--i:${i}" data-tema="${t.id}">
+    <div class="tema-cuerpo"><strong>${t.fijado ? '📌 ' : ''}${esc(t.titulo)}</strong>
+      <div class="flujo" style="margin-top:6px"><span class="badge gris">${esc(SECCIONES[t.seccion] || t.seccion)}</span>${t.resuelto ? '<span class="badge ok">Resuelta ✓</span>' : ''}${t.responde_instructor ? '<span class="badge">Respondió un instructor</span>' : ''}</div>
+      <div class="muted" style="font-size:12.5px;margin-top:6px">${esc(t.autor)} · ${esc(ROL_FORO[t.autor_rol] || '')} · última actividad ${esc(cuando(t.actividad))}</div></div>
+    <div class="tema-n"><b>${t.respuestas}</b><small>${t.respuestas === 1 ? 'respuesta' : 'respuestas'}</small></div></button>`;
+}
+VISTAS['c-foro'] = async function (v) {
+  if (state.foroTema) return verTemaForo(v, state.foroTema);
+  const f = state.foroFiltro || { seccion: '', q: '', filtro: '' };
+  const temas = await Store.foroTemas(f);
+  v.innerHTML = hero('Foro de consultas', 'Preguntá tus dudas del curso y ayudá a tus compañeros. Los instructores también responden.',
+    '<div style="margin-top:14px"><button class="btn sec" id="nuevo-tema">+ Nueva consulta</button></div>') + `
+    <div class="card anim" style="--i:1">
+      <div class="foro-filtro">
+        <input id="fo-q" placeholder="Buscar en el foro" value="${esc(f.q)}" aria-label="Buscar">
+        <select id="fo-sec" aria-label="Sección"><option value="">Todas las secciones</option>${opcionesLeccion(f.seccion).replace(/ selected/g, '').replace(`value="${f.seccion}"`, `value="${f.seccion}" selected`)}</select>
+        <div class="segmento" style="margin:0">${[['', 'Todas'], ['sin_respuesta', 'Sin responder'], ['resueltas', 'Resueltas']].map(([k, t]) => `<button class="${f.filtro === k ? 'on' : ''}" data-fil="${k}">${t}</button>`).join('')}</div>
+      </div>
+      ${temas.length ? temas.map((t, i) => filaTema(t, i)).join('') : vacio(f.q || f.seccion || f.filtro ? 'No hay consultas con esos filtros.' : 'Todavía no hay consultas. ¡Hacé la primera!')}
     </div>`;
-  const chat = $('#chat', v); const txt = $('#ia-texto', v);
-  const abajo = () => { chat.scrollTop = chat.scrollHeight; };
-  abajo();
-  const st = $('#ia-sin-tema', v); if (st) st.onclick = () => { state.iaLeccion = null; state.iaTema = null; VISTAS['c-ia'](v); };
-  const nv = $('#ia-nuevo', v); if (nv) nv.onclick = () => { guardarChatIA([]); state.iaLeccion = null; state.iaTema = null; VISTAS['c-ia'](v); };
-  $$('[data-sug]', v).forEach((b) => b.onclick = () => { txt.value = b.dataset.sug; enviar(); });
-  txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } };
-  $('#f-ia', v).onsubmit = (e) => { e.preventDefault(); enviar(); };
-  let enviando = false;
-  async function enviar() {
-    const q = txt.value.trim(); if (!q || enviando || !estado.activo) return;
-    enviando = true; txt.value = ''; $('#ia-enviar', v).disabled = true;
-    const conTema = tema && !mensajes.length ? `[Consulta sobre ${tema}] ${q}` : q;
-    mensajes.push({ role: 'user', content: conTema });
-    if ($('.chat-vacio', chat)) chat.innerHTML = '';
-    chat.insertAdjacentHTML('beforeend', burbuja({ role: 'user', content: conTema }) + '<div class="burbuja ia escribiendo"><span></span><span></span><span></span></div>');
-    abajo();
-    const caja = chat.lastElementChild; let resp = '';
-    try {
-      const r = await fetch('/api/asistente', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mensajes, leccion }) });
-      if (!r.ok) { const d = await r.json().catch(() => ({})); throw new Error(d.error || (r.status === 413 ? 'La pregunta es demasiado larga.' : 'El asistente no respondió. Probá de nuevo.')); }
-      const lector = r.body.getReader(); const dec = new TextDecoder();
-      caja.classList.remove('escribiendo');
-      for (;;) { const { value, done } = await lector.read(); if (done) break; resp += dec.decode(value, { stream: true }); caja.innerHTML = formatoIA(resp); abajo(); }
-      if (!resp.trim()) throw new Error('El asistente no respondió. Probá de nuevo.');
-      mensajes.push({ role: 'assistant', content: resp }); guardarChatIA(mensajes);
-      const c = $('#ia-cupo', v); if (c && estado.quedan > 0) { estado.quedan--; c.textContent = `Te quedan ${estado.quedan} de ${estado.limite} preguntas por hoy.`; }
-    } catch (e) {
-      mensajes.pop(); caja.remove(); chat.lastElementChild?.remove(); txt.value = q; toast(e.message, 'error');
-    }
-    enviando = false; $('#ia-enviar', v).disabled = false; txt.focus();
-  }
+  const recargar = (cambio) => { state.foroFiltro = { ...f, ...cambio }; VISTAS['c-foro'](v); };
+  $('#fo-q', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(async () => { await recargar({ q: e.target.value }); const i = $('#fo-q', v); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }, 300); };
+  $('#fo-sec', v).onchange = (e) => recargar({ seccion: e.target.value });
+  $$('[data-fil]', v).forEach((b) => b.onclick = () => recargar({ filtro: b.dataset.fil }));
+  $$('[data-tema]', v).forEach((b) => b.onclick = () => { state.foroTema = Number(b.dataset.tema); VISTAS['c-foro'](v); window.scrollTo({ top: 0 }); });
+  $('#nuevo-tema', v).onclick = () => formTema(null, (t) => { state.foroTema = t.id; VISTAS['c-foro'](v); });
 };
-function burbuja(m) {
-  return m.role === 'user' ? `<div class="burbuja yo">${esc(m.content.replace(/^\[Consulta sobre [^\]]+\]\s*/, '')).replace(/\n/g, '<br>')}</div>` : `<div class="burbuja ia">${formatoIA(m.content)}</div>`;
+function formTema(t, despues) {
+  const md = modal(`<div class="modal-head"><h3>${t ? 'Editar consulta' : 'Nueva consulta'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" id="f-tema">
+      ${t ? '' : `<label class="campo full">Sección<select id="te-sec" name="seccion">${opcionesLeccion(state.foroFiltro?.seccion || 'GENERAL')}</select></label>`}
+      <label class="campo full">Título<input id="te-tit" name="titulo" maxlength="140" value="${esc(t?.titulo || '')}" placeholder="Ej: ¿Cuándo se usa el QNE?"></label>
+      <label class="campo full">Tu consulta<textarea id="te-cuerpo" name="cuerpo" rows="7" placeholder="Contá tu duda con el mayor detalle posible">${esc(t?.cuerpo || '')}</textarea></label>
+    </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="te-ok">${t ? 'Guardar' : 'Publicar'}</button></div>`, { ancho: true });
+  setTimeout(() => $('#te-tit', md.el)?.focus(), 100);
+  $('#te-ok', md.el).onclick = async () => {
+    const d = Object.fromEntries(new FormData($('#f-tema', md.el)));
+    const r = await hacer(() => t ? Store.foroEditar('tema', t.id, d) : Store.foroCrearTema(d), t ? 'Consulta actualizada' : 'Consulta publicada');
+    if (r !== undefined) { md.cerrar(); despues(r || t); }
+  };
+}
+async function verTemaForo(v, id) {
+  const t = await hacer(() => Store.foroTema(id));
+  if (!t) { state.foroTema = null; return VISTAS['c-foro'](v); }
+  const post = (p, esTema) => `<article class="post ${p.mejor ? 'mejor' : ''} ${['instructor', 'admin'].includes(p.autor_rol) ? 'docente' : ''}">
+    <div class="post-head"><div class="avatar" style="width:34px;height:34px;font-size:12px">${esc(p.autor.split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase())}</div>
+      <div><b>${esc(p.autor)}</b> ${['instructor', 'admin'].includes(p.autor_rol) ? `<span class="badge">${esc(ROL_FORO[p.autor_rol])}</span>` : `<span class="muted" style="font-size:12.5px">${esc(ROL_FORO[p.autor_rol] || '')}</span>`}
+        <div class="muted" style="font-size:12px">${esc(cuando(p.fecha))}${p.editado ? ' · editado' : ''}</div></div>
+      ${p.mejor ? '<span class="badge ok" style="margin-left:auto">✓ Respuesta destacada</span>' : ''}</div>
+    <div class="post-texto">${textoPost(p.cuerpo)}</div>
+    <div class="flujo post-acc">
+      ${!esTema && t.puede_destacar ? `<button class="link-btn" data-dest="${p.id}">${p.mejor ? 'Quitar destacada' : 'Marcar como la que me resolvió la duda'}</button>` : ''}
+      ${(esTema ? t.mio : p.mia) ? `<button class="link-btn" data-ed="${esTema ? 'tema' : 'respuesta'}:${p.id}">Editar</button>` : ''}
+      ${(esTema ? t.mio : p.mia) || t.puede_moderar ? `<button class="link-btn peligro" data-bo="${esTema ? 'tema' : 'respuesta'}:${p.id}">Borrar</button>` : ''}
+    </div></article>`;
+  v.innerHTML = `<div class="foro-volver anim"><button class="btn sec sm" id="fo-volver">← Volver al foro</button>
+      ${t.puede_moderar ? `<button class="btn sec sm" id="fo-fijar">${t.fijado ? 'Desfijar' : 'Fijar arriba'}</button>` : ''}</div>
+    <div class="card anim" style="--i:1">
+      <div class="flujo" style="margin-bottom:8px"><span class="badge gris">${esc(SECCIONES[t.seccion] || t.seccion)}</span>${t.resuelto ? '<span class="badge ok">Resuelta ✓</span>' : ''}${t.fijado ? '<span class="badge">📌 Fijada</span>' : ''}</div>
+      <h2 class="tema-titulo">${esc(t.titulo)}</h2>
+      ${post(t, true)}
+    </div>
+    <div class="card anim" style="--i:2"><div class="card-head"><h3>${t.respuestas_lista.length} ${t.respuestas_lista.length === 1 ? 'respuesta' : 'respuestas'}</h3></div>
+      ${t.respuestas_lista.length ? t.respuestas_lista.map((r) => post(r, false)).join('') : vacio('Todavía nadie respondió. ¡Podés ser el primero!')}
+      <form id="f-resp" class="responder"><label class="campo">Tu respuesta<textarea id="re-cuerpo" rows="4" placeholder="Escribí tu respuesta"></textarea></label>
+        <div style="display:flex;justify-content:flex-end"><button class="btn" type="submit">Responder</button></div></form>
+    </div>`;
+  const re = () => verTemaForo(v, id);
+  $('#fo-volver', v).onclick = () => { state.foroTema = null; VISTAS['c-foro'](v); };
+  const fj = $('#fo-fijar', v); if (fj) fj.onclick = async () => { await hacer(() => Store.foroFijar(id), t.fijado ? 'Consulta desfijada' : 'Consulta fijada arriba'); re(); };
+  $('#f-resp', v).onsubmit = async (e) => { e.preventDefault(); const r = await hacer(() => Store.foroResponder(id, $('#re-cuerpo', v).value), 'Respuesta publicada'); if (r) re(); };
+  $$('[data-dest]', v).forEach((b) => b.onclick = async () => { const r = await hacer(() => Store.foroDestacar(b.dataset.dest)); if (r !== undefined) { toast(r ? 'Respuesta destacada. La consulta quedó resuelta.' : 'Se quitó la respuesta destacada', 'ok'); re(); } });
+  $$('[data-ed]', v).forEach((b) => b.onclick = () => {
+    const [tipo, pid] = b.dataset.ed.split(':');
+    if (tipo === 'tema') return formTema(t, re);
+    const r = t.respuestas_lista.find((x) => x.id == pid);
+    const md = modal(`<div class="modal-head"><h3>Editar respuesta</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+      <div class="modal-body"><textarea id="er-cuerpo" rows="6">${esc(r.cuerpo)}</textarea></div>
+      <div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="er-ok">Guardar</button></div>`);
+    $('#er-ok', md.el).onclick = async () => { if (await hacer(async () => { await Store.foroEditar('respuesta', r.id, { cuerpo: $('#er-cuerpo', md.el).value }); return true; }, 'Respuesta actualizada')) { md.cerrar(); re(); } };
+  });
+  $$('[data-bo]', v).forEach((b) => b.onclick = async () => {
+    const [tipo, pid] = b.dataset.bo.split(':');
+    if (!(await confirmar(tipo === 'tema' ? 'Borrar consulta' : 'Borrar respuesta', tipo === 'tema' ? 'Se borra la consulta con todas sus respuestas.' : 'La respuesta se borra para todos.', 'Borrar'))) return;
+    if (await hacer(async () => { await Store.foroBorrar(tipo, pid); return true; }, 'Borrado')) { if (tipo === 'tema') { state.foroTema = null; VISTAS['c-foro'](v); } else re(); }
+  });
 }
 
 /* Flight Center · interfaz (parte 6: asistencia con QR) */

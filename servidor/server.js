@@ -11,7 +11,6 @@ const { crearStore } = require('./nucleo');
 const persistencia = require('./persistencia');
 const avisos = require('./avisos');
 const meteo = require('./meteo');
-const asistente = require('./asistente');
 
 const PORT = Number(process.env.PORT || 3000);
 const PRODUCCION = process.env.NODE_ENV === 'production';
@@ -112,27 +111,6 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
     res.send(buf);
   });
 
-  // asistente de IA del campus
-  const contextoAsistente = (uid, leccion) => {
-    Store._como(uid);
-    try {
-      const u = Store.yo(); if (!u) return null;
-      const lecs = u.rol === 'alumno' ? ['teorica', 'vuelo', 'simulador'].map((t) => ({ ...Store.leccionActual(u.id, t), track: t })).filter((l) => l.id) : [];
-      if (leccion && Store.LECCIONES[leccion]) lecs.unshift({ ...Store.LECCIONES[leccion], track: Store.LECCIONES[leccion].track, consulta: true });
-      return { usuario: u, lecciones: lecs };
-    } finally { Store._como(null); }
-  };
-  app.get('/api/asistente/estado', (req, res) => {
-    const uid = req.session?.uid; if (!uid) return res.status(401).json({ error: 'Sesión no iniciada' });
-    res.json({ activo: asistente.activo(), limite: asistente.LIMITE_DIARIO, ...asistente.cupo(uid) });
-  });
-  app.post('/api/asistente', async (req, res) => {
-    const uid = req.session?.uid; if (!uid) return res.status(401).json({ error: 'Sesión no iniciada' });
-    const ctx = contextoAsistente(uid, req.body?.leccion);
-    if (!ctx || !['alumno', 'ppa', 'instructor', 'admin'].includes(ctx.usuario.rol)) return res.status(403).json({ error: 'Sin permiso' });
-    await asistente.responder({ ...ctx, mensajes: req.body?.mensajes }, res);
-  });
-
   app.get('/api/meteo', async (req, res) => {
     if (!req.session?.uid) return res.status(401).json({ error: 'Sesión no iniciada' });
     try { res.json(await meteo.consultar(req.query.id)); } catch (e) { res.status(400).json({ error: e.message }); }
@@ -148,6 +126,7 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
   });
 
   app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1h', index: 'index.html' }));
+  app.use('/api', (req, res) => res.status(404).json({ error: 'No encontrado' }));
   app.use((req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
   // recordatorio de deuda: todos los días a las 9:00 (hora de Argentina)

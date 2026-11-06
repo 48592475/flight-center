@@ -110,6 +110,16 @@ function crearStore(opts = {}) {
     nov(fcc, diego, 'falla', 'Indicador de temperatura de aceite marca bajo en crucero.', 'descartada', 'Indicación normal para la temperatura exterior del día. No es falla.', -9);
     nov(frasca, martin, 'falla', 'El joystick de alerón tiene juego hacia la izquierda.', 'reportada', null, -2);
     db.planes = []; db.seq.p = 0;
+    // campus: ejemplos de la demo
+    Object.assign(db, { materiales: [], tps: [], entregas: [], archivos: [] }); Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0 });
+    const mat = (leccion, titulo, tipo, extra, autor, dias) => db.materiales.push({ id: ++db.seq.mat, leccion, titulo, tipo, descripcion: '', url: '', texto: '', archivo_id: null, autor_id: autor, fecha: dia(dias) + ' 10:00', ...extra });
+    mat('GENERAL', 'Bienvenida al curso de Piloto Privado', 'texto', { texto: 'Bienvenidos al campus de Flight Center. Acá van a encontrar el material de cada clase teórica, de los simuladores y de las lecciones de vuelo, ordenado según el syllabus. Antes de cada vuelo revisen el material de la lección que les toca y traigan estudiados los temas indicados.' }, martin, -60);
+    mat('TEO 2', 'Resumen: fuerzas que actúan sobre el avión', 'texto', { texto: 'Sustentación, peso, empuje y resistencia. En vuelo recto, nivelado y no acelerado, la sustentación equilibra el peso y el empuje equilibra la resistencia. Repasar: ángulo de ataque, pérdida, factor de carga en virajes.' }, diego, -45);
+    mat('FL 3', 'Escapes: puntos clave', 'texto', { texto: 'Potencia máxima, actitud de ascenso, flaps de a etapas según el POH, compensar y comunicar. Practicar la secuencia en tierra antes del vuelo.' }, martin, -13);
+    const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
+    const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
+    tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    db.entregas.push({ id: ++db.seq.en, tp_id: tp1, alumno_id: juan, texto: '1) Viento 030° 8 kt, visibilidad mayor a 10 km, pocas nubes a 3000 ft: VFR. 2) Ráfagas de 22 kt y techo a 1200 ft: marginal, no recomendable. 3) Visibilidad 3 km y techo a 500 ft: IFR, no se puede volar VFR.', archivo_id: null, fecha: dia(-1) + ' 20:15', tardia: false, estado: 'aprobado', nota: 9, comentario: 'Muy bien. En el 2 revisá el viento cruzado para la pista 20.', corrector_id: diego, fecha_correccion: dia(0) + ' 08:30' });
     db.notificaciones = []; db.seq.nt = 0;
     const mov = reconstruirCuentas(db);
     mov(juan, dia(-38), 'Pago · transferencia', 'pago', 600000, 'pago:1');
@@ -128,7 +138,8 @@ function crearStore(opts = {}) {
       movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
       usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
         password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
-      recursos: [] };
+      recursos: [], materiales: [], tps: [], entregas: [], archivos: [] };
+    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0 });
     const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
     R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
     R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
@@ -161,6 +172,8 @@ function crearStore(opts = {}) {
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
+    for (const k of ['materiales', 'tps', 'entregas', 'archivos']) if (!d[k]) d[k] = [];
+    for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
     if (!d.movimientos) reconstruirCuentas(d);
@@ -187,9 +200,9 @@ function crearStore(opts = {}) {
 
   // ---------- notificaciones (email y WhatsApp) ----------
   // En la demo quedan registradas para verlas; con un servidor se envían de verdad.
-  function notificar(u, tipo, datos) {
+  function notificar(u, tipo, datos, { soloEmail = false } = {}) {
     const pref = u.notif || { email: true, whatsapp: true };
-    const canales = [pref.email && u.email ? ['email', u.email] : null, pref.whatsapp && u.telefono ? ['whatsapp', u.telefono] : null].filter(Boolean);
+    const canales = [pref.email && u.email ? ['email', u.email] : null, !soloEmail && pref.whatsapp && u.telefono ? ['whatsapp', u.telefono] : null].filter(Boolean);
     for (const [canal, destino] of canales) {
       const n = { id: ++db.seq.nt, usuario_id: u.id, canal, destino, tipo, fecha: ahora(), dia: hoy(), datos: JSON.parse(JSON.stringify(datos)),
         nombre: u.nombre, apellido: u.apellido, rol: u.rol, estado: navegador ? 'demo' : 'pendiente' };
@@ -780,6 +793,114 @@ function crearStore(opts = {}) {
     marcarBristell(u, !!valor, me); guardar(); return pub(u);
   };
   api.pilotosPPA = () => { exigir('admin', 'instructor'); return db.usuarios.filter((u) => u.rol === 'ppa' && u.activo).map(pub).sort((a, b) => a.apellido.localeCompare(b.apellido)); };
+  // ---------- campus: materiales, trabajos prácticos y entregas ----------
+  const DOCENTES = ['instructor', 'admin'];
+  const leccionValida = (l) => l === 'GENERAL' || !!LECCIONES[l];
+  const MAX_ARCHIVO = () => (navegador ? 2 : 10) * 1024 * 1024;
+  function guardarArchivo(archivo, autor, ambito) {
+    if (!archivo || !archivo.data) return null;
+    if (Number(archivo.tam) > MAX_ARCHIVO()) fail(`El archivo supera los ${MAX_ARCHIVO() / 1048576} MB permitidos${navegador ? ' en la demo' : ''}.`);
+    const okTipo = /^(application\/pdf|image\/(png|jpe?g|gif|webp)|application\/(msword|vnd\.openxmlformats|vnd\.ms-)|text\/plain|application\/zip)/.test(archivo.tipo || '')
+      || /\.(pdf|docx?|pptx?|xlsx?|jpe?g|png|gif|webp|txt|zip)$/i.test(archivo.nombre || '');
+    if (!okTipo) fail('Formato no permitido. Subí PDF, Word, PowerPoint, Excel, imagen, texto o ZIP.');
+    const id = ++db.seq.ar;
+    const meta = { id, nombre: String(archivo.nombre || 'archivo').slice(0, 140), tam: Number(archivo.tam) || 0, tipo: String(archivo.tipo || 'application/octet-stream').slice(0, 100), autor_id: autor.id, fecha: ahora(), ambito };
+    if (opts.archivos) opts.archivos.guardar(id, archivo.data); else meta.data = archivo.data;
+    db.archivos.push(meta); return id;
+  }
+  function borrarArchivo(id) {
+    if (!id) return; db.archivos = db.archivos.filter((a) => a.id !== id); if (opts.archivos) opts.archivos.borrar(id);
+  }
+  const metaArchivo = (id) => { const a = db.archivos.find((x) => x.id === id); if (!a) return null; const { data, ...m } = a; return m; };
+  const puedeVerArchivo = (me, a) => a && (a.ambito === 'material' || a.ambito === 'tp' || a.ambito === `entrega:${me.id}` || DOCENTES.includes(me.rol));
+  const conAutor = (x) => ({ ...x, autor: nombre(usuario(x.autor_id)), archivo: metaArchivo(x.archivo_id) });
+
+  api.campusResumen = () => {
+    yo(); const r = {};
+    for (const m of db.materiales) { r[m.leccion] = r[m.leccion] || { materiales: 0, tps: 0 }; r[m.leccion].materiales++; }
+    for (const t of db.tps) { r[t.leccion] = r[t.leccion] || { materiales: 0, tps: 0 }; r[t.leccion].tps++; }
+    return r;
+  };
+  api.materiales = (leccion) => { yo(); return db.materiales.filter((m) => !leccion || m.leccion === leccion).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id).map(conAutor); };
+  api.guardarMaterial = (d) => {
+    const me = exigir(...DOCENTES);
+    if (!leccionValida(d.leccion)) fail('Elegí la lección del syllabus');
+    if (!String(d.titulo || '').trim()) fail('Poné un título');
+    if (!['archivo', 'video', 'link', 'texto'].includes(d.tipo)) fail('Elegí el tipo de material');
+    const url = String(d.url || '').trim();
+    if (['video', 'link'].includes(d.tipo) && !/^https:\/\/\S+$/i.test(url)) fail('Pegá un link que empiece con https://');
+    if (d.tipo === 'texto' && !String(d.texto || '').trim()) fail('Escribí el contenido');
+    let m = d.id ? db.materiales.find((x) => x.id === Number(d.id)) : null;
+    if (d.id && !m) fail('Material no encontrado');
+    if (d.tipo === 'archivo' && !d.archivo && !m?.archivo_id) fail('Elegí el archivo');
+    const nuevoArchivo = d.tipo === 'archivo' && d.archivo ? guardarArchivo(d.archivo, me, 'material') : null;
+    if (!m) { m = { id: ++db.seq.mat, autor_id: me.id, archivo_id: null }; db.materiales.push(m); }
+    if (nuevoArchivo || d.tipo !== 'archivo') { borrarArchivo(m.archivo_id); m.archivo_id = nuevoArchivo; }
+    Object.assign(m, { leccion: d.leccion, titulo: String(d.titulo).trim().slice(0, 140), tipo: d.tipo, descripcion: String(d.descripcion || '').trim().slice(0, 600),
+      url: ['video', 'link'].includes(d.tipo) ? url.slice(0, 500) : '', texto: d.tipo === 'texto' ? String(d.texto).trim().slice(0, 20000) : '', fecha: ahora() });
+    guardar(); return conAutor(m);
+  };
+  api.borrarMaterial = (id) => { exigir(...DOCENTES); const m = db.materiales.find((x) => x.id === Number(id)); if (!m) fail('Material no encontrado'); borrarArchivo(m.archivo_id); db.materiales = db.materiales.filter((x) => x !== m); guardar(); };
+
+  const estadoEntrega = (t, e) => e ? e.estado : (t.fecha_limite && t.fecha_limite < hoy() ? 'vencido' : 'pendiente');
+  api.trabajos = (leccion) => {
+    const me = yo();
+    const l = db.tps.filter((t) => !leccion || t.leccion === leccion).sort((a, b) => (a.fecha_limite || '9999').localeCompare(b.fecha_limite || '9999') || b.id - a.id);
+    if (me.rol === 'alumno') return l.map((t) => { const e = db.entregas.find((x) => x.tp_id === t.id && x.alumno_id === me.id);
+      return { ...conAutor(t), entrega: e ? { ...e, archivo: metaArchivo(e.archivo_id), corrector: nombre(usuario(e.corrector_id)) } : null, estado: estadoEntrega(t, e) }; });
+    if (DOCENTES.includes(me.rol)) return l.map((t) => { const es = db.entregas.filter((x) => x.tp_id === t.id);
+      return { ...conAutor(t), entregas: es.length, sin_corregir: es.filter((x) => x.estado === 'entregado').length }; });
+    return [];
+  };
+  api.guardarTP = (d) => {
+    const me = exigir(...DOCENTES);
+    if (!leccionValida(d.leccion)) fail('Elegí la lección del syllabus');
+    if (!String(d.titulo || '').trim() || !String(d.consigna || '').trim()) fail('Completá el título y la consigna');
+    if (d.fecha_limite && !/^\d{4}-\d{2}-\d{2}$/.test(d.fecha_limite)) fail('Fecha límite inválida');
+    let t = d.id ? db.tps.find((x) => x.id === Number(d.id)) : null;
+    const nuevo = !t;
+    const adj = d.archivo ? guardarArchivo(d.archivo, me, 'tp') : null;
+    if (!t) { t = { id: ++db.seq.tp, autor_id: me.id, archivo_id: null, fecha: ahora() }; db.tps.push(t); }
+    if (adj) { borrarArchivo(t.archivo_id); t.archivo_id = adj; }
+    Object.assign(t, { leccion: d.leccion, titulo: String(d.titulo).trim().slice(0, 140), consigna: String(d.consigna).trim().slice(0, 20000), fecha_limite: d.fecha_limite || null });
+    if (nuevo) for (const a of db.usuarios.filter((x) => x.rol === 'alumno' && x.activo)) notificar(a, 'tp_nuevo', { tp: { titulo: t.titulo, leccion: t.leccion, fecha_limite: t.fecha_limite } }, { soloEmail: true });
+    guardar(); return conAutor(t);
+  };
+  api.borrarTP = (id) => {
+    exigir(...DOCENTES); const t = db.tps.find((x) => x.id === Number(id)); if (!t) fail('Trabajo no encontrado');
+    if (db.entregas.some((e) => e.tp_id === t.id)) fail('Este trabajo ya tiene entregas, no se puede borrar.');
+    borrarArchivo(t.archivo_id); db.tps = db.tps.filter((x) => x !== t); guardar();
+  };
+  api.entregarTP = (tpId, { texto, archivo }) => {
+    const me = exigir('alumno'); const t = db.tps.find((x) => x.id === Number(tpId)); if (!t) fail('Trabajo no encontrado');
+    if (!String(texto || '').trim() && !archivo) fail('Escribí tu respuesta o adjuntá un archivo');
+    let e = db.entregas.find((x) => x.tp_id === t.id && x.alumno_id === me.id);
+    if (e && e.estado === 'aprobado') fail('Este trabajo ya está aprobado');
+    const adj = archivo ? guardarArchivo(archivo, me, `entrega:${me.id}`) : null;
+    if (!e) { e = { id: ++db.seq.en, tp_id: t.id, alumno_id: me.id, archivo_id: null }; db.entregas.push(e); }
+    if (adj) { borrarArchivo(e.archivo_id); e.archivo_id = adj; }
+    Object.assign(e, { texto: String(texto || '').trim().slice(0, 20000), fecha: ahora(), tardia: !!(t.fecha_limite && t.fecha_limite < hoy()), estado: 'entregado', nota: null, comentario: e.comentario || null });
+    guardar(); return { ...e, archivo: metaArchivo(e.archivo_id) };
+  };
+  api.entregasDeTP = (tpId) => {
+    exigir(...DOCENTES); const t = db.tps.find((x) => x.id === Number(tpId)); if (!t) fail('Trabajo no encontrado');
+    return db.usuarios.filter((u) => u.rol === 'alumno' && u.activo).map((u) => { const e = db.entregas.find((x) => x.tp_id === t.id && x.alumno_id === u.id);
+      return { alumno_id: u.id, alumno: nombre(u), entrega: e ? { ...e, archivo: metaArchivo(e.archivo_id), corrector: nombre(usuario(e.corrector_id)) } : null, estado: estadoEntrega(t, e) }; })
+      .sort((a, b) => ['entregado', 'rehacer', 'aprobado', 'pendiente', 'vencido'].indexOf(a.estado) - ['entregado', 'rehacer', 'aprobado', 'pendiente', 'vencido'].indexOf(b.estado));
+  };
+  api.corregirEntrega = (id, { estado, nota, comentario }) => {
+    const me = exigir(...DOCENTES); const e = db.entregas.find((x) => x.id === Number(id)); if (!e) fail('Entrega no encontrada');
+    if (!['aprobado', 'rehacer'].includes(estado)) fail('Elegí si está aprobado o hay que rehacerlo');
+    const n = nota === '' || nota == null ? null : Number(nota);
+    if (n != null && !(Number.isInteger(n) && n >= 1 && n <= 10)) fail('La nota tiene que ser un número del 1 al 10');
+    Object.assign(e, { estado, nota: n, comentario: String(comentario || '').trim().slice(0, 4000) || null, corrector_id: me.id, fecha_correccion: ahora() });
+    const t = db.tps.find((x) => x.id === e.tp_id); const al = usuario(e.alumno_id);
+    if (al) notificar(al, 'correccion', { tp: { titulo: t.titulo, leccion: t.leccion }, estado, nota: n, comentario: e.comentario, corrector: nombre(me) }, { soloEmail: true });
+    guardar(); return e;
+  };
+  // en la demo los archivos viven en el navegador; en el servidor se descargan por /api/archivo/:id
+  api.archivo = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); if (!puedeVerArchivo(me, a)) fail('Archivo no disponible'); return a; };
+  api._archivoPermitido = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); return puedeVerArchivo(me, a) ? metaArchivo(a.id) : null; };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
@@ -832,6 +953,18 @@ const contenidoAviso = (() => {
         notas: ['Traiga leídos los contenidos de la clase del syllabus.', 'Baja sin cargo hasta 24 horas antes. Con menos aviso se cobra el 20% del valor de la clase.'],
         wpp: ['📚 *Flight Center* · Inscripción confirmada', '', `Hola ${n.nombre}, quedaste inscripto/a en la clase *${k.teo} · ${k.titulo}*.`, '', `📅 *${fechaLarga(k.fecha)}*`, `🕗 ${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`, `🏫 ${k.aula} · ${k.instructor}`, '', '_Baja sin cargo hasta 24 h antes._'],
       };
+    }
+    if (n.tipo === 'tp_nuevo') {
+      const t = n.datos.tp;
+      return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
+        filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
+        notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'correccion') {
+      const c = n.datos;
+      return { asunto: `Trabajo corregido · ${c.tp.titulo}`, titulo: 'Tu trabajo práctico fue corregido', intro: `${c.corrector} corrigió tu entrega en el campus de Flight Center.`,
+        filas: [['Trabajo', c.tp.titulo], ['Resultado', c.estado === 'aprobado' ? 'Aprobado' : 'A rehacer'], ...(c.nota != null ? [['Nota', String(c.nota)]] : []), ...(c.comentario ? [['Comentario', c.comentario]] : [])],
+        notas: [c.estado === 'aprobado' ? '¡Felicitaciones! Seguí así.' : 'Revisá el comentario y volvé a entregar el trabajo desde el campus.'], wpp: [] };
     }
     const d = n.datos;
     return {

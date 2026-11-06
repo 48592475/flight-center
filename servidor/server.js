@@ -28,6 +28,7 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
     // acepta contraseñas sin cifrar de datos viejos y las de bcrypt
     verificarPass: (p, h) => (String(h || '').startsWith('$2') ? bcrypt.compareSync(String(p), h) : String(p) === h),
     docs: persistencia.docs,
+    archivos: persistencia.archivos,
     alNotificar: (n) => avisos.enviar(Store, n),
   });
 
@@ -93,6 +94,23 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
       if (!(e instanceof Error) || /is not a function|undefined|null/.test(msg)) console.error(m, e);
       return res.status(msg === 'Sesión no iniciada' ? 401 : 400).json({ error: msg });
     } finally { Store._como(null); }
+  });
+
+  // archivos del campus: solo con sesión y si la persona tiene permiso para verlos
+  app.get('/api/archivo/:id', async (req, res) => {
+    const uid = req.session?.uid;
+    if (!uid) return res.status(401).send('Iniciá sesión para ver este archivo.');
+    let meta = null;
+    try { Store._como(uid); meta = Store._archivoPermitido(Number(req.params.id)); } catch { meta = null; } finally { Store._como(null); }
+    if (!meta) return res.status(404).send('Archivo no disponible.');
+    const data = await persistencia.archivos.leer(meta.id);
+    if (!data) return res.status(404).send('Archivo no disponible.');
+    const coma = data.indexOf(',');
+    const buf = Buffer.from(data.slice(coma + 1), 'base64');
+    const inline = /^(application\/pdf|image\/|text\/plain)/.test(meta.tipo);
+    res.set({ 'Content-Type': meta.tipo || 'application/octet-stream', 'Content-Length': buf.length, 'Cache-Control': 'private, max-age=300',
+      'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename*=UTF-8''${encodeURIComponent(meta.nombre)}` });
+    res.send(buf);
   });
 
   app.get('/api/meteo', async (req, res) => {

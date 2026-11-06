@@ -7,7 +7,7 @@ import os
 R = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(R, 'src', f), encoding='utf-8').read()
 CSS = src('base.css') + src('extra.css') + src('extra3.css')
-APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app6.js']
+APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app7.js', 'app6.js']
 ICONO = "data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27><path fill=%27%2359b2ea%27 d=%27M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z%27/></svg>"
 
 def pagina(cliente, store=True):

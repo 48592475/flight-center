@@ -39,6 +39,18 @@ const contenidoAviso = (() => {
         wpp: ['📚 *Flight Center* · Inscripción confirmada', '', `Hola ${n.nombre}, quedaste inscripto/a en la clase *${k.teo} · ${k.titulo}*.`, '', `📅 *${fechaLarga(k.fecha)}*`, `🕗 ${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`, `🏫 ${k.aula} · ${k.instructor}`, '', '_Baja sin cargo hasta 24 h antes._'],
       };
     }
+    if (n.tipo === 'tp_nuevo') {
+      const t = n.datos.tp;
+      return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
+        filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
+        notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'correccion') {
+      const c = n.datos;
+      return { asunto: `Trabajo corregido · ${c.tp.titulo}`, titulo: 'Tu trabajo práctico fue corregido', intro: `${c.corrector} corrigió tu entrega en el campus de Flight Center.`,
+        filas: [['Trabajo', c.tp.titulo], ['Resultado', c.estado === 'aprobado' ? 'Aprobado' : 'A rehacer'], ...(c.nota != null ? [['Nota', String(c.nota)]] : []), ...(c.comentario ? [['Comentario', c.comentario]] : [])],
+        notas: [c.estado === 'aprobado' ? '¡Felicitaciones! Seguí así.' : 'Revisá el comentario y volvé a entregar el trabajo desde el campus.'], wpp: [] };
+    }
     const d = n.datos;
     return {
       asunto: `Recordatorio de saldo pendiente · ${pesos(d.saldo)}`, titulo: 'Recordatorio de saldo pendiente',

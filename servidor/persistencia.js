@@ -15,10 +15,12 @@ async function iniciar() {
     const local = /localhost|127\.0\.0\.1/.test(URL_DB) || !/\./.test(new URL(URL_DB).hostname);
     pool = new Pool({ connectionString: URL_DB, ssl: local ? false : { rejectUnauthorized: false }, max: 5 });
     await pool.query(`CREATE TABLE IF NOT EXISTS fc_estado (id INT PRIMARY KEY, datos JSONB NOT NULL, actualizado TIMESTAMPTZ NOT NULL DEFAULT now())`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS fc_archivos (id INT PRIMARY KEY, data TEXT NOT NULL, creado TIMESTAMPTZ NOT NULL DEFAULT now())`);
     await pool.query(`CREATE TABLE IF NOT EXISTS fc_documentos (usuario_id INT NOT NULL, tipo TEXT NOT NULL, data TEXT NOT NULL, actualizado TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (usuario_id, tipo))`);
     console.log('Base de datos: PostgreSQL');
   } else {
     fs.mkdirSync(path.join(DIR, 'documentos'), { recursive: true });
+    fs.mkdirSync(path.join(DIR, 'archivos'), { recursive: true });
     console.log('Base de datos: archivos locales en', DIR);
   }
 }
@@ -64,4 +66,22 @@ const docs = {
   },
 };
 
-module.exports = { iniciar, cargar, guardar, sinGuardar, docs };
+// archivos del campus (materiales, consignas y entregas)
+const archivoCampus = (id) => path.join(DIR, 'archivos', `${Number(id)}.txt`);
+const archivos = {
+  guardar(id, data) {
+    const p = pool ? pool.query('INSERT INTO fc_archivos (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data', [id, data])
+      : Promise.resolve(fs.writeFileSync(archivoCampus(id), data));
+    p.catch((e) => console.error('Error al guardar un archivo del campus:', e.message));
+  },
+  borrar(id) {
+    const p = pool ? pool.query('DELETE FROM fc_archivos WHERE id = $1', [id]) : Promise.resolve(fs.rmSync(archivoCampus(id), { force: true }));
+    p.catch((e) => console.error('Error al borrar un archivo del campus:', e.message));
+  },
+  async leer(id) {
+    if (pool) { const r = await pool.query('SELECT data FROM fc_archivos WHERE id = $1', [id]); return r.rows[0]?.data || null; }
+    try { return fs.readFileSync(archivoCampus(id), 'utf8'); } catch { return null; }
+  },
+};
+
+module.exports = { iniciar, cargar, guardar, sinGuardar, docs, archivos };

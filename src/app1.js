@@ -114,7 +114,7 @@ function renderLogin() {
   if ($('#reset-demo')) $('#reset-demo').onclick = async () => { await Store.reiniciar(); toast('Datos de ejemplo restablecidos', 'ok'); };
   f.onsubmit = async (e) => {
     e.preventDefault(); $('#login-err').textContent = '';
-    try { state.user = await Store.login(f.email.value, f.password.value); state.tab = null; await render(); }
+    try { state.user = await Store.login(f.email.value, f.password.value); state.tab = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } await render(); }
     catch (err) {
       $('#login-err').textContent = err.message;
       $('.login-card').animate([{ transform: 'translateX(0)' }, { transform: 'translateX(-10px)' }, { transform: 'translateX(10px)' }, { transform: 'translateX(0)' }], { duration: 350 });
@@ -135,16 +135,22 @@ async function renderApp() {
   const u = await Store.yo();
   if (!u) { state.user = null; return renderLogin(); }
   state.user = u;
-  const tabs = TABS[u.rol];
+  // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
+  const conCampus = u.rol !== 'mecanico';
+  if (!conCampus) state.portal = 'reservas';
+  if (!state.portal) { try { state.portal = sessionStorage.getItem('fc-portal'); } catch { /* sin storage */ } }
+  if (!state.portal) return renderPortal(u);
+  const tabs = (state.portal === 'campus' ? TABS_CAMPUS : TABS)[u.rol];
   if (!state.tab || !tabs.some(([k]) => k === state.tab)) state.tab = tabs[0][0];
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
-      ${logo(ROLES[u.rol])}
+      ${logo(state.portal === 'campus' ? 'Campus' : ROLES[u.rol])}
       <nav class="tabs">${tabs.map(([k, t]) => `<button class="tab ${k === state.tab ? 'activo' : ''}" data-tab="${k}">${t}</button>`).join('')}</nav>
-      <div class="user-chip"><div class="avatar">${esc(iniciales(u))}</div><span class="nombre">${esc(u.nombre)}</span>
+      <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}<div class="avatar">${esc(iniciales(u))}</div><span class="nombre">${esc(u.nombre)}</span>
         <button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
     </div></header><main id="vista"></main>`;
   $$('.tab').forEach((b) => b.onclick = async () => await irA(b.dataset.tab));
-  $('#logout').onclick = async () => { await Store.logout(); state.user = null; await render(); };
+  $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } await render(); };
+  const cp = $('#cambio-portal'); if (cp) cp.onclick = () => elegirPortal(state.portal === 'campus' ? 'reservas' : 'campus');
   const key = `${u.rol}:${state.tab}`;
   (VISTAS[key] || VISTAS[state.tab])($('#vista'));
 }

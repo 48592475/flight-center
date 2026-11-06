@@ -35,7 +35,7 @@ function verMensajes(lista) {
 
 // ---------- vista de avisos ----------
 const ESTADO_ENVIO = { enviado: 'Enviado ✓', pendiente: 'En cola de envío', error: 'No se pudo enviar', sin_configurar: 'No enviado: el canal todavía no está configurado en el servidor', demo: 'Demo' };
-const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago' };
+const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido' };
 VISTAS.avisos = async function vistaAvisos(v) {
   const esAdmin = state.user.rol === 'admin';
   const l = esAdmin ? await Store.notificaciones() : await Store.misNotificaciones();

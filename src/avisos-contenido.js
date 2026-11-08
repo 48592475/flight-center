@@ -45,6 +45,17 @@ const contenidoAviso = (() => {
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
     }
+    if (n.tipo === 'turno_liberado') {
+      const d = n.datos; const sim = d.tipo === 'simulador'; const bl = d.bloques;
+      const horario = `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs`;
+      return { asunto: `Turno liberado · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(d.fecha)} a las ${hh(bl[0])}`, titulo: 'Se liberó un turno',
+        intro: `Se canceló un ${sim ? 'turno de simulador' : 'vuelo'} y el horario quedó libre. Si te sirve, reservalo desde la app de Flight Center: se lo queda el primero que lo reserve.`,
+        filas: [['Fecha', fechaLarga(d.fecha)], ['Horario', `${horario}${bl.length > 1 ? ` (${bl.length} bloques)` : ''}`], [sim ? 'Simulador' : 'Aeronave', `${d.recurso}${d.modelo ? ` · ${d.modelo}` : ''}`],
+          ['Instructor', d.instructor || 'Sin instructor asignado']],
+        notas: ['El turno no queda reservado para vos: tenés que reservarlo en la app.', 'Si no querés recibir estos avisos, desactivalos en Mi perfil → Avisos.'],
+        wpp: [`🔔 *Flight Center* · Turno liberado`, '', `Hola ${n.nombre}, se liberó un ${sim ? 'turno de simulador' : 'vuelo'}.`, '', `📅 *${fechaLarga(d.fecha)}*`, `🕗 ${horario}`,
+          `${sim ? '🖥️' : '🛩️'} ${d.recurso}${d.modelo ? ` · ${d.modelo}` : ''}`, `👨‍✈️ ${d.instructor || 'Sin instructor asignado'}`, '', 'Si te interesa, reservalo desde la app: se lo queda el primero que lo reserve.'] };
+    }
     if (n.tipo === 'ausencia') {
       const r = n.datos.reserva; const sim = r.tipo === 'simulador';
       return { asunto: `Ausencia registrada · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(r.fecha)}`, titulo: 'Registramos tu ausencia',

@@ -405,7 +405,7 @@ VISTAS.reservas = async function vistaMisReservas(v) {
       const grupo = id.startsWith('g') ? prox[Number(id.slice(1))] : null;
       const info = grupo ? await Store.infoCancelacion(grupo.map((r) => r.id)) : await Store.infoCancelacion(id.slice(1), 'teorica');
       if (!(await confirmar('Cancelar reserva', `¿Cancelar ${TIPO_RES[pase.tipo].toLowerCase()} del ${fmtFecha(pase.fecha)} (${pase.horario})? ${textoCargo(info)}`, info.cargo ? `Cancelar y pagar ${pesos(info.cargo)}` : 'Sí, cancelar'))) return;
-      const cargo = await hacer(async () => { if (!grupo) return await Store.darseDeBaja(id.slice(1)); let t = 0; for (const r of grupo) t += await Store.cancelarReserva(r.id); return t; });
+      const cargo = await hacer(async () => { if (!grupo) return await Store.darseDeBaja(id.slice(1)); return await Store.cancelarReservas(grupo.map((r) => r.id)); });
       if (cargo !== undefined) toast(cargo ? `Cancelada. Se cargó ${pesos(cargo)} a tu estado de cuenta.` : 'Reserva cancelada sin cargo', 'ok');
       await VISTAS.reservas(v);
     };

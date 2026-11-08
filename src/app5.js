@@ -35,16 +35,16 @@ function verMensajes(lista) {
 
 // ---------- vista de avisos ----------
 const ESTADO_ENVIO = { enviado: 'Enviado ✓', pendiente: 'En cola de envío', error: 'No se pudo enviar', sin_configurar: 'No enviado: el canal todavía no está configurado en el servidor', demo: 'Demo' };
-const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido', foro_respuesta: 'Respuesta en el foro', ausencia: 'Ausencia registrada' };
+const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido', foro_respuesta: 'Respuesta en el foro', ausencia: 'Ausencia registrada', turno_liberado: 'Turno liberado' };
 VISTAS.avisos = async function vistaAvisos(v) {
   const esAdmin = state.user.rol === 'admin';
   const l = esAdmin ? await Store.notificaciones() : await Store.misNotificaciones();
   // agrupa email + WhatsApp del mismo aviso
   const grupos = []; const idx = new Map();
-  for (const n of l) { const k = `${n.usuario_id}|${n.tipo}|${n.fecha}`; if (!idx.has(k)) { idx.set(k, grupos.length); grupos.push([]); } grupos[idx.get(k)].push(n); }
+  for (const n of l) { const k = `${n.usuario_id}|${n.tipo}|${n.fecha}|${JSON.stringify(n.datos)}`; if (!idx.has(k)) { idx.set(k, grupos.length); grupos.push([]); } grupos[idx.get(k)].push(n); }
   const hoyD = isoLocal(new Date());
   const deudasHoy = esAdmin ? grupos.filter((g) => g[0].tipo === 'deuda' && g[0].dia === hoyD).length : 0;
-  v.innerHTML = hero('Avisos', esAdmin ? 'Todos los emails y WhatsApp que envía el sistema: confirmaciones de reserva y el recordatorio diario a quienes tienen saldo pendiente.' : 'Las confirmaciones de tus reservas y los recordatorios que te enviamos por email y WhatsApp.') + `
+  v.innerHTML = hero('Avisos', esAdmin ? 'Todos los emails y WhatsApp que envía el sistema: confirmaciones de reserva y el recordatorio diario a quienes tienen saldo pendiente.' : 'Las confirmaciones de tus reservas, los turnos que se liberan y los recordatorios que te enviamos por email y WhatsApp.') + `
     ${esAdmin ? `<div class="stats"><div class="stat dest anim" style="--i:1"><div class="lbl">Recordatorios de deuda hoy</div><div class="val">${deudasHoy}</div></div>
       <div class="stat anim" style="--i:2"><div class="lbl">Avisos enviados</div><div class="val">${grupos.length}</div></div></div>
       <div class="aviso anim" style="--i:2"><div style="flex:1"><strong>Recordatorio diario de deuda</strong>${MODO === 'servidor' ? 'Sale solo todos los días a las 9:00 a quienes tienen saldo a pagar.' : 'En la demo se genera al iniciar sesión.'} Si hoy ya salió, no se repite.</div><button class="btn sec sm" id="rec-ahora">Enviar ahora</button></div>` : ''}
@@ -65,14 +65,15 @@ VISTAS.avisos = async function vistaAvisos(v) {
   VISTAS.perfil = async function (v) {
     await perfil(v);
     if (!['alumno', 'ppa'].includes(state.user.rol)) return;
-    const u = await Store.yo(); const p = u.notif || { email: true, whatsapp: true };
+    const u = await Store.yo(); const p = { email: true, whatsapp: true, liberados: true, ...(u.notif || {}) };
     const card = document.createElement('div'); card.className = 'card anim';
-    card.innerHTML = `<div class="card-head"><h3>Avisos</h3><span class="muted">Confirmaciones de reserva y recordatorios de pago</span></div>
+    card.innerHTML = `<div class="card-head"><h3>Avisos</h3><span class="muted">Confirmaciones, turnos liberados y recordatorios de pago</span></div>
       <div class="flujo"><label class="marca"><input type="checkbox" id="nt-email" ${p.email ? 'checked' : ''}> Por email (${esc(u.email)})</label>
-      <label class="marca"><input type="checkbox" id="nt-wpp" ${p.whatsapp ? 'checked' : ''}> Por WhatsApp (${esc(u.telefono || 'sin teléfono cargado')})</label></div>`;
+      <label class="marca"><input type="checkbox" id="nt-wpp" ${p.whatsapp ? 'checked' : ''}> Por WhatsApp (${esc(u.telefono || 'sin teléfono cargado')})</label></div>
+      <div class="flujo" style="margin-top:10px"><label class="marca"><input type="checkbox" id="nt-lib" ${p.liberados !== false ? 'checked' : ''}> Avisarme cuando se libera un turno de vuelo o simulador</label></div>`;
     $$('.card', v)[0].after(card);
-    const g = async () => { state.user = await Store.guardarPreferencias({ email: $('#nt-email', v).checked, whatsapp: $('#nt-wpp', v).checked }); toast('Preferencias de aviso guardadas', 'ok'); };
-    $('#nt-email', v).onchange = g; $('#nt-wpp', v).onchange = g;
+    const g = async () => { state.user = await Store.guardarPreferencias({ email: $('#nt-email', v).checked, whatsapp: $('#nt-wpp', v).checked, liberados: $('#nt-lib', v).checked }); toast('Preferencias de aviso guardadas', 'ok'); };
+    $('#nt-email', v).onchange = g; $('#nt-wpp', v).onchange = g; $('#nt-lib', v).onchange = g;
   };
 }
 // ---------- aviso en el estado de cuenta ----------

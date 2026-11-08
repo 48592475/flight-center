@@ -207,6 +207,7 @@ function crearStore(opts = {}) {
   if (!db || db.v !== 2) db = opts.produccion ? semillaProduccion() : semilla(); else db = migrar(db);
   if (!db.config) db.config = configInicial();
   let sesion = null;
+  let loteLiberados = null; // al cancelar varios bloques juntos se manda un solo aviso
   if (navegador) { try { sesion = Number(sessionStorage.getItem(KEY + '-s')) || null; } catch { /* sin storage */ } }
   const guardar = () => {
     if (!navegador) return opts.guardar(db);
@@ -319,6 +320,25 @@ function crearStore(opts = {}) {
   }
 
   // ---------- API pública ----------
+  // ---------- turno liberado: aviso a todos los alumnos y pilotos ----------
+  function avisarLiberado(rs, quien) {
+    const grupos = new Map();
+    for (const r of rs.filter((x) => ['vuelo', 'simulador'].includes(x.tipo) && !yaEmpezo(x.fecha, x.bloque))) {
+      const k = `${r.tipo}|${r.fecha}|${r.recurso_id}|${r.instructor_id}`; if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(r);
+    }
+    for (const g of grupos.values()) {
+      const r = g[0]; const bloques = g.map((x) => x.bloque).sort((a, b) => a - b);
+      const rec = recurso(r.recurso_id); const inst = usuario(r.instructor_id);
+      const datos = { tipo: r.tipo, fecha: r.fecha, bloques, recurso: rec?.nombre || '', modelo: rec?.modelo || '', instructor: inst ? nombre(inst) : null };
+      for (const u of db.usuarios) {
+        if (!u.activo || !['alumno', 'ppa'].includes(u.rol) || u.id === r.piloto_id || u.id === quien?.id) continue;
+        if (u.notif && u.notif.liberados === false) continue;
+        const permitidos = bloquesPermitidos(u); // un alumno extranjero solo se entera de los bloques que puede reservar
+        if (permitidos && !bloques.some((b) => permitidos.includes(b))) continue;
+        notificar(u, 'turno_liberado', datos);
+      }
+    }
+  }
   const api = {
     BLOQUES, LECCIONES, TRACKS, itemKeys, hoy, dia,
 
@@ -464,6 +484,7 @@ function crearStore(opts = {}) {
       if (r.estado !== 'pendiente') fail('Solo se pueden cancelar reservas pendientes');
       if (r.piloto_id === u.id && yaEmpezo(r.fecha, r.bloque)) fail('Tu turno ya empezó y no se puede cancelar. Si no pudiste venir, avisale a tu instructor o a la escuela.');
       r.estado = 'cancelado';
+      if (loteLiberados) loteLiberados.push(r); else avisarLiberado([r], u);
       // solo se cobra cuando cancela el propio piloto con menos de 24 hs de aviso
       let cargo = 0;
       if (r.piloto_id === u.id) {
@@ -495,6 +516,12 @@ function crearStore(opts = {}) {
       r.estado = 'pendiente'; delete r.ausencia;
       db.movimientos = db.movimientos.filter((m) => m.ref !== `aus:${r.id}`);
       guardar();
+    },
+    cancelarReservas(ids) {
+      const u = yo(); loteLiberados = []; let total = 0;
+      try { for (const id of ids || []) total += api.cancelarReserva(id); }
+      finally { const l = loteLiberados; loteLiberados = null; if (l.length) { avisarLiberado(l, u); guardar(); } }
+      return total;
     },
     infoCancelacion(ids, tipo) {
       yo(); const l = (Array.isArray(ids) ? ids : [ids]);
@@ -1022,7 +1049,7 @@ function crearStore(opts = {}) {
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
-  api.guardarPreferencias = ({ email, whatsapp }) => { const u = yo(); u.notif = { email: !!email, whatsapp: !!whatsapp }; guardar(); return pub(u); };
+  api.guardarPreferencias = ({ email, whatsapp, liberados }) => { const u = yo(); u.notif = { email: !!email, whatsapp: !!whatsapp, liberados: liberados !== false }; guardar(); return pub(u); };
   // ---------- uso interno del servidor (no se exponen a la interfaz) ----------
   api._como = (id) => { sesion = id || null; };
   api._sesion = () => sesion;
@@ -1077,6 +1104,17 @@ const contenidoAviso = (() => {
       return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'turno_liberado') {
+      const d = n.datos; const sim = d.tipo === 'simulador'; const bl = d.bloques;
+      const horario = `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs`;
+      return { asunto: `Turno liberado · ${sim ? 'Simulador' : 'Vuelo'} del ${fechaCorta(d.fecha)} a las ${hh(bl[0])}`, titulo: 'Se liberó un turno',
+        intro: `Se canceló un ${sim ? 'turno de simulador' : 'vuelo'} y el horario quedó libre. Si te sirve, reservalo desde la app de Flight Center: se lo queda el primero que lo reserve.`,
+        filas: [['Fecha', fechaLarga(d.fecha)], ['Horario', `${horario}${bl.length > 1 ? ` (${bl.length} bloques)` : ''}`], [sim ? 'Simulador' : 'Aeronave', `${d.recurso}${d.modelo ? ` · ${d.modelo}` : ''}`],
+          ['Instructor', d.instructor || 'Sin instructor asignado']],
+        notas: ['El turno no queda reservado para vos: tenés que reservarlo en la app.', 'Si no querés recibir estos avisos, desactivalos en Mi perfil → Avisos.'],
+        wpp: [`🔔 *Flight Center* · Turno liberado`, '', `Hola ${n.nombre}, se liberó un ${sim ? 'turno de simulador' : 'vuelo'}.`, '', `📅 *${fechaLarga(d.fecha)}*`, `🕗 ${horario}`,
+          `${sim ? '🖥️' : '🛩️'} ${d.recurso}${d.modelo ? ` · ${d.modelo}` : ''}`, `👨‍✈️ ${d.instructor || 'Sin instructor asignado'}`, '', 'Si te interesa, reservalo desde la app: se lo queda el primero que lo reserve.'] };
     }
     if (n.tipo === 'ausencia') {
       const r = n.datos.reserva; const sim = r.tipo === 'simulador';

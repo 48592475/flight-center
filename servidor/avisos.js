@@ -68,6 +68,12 @@ function plantillaWhatsapp(n) {
     const fecha = new Date(`${k.fecha}T12:00`).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
     return { nombre: env.WHATSAPP_TPL_CLASE || 'clase_confirmada', params: [n.nombre, `${k.teo} · ${k.titulo}`, fecha, `${hh(k.bloque)} a ${hh(k.bloque + 2)} hs`, `${k.aula} con ${k.instructor}`] };
   }
+  if (n.tipo === 'turno_liberado') {
+    const hh = (h) => `${String(h).padStart(2, '0')}:00`; const bl = d.bloques;
+    const fecha = new Date(`${d.fecha}T12:00`).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+    return { nombre: env.WHATSAPP_TPL_LIBERADO || 'turno_liberado', params: [n.nombre, d.tipo === 'simulador' ? 'simulador' : 'vuelo', fecha, `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs`,
+      `${d.recurso}${d.modelo ? ` (${d.modelo})` : ''}`, d.instructor || 'sin instructor asignado'] };
+  }
   return { nombre: env.WHATSAPP_TPL_DEUDA || 'recordatorio_pago', params: [n.nombre, `$ ${Math.round(d.saldo).toLocaleString('es-AR')}`] };
 }
 

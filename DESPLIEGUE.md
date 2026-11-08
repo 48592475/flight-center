@@ -63,7 +63,7 @@ Más adelante, con un dominio propio (por ejemplo @flightcenter.com.ar), se camb
 
 1. Creá una cuenta en https://business.facebook.com y después una app en https://developers.facebook.com con el producto **WhatsApp**.
 2. Registrá el número de la escuela (no puede estar en uso en la app de WhatsApp) y verificá la empresa.
-3. En **WhatsApp Manager → Plantillas de mensaje** creá estas tres plantillas, categoría **Utilidad**, idioma **Español (ARG)** (`es_AR`). El texto tiene que respetar el orden de las variables:
+3. En **WhatsApp Manager → Plantillas de mensaje** creá estas cuatro plantillas, categoría **Utilidad**, idioma **Español (ARG)** (`es_AR`). El texto tiene que respetar el orden de las variables:
 
    **reserva_confirmada**
    ```
@@ -82,6 +82,16 @@ Más adelante, con un dominio propio (por ejemplo @flightcenter.com.ar), se camb
    Fecha: {{3}}
    Horario: {{4}}
    Lugar: {{5}}
+   ```
+
+   **turno_liberado**
+   ```
+   Hola {{1}}, se liberó un turno de {{2}} en Flight Center.
+   Fecha: {{3}}
+   Horario: {{4}}
+   Equipo: {{5}}
+   Instructor: {{6}}
+   Si te interesa, reservalo desde la app: se lo queda el primero que lo reserve.
    ```
 
    **recordatorio_pago**

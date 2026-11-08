@@ -96,7 +96,7 @@ function renderLogin() {
   app.innerHTML = `<section class="login">${nubes}
     <div class="plane-fly">${ICON.avion.replace('<svg', '<svg style="transform:rotate(80deg)"')}</div>
     <div class="login-card">
-      ${logo('Sistema de reservas', 'claro')}${MODO === 'demo' ? '<span class="demo-tag">Versión demo · los datos se guardan en este navegador</span>' : ''}
+      ${logo('Sistema de operaciones', 'claro')}${MODO === 'demo' ? '<span class="demo-tag">Versión demo · los datos se guardan en este navegador</span>' : ''}
       <p class="muted" style="margin:16px 0 0">Ingresá con el email registrado en la escuela.</p>
       <form id="f-login" novalidate>
         <label class="campo">Email<input id="l-email" type="email" name="email" autocomplete="username" required placeholder="tu@email.com"></label>

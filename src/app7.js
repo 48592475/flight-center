@@ -52,7 +52,7 @@ function renderPortal(u) {
       <div class="portal-opciones">
         <button class="portal-op anim" style="--i:3" data-p="campus"><span class="portal-ico">${ICON_CAMPUS}</span><strong>Campus</strong>
           <span>${u.rol === 'alumno' ? 'Material de teoría, simulador y maniobras, y tus trabajos prácticos.' : u.rol === 'ppa' ? 'Material de estudio de la escuela.' : 'Subí material y corregí los trabajos prácticos.'}</span></button>
-        <button class="portal-op anim" style="--i:4" data-p="reservas"><span class="portal-ico">${ICON_RESERVAS}</span><strong>Sistema de reservas</strong>
+        <button class="portal-op anim" style="--i:4" data-p="reservas"><span class="portal-ico">${ICON_RESERVAS}</span><strong>Sistema de operaciones</strong>
           <span>${['alumno', 'ppa'].includes(u.rol) ? 'Vuelos, simulador, clases, tu syllabus y tu estado de cuenta.' : u.rol === 'instructor' ? 'Tu agenda, tus alumnos, clases y flota.' : 'Panel, instructores, reservas, cuentas y usuarios.'}</span></button>
       </div>
     </div></section>`;

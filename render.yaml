@@ -28,7 +28,12 @@ services:
         sync: false
       - key: ADMIN_PASSWORD
         sync: false
-      # Emails (Gmail de la escuela con contraseña de aplicación)
+      # Emails gratis con Brevo (brevo.com): clave de API y email remitente verificado
+      - key: BREVO_API_KEY
+        sync: false
+      - key: MAIL_REMITENTE
+        sync: false
+      # Emails por Gmail (solo funciona con un plan pago de Render)
       - key: SMTP_USER
         sync: false
       - key: SMTP_PASS

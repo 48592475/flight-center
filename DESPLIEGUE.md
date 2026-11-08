@@ -31,7 +31,7 @@ Limitación del plan gratis de Render: si nadie usa la página durante 15 minuto
    - **DATABASE_URL**: la Connection string de Neon.
    - **ADMIN_EMAIL**: el email con el que va a entrar la administración.
    - **ADMIN_PASSWORD**: una contraseña segura (mínimo 6 caracteres). Cambiala después desde *Mi perfil*.
-   - Las demás (SMTP, WHATSAPP, FAA) se pueden dejar vacías y cargar más adelante.
+   - Las demás (BREVO, SMTP, WHATSAPP, FAA) se pueden dejar vacías y cargar más adelante.
 4. Tocá **Apply**. En unos minutos queda online en una dirección tipo `https://flight-center.onrender.com`.
 5. Entrá con ADMIN_EMAIL y ADMIN_PASSWORD. Desde **Usuarios** cargá instructores, alumnos, pilotos y mecánicos, y desde **Instructores** asigná los días y horarios de vuelo.
 
@@ -47,17 +47,19 @@ Como el servidor gratis se apaga cuando no se usa, un servicio externo lo despie
 4. **Schedule**: todos los días a las **09:00**, zona horaria **America/Argentina/Buenos_Aires**.
 5. En **Advanced**, poné el **Timeout** en 60 segundos (el servidor puede tardar en despertar). Guardá.
 
-## 3. Activar los emails (Gmail)
+## 3. Activar los emails (Brevo, gratis)
 
-1. Creá un Gmail de la escuela, por ejemplo `flightcenter.reservas@gmail.com`.
-2. En https://myaccount.google.com/security activá la **Verificación en dos pasos**.
-3. Entrá a https://myaccount.google.com/apppasswords, creá una contraseña de aplicación llamada "Flight Center" y copiá las 16 letras.
+El plan gratis de Render bloquea el envío de emails por SMTP (Gmail). Por eso los emails salen por **Brevo**, que los manda por otra vía y tiene un plan gratis de **300 emails por día**.
+
+1. Creá una cuenta gratis en https://www.brevo.com (podés usar el Gmail de la escuela).
+2. Entrá a **Senders, Domains & Dedicated IPs → Senders** (remitentes), tocá **Add a sender** y cargá el nombre `Flight Center` y el email desde el que van a salir los avisos (por ejemplo el Gmail de la escuela). Brevo manda un mail a esa casilla: abrilo y confirmá.
+3. Entrá a **SMTP & API → API Keys**, tocá **Generate a new API key**, ponele de nombre `Flight Center` y copiá la clave (empieza con `xkeysib-`). Se muestra una sola vez.
 4. En Render: servicio **flight-center → Environment**, cargá:
-   - `SMTP_USER` = el Gmail
-   - `SMTP_PASS` = la contraseña de aplicación (sin espacios)
-5. Guardá. El servicio se reinicia solo y desde ahí los avisos salen por email.
+   - `BREVO_API_KEY` = la clave del paso 3
+   - `MAIL_REMITENTE` = el email que verificaste en el paso 2
+5. Guardá. El servicio se reinicia solo y desde ahí los avisos salen por email. Para comprobarlo, entrá como administración a **Avisos**: los emails nuevos tienen que figurar como **enviado**.
 
-Más adelante, con un dominio propio (por ejemplo @flightcenter.com.ar), se cambian `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` y `MAIL_FROM` por los del proveedor de correo.
+Si algún día la escuela pasa Render a un plan pago, también se puede usar Gmail directo: cargar `SMTP_USER` (el Gmail) y `SMTP_PASS` (una contraseña de aplicación de https://myaccount.google.com/apppasswords) y borrar `BREVO_API_KEY`. Con un dominio propio (por ejemplo @flightcenter.com.ar) conviene verificar el dominio en Brevo para que los emails lleguen mejor.
 
 ## 4. Activar WhatsApp (API oficial de Meta)
 

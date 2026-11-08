@@ -1,10 +1,14 @@
-/* Envío real de avisos: email (SMTP, por ejemplo Gmail) y WhatsApp (API oficial de Meta).
+/* Envío real de avisos: email (Brevo, gratis y compatible con el plan gratis de Render, o SMTP como Gmail)
+   y WhatsApp (API oficial de Meta).
    Si un canal no tiene sus claves cargadas, el aviso queda registrado como "sin configurar". */
 const { contenidoAviso } = require('./nucleo');
 
 const env = process.env;
 const URL_PUBLICA = (env.PUBLIC_URL || env.RENDER_EXTERNAL_URL || '').replace(/\/$/, '');
-const emailListo = () => !!(env.SMTP_USER && env.SMTP_PASS);
+// Brevo manda por HTTPS: funciona aunque el hosting bloquee los puertos de SMTP (Render gratis los bloquea)
+const brevoListo = () => !!(env.BREVO_API_KEY && env.MAIL_REMITENTE);
+const smtpListo = () => !!(env.SMTP_USER && env.SMTP_PASS);
+const emailListo = () => brevoListo() || smtpListo();
 const whatsappListo = () => !!(env.WHATSAPP_TOKEN && env.WHATSAPP_PHONE_ID);
 
 let transporte = null;
@@ -15,6 +19,18 @@ function smtp() {
     transporte = nodemailer.createTransport({ host: env.SMTP_HOST || 'smtp.gmail.com', port, secure: port === 465, auth: { user: env.SMTP_USER, pass: env.SMTP_PASS } });
   }
   return transporte;
+}
+
+async function enviarEmail({ to, nombre, subject, html, text }) {
+  if (brevoListo()) {
+    const r = await fetch(env.BREVO_URL || 'https://api.brevo.com/v3/smtp/email', {
+      method: 'POST', headers: { 'api-key': env.BREVO_API_KEY, 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ sender: { name: env.MAIL_NOMBRE || 'Flight Center', email: env.MAIL_REMITENTE }, to: [{ email: to, ...(nombre ? { name: nombre } : {}) }], subject, htmlContent: html, textContent: text }),
+    });
+    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`Brevo: ${j.message || `respondió ${r.status}`}`); }
+    return;
+  }
+  await smtp().sendMail({ from: env.MAIL_FROM || `Flight Center <${env.SMTP_USER}>`, to, subject, html, text });
 }
 
 const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -44,8 +60,10 @@ function htmlEmail(n, a) {
 
 // Número argentino en formato internacional para WhatsApp: 549 + característica + número
 function numeroWhatsapp(tel) {
-  let d = String(tel || '').replace(/\D/g, '');
+  const original = String(tel || '').trim();
+  let d = original.replace(/\D/g, '');
   if (!d) return null;
+  if ((original.startsWith('+') || original.startsWith('00')) && !d.replace(/^00/, '').startsWith('54')) { d = d.replace(/^00/, ''); return d.length >= 8 ? d : null; }
   if (d.startsWith('00')) d = d.slice(2);
   if (d.startsWith('0')) d = d.slice(1);
   if (!d.startsWith('54')) d = '54' + d;
@@ -96,7 +114,7 @@ async function enviar(Store, n) {
     if (n.canal === 'email') {
       if (!emailListo()) return marcar('sin_configurar');
       const a = contenidoAviso(n);
-      await smtp().sendMail({ from: env.MAIL_FROM || `Flight Center <${env.SMTP_USER}>`, to: n.destino, subject: a.asunto, html: htmlEmail(n, a),
+      await enviarEmail({ to: n.destino, nombre: `${n.nombre} ${n.apellido}`.trim(), subject: a.asunto, html: htmlEmail(n, a),
         text: [`Estimado/a ${n.nombre} ${n.apellido}:`, '', a.intro, '', ...a.filas.map(([k, v]) => `${k}: ${v}`), '', ...a.notas, '', 'Administración · Flight Center'].join('\n') });
       return marcar('enviado');
     }

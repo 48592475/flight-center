@@ -3583,6 +3583,7 @@ async function reservarTurno(c, tipo) {
     $('#bloques', c).innerHTML = s.disp.map((d, i) => {
       let est = `${d.instructores.length} instr. · ${d.recursos.length} ${esSim ? 'simul.' : 'aviones'}`; let dis = false;
       if (d.ocupadoYo) { est = 'Ya tenés actividad'; dis = true; }
+      else if (d.reservado) { est = 'Reservado'; dis = true; }
       else if (d.pasado) { est = 'No disponible'; dis = true; }
       else if (!d.recursos.filter(avionOk).length || (!puedeSolo && !d.instructores.length)) { est = !d.instructores.length && !puedeSolo ? 'Sin instructores' : 'Completo'; dis = true; }
       else if (yaTengo) { est = `Ya reservaste ${esSim ? 'simulador' : 'vuelo'} este día`; dis = true; }

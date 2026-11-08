@@ -243,6 +243,9 @@ function crearStore(opts = {}) {
   const yo = () => { const u = sesion && usuario(sesion); if (!u || !u.activo) fail('Sesión no iniciada'); return u; };
   const exigir = (...roles) => { const u = yo(); if (!roles.includes(u.rol)) fail('No tenés permiso para esta acción'); return u; };
   const nombre = (u) => (u ? `${u.nombre} ${u.apellido}` : '');
+  // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
+  const BLOQUES_EXTRANJEROS = [8, 14, 16];
+  const bloquesPermitidos = (u) => u && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina' ? BLOQUES_EXTRANJEROS : null;
   const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
@@ -390,11 +393,11 @@ function crearStore(opts = {}) {
 
     // ---------- reservas de vuelo y simulador ----------
     disponibilidadDia(tipo, f) {
-      const me = yo();
+      const me = yo(); const permitidos = bloquesPermitidos(me);
       const insts = db.usuarios.filter((u) => u.rol === 'instructor' && u.activo);
       const recs = db.recursos.filter((r) => r.tipo === (tipo === 'vuelo' ? 'avion' : 'simulador') && r.estado === 'operativa');
       return BLOQUES.map((b) => ({
-        bloque: b, pasado: yaEmpezo(f, b), ocupadoYo: ocupacionPersona(me.id, f, b),
+        bloque: b, pasado: yaEmpezo(f, b), ocupadoYo: ocupacionPersona(me.id, f, b), reservado: !!permitidos && !permitidos.includes(b),
         instructores: insts.filter((i) => disponibleAdmin(i.id, f, b) && !ocupacionPersona(i.id, f, b)).map((i) => i.id),
         recursos: recs.filter((r) => !activas().some((x) => x.recurso_id === r.id && x.fecha === f && x.bloque === b)).map((r) => r.id),
       }));
@@ -407,6 +410,8 @@ function crearStore(opts = {}) {
       bloques = [...new Set((bloques || []).map(Number))].sort((a, b) => a - b);
       if (!bloques.length || bloques.some((b) => !BLOQUES.includes(b))) fail('Elegí al menos un bloque horario');
       if (bloques.some((b) => yaEmpezo(fecha, b))) fail('Ese horario ya pasó');
+      const permitidos = bloquesPermitidos(u);
+      if (permitidos && bloques.some((b) => !permitidos.includes(b))) fail('Ese horario ya está reservado. Elegí otro bloque.');
       const inst = instructor_id ? usuario(instructor_id) : null;
       if (instructor_id && (!inst || inst.rol !== 'instructor' || !inst.activo)) fail('Instructor inválido');
       const tipoRec = tipo === 'vuelo' ? 'avion' : 'simulador';

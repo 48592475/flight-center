@@ -34,7 +34,7 @@ function crearStore(opts = {}) {
     const db = { v: 2, seq: { u: 0, rec: 0, r: 0, c: 0, i: 0, n: 0 }, usuarios: [], recursos: [], disponibilidad: {}, reservas: [], clases: [], inscripciones: [], novedades: [] };
     const U = (rol, nombre, apellido, email, extra = {}) => {
       const u = { id: ++db.seq.u, rol, activo: true, nombre, apellido, email, password: hashPass('flight123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '',
-        contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {}, ...extra };
+        contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {}, nacionalidad: 'Argentina', ...extra };
       db.usuarios.push(u); return u.id;
     };
     const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
@@ -43,7 +43,7 @@ function crearStore(opts = {}) {
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
-    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
+    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
     const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
     void admin;
 
@@ -334,7 +334,20 @@ function crearStore(opts = {}) {
       if (!String(datos.nombre || '').trim() || !String(datos.apellido || '').trim()) fail('Nombre y apellido son obligatorios');
       if (!/^\S+@\S+\.\S+$/.test(String(datos.email || ''))) fail('El email no es válido');
       if (db.usuarios.some((x) => x.id !== u.id && x.email.toLowerCase() === datos.email.trim().toLowerCase())) fail('Ese email ya está registrado');
-      for (const c of ['nombre', 'apellido', 'email', 'dni', 'fecha_nacimiento', 'direccion', 'telefono', 'contacto_emergencia', 'licencia_nro', 'vencimiento_cma']) if (c in datos) u[c] = String(datos[c] ?? '').trim();
+      // nacionalidad (obligatoria) y, para alumnos y pilotos extranjeros, contacto de emergencia de sus tutores
+      const rolFinal = me.rol === 'admin' && datos.rol && u.id !== me.id ? datos.rol : u.rol;
+      const nac = 'nacionalidad' in datos ? String(datos.nacionalidad ?? '').trim() : (u.nacionalidad || '');
+      if (('nacionalidad' in datos || !u.email) && !nac) fail('Elegí la nacionalidad');
+      const pideTutor = nac && nac !== 'Argentina' && ['alumno', 'ppa'].includes(rolFinal);
+      if (pideTutor) {
+        const t = (k) => String((k in datos ? datos[k] : u[k]) ?? '').trim();
+        if (!t('tutor_nombre')) fail('Por no ser de Argentina, cargá el nombre del tutor o responsable');
+        if (!t('tutor_parentesco')) fail('Indicá el parentesco o vínculo del tutor');
+        if (t('tutor_telefono').replace(/\D/g, '').length < 6) fail('Cargá un teléfono válido del tutor, con código de país');
+        if (t('tutor_email') && !/^\S+@\S+\.\S+$/.test(t('tutor_email'))) fail('El email del tutor no es válido');
+      }
+      for (const c of ['nombre', 'apellido', 'email', 'dni', 'fecha_nacimiento', 'direccion', 'telefono', 'contacto_emergencia', 'licencia_nro', 'vencimiento_cma', 'nacionalidad', 'tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) if (c in datos) u[c] = String(datos[c] ?? '').trim();
+      if (!pideTutor) for (const c of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) delete u[c];
       if (me.rol === 'admin') {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
         if (datos.rol && u.id !== me.id) u.rol = datos.rol;
@@ -661,6 +674,7 @@ function crearStore(opts = {}) {
     crearUsuario(datos) {
       exigir('admin');
       if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
+      if (!String(datos.nacionalidad || '').trim()) fail('Elegí la nacionalidad');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
       const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };
       db.usuarios.push(u);

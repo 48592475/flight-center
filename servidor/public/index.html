@@ -915,6 +915,12 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .op-aus span { display: grid; gap: 2px; }
 .op-aus small { color: var(--muted); }
 
+/* nacionalidad y tutores */
+.tutor-caja { border-color: #f3cf8c; background: #fffaf0; }
+.tutor-caja legend { color: #8a5300; }
+.aviso-perfil { background: #fff4e0; border: 1px solid #f3cf8c; color: #6b4300; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
+.tutor-ficha { background: #fffaf0; border-radius: 10px; padding: 8px 10px; }
+
 </style>
 </head>
 <body>
@@ -3908,6 +3914,29 @@ async function abrirLibro(alumnoId, abrir) {
   await libroSyllabus($('#libro-m', m.el), alumnoId, { abrir });
 }
 
+// ---------- nacionalidad y tutores ----------
+const PAISES = ['Argentina', 'Bolivia', 'Brasil', 'Chile', 'Colombia', 'Costa Rica', 'Cuba', 'Ecuador', 'El Salvador', 'Guatemala', 'Honduras', 'México', 'Nicaragua', 'Panamá', 'Paraguay', 'Perú',
+  'Puerto Rico', 'República Dominicana', 'Uruguay', 'Venezuela', 'Canadá', 'Estados Unidos', 'Alemania', 'Austria', 'Bélgica', 'Dinamarca', 'España', 'Francia', 'Grecia', 'Irlanda', 'Italia',
+  'Noruega', 'Países Bajos', 'Polonia', 'Portugal', 'Reino Unido', 'Rusia', 'Suecia', 'Suiza', 'Ucrania', 'Australia', 'China', 'Corea del Sur', 'India', 'Israel', 'Japón', 'Líbano',
+  'Nueva Zelanda', 'Sudáfrica', 'Turquía', 'Otro país'];
+const selectNacionalidad = (id, valor) => `<label class="campo"><span>Nacionalidad</span><select id="${id}" name="nacionalidad" required>
+  <option value="" ${valor ? '' : 'selected'} disabled>Elegí la nacionalidad</option>
+  ${PAISES.map((p) => `<option ${valor === p ? 'selected' : ''}>${p}</option>`).join('')}${valor && !PAISES.includes(valor) ? `<option selected>${esc(valor)}</option>` : ''}</select></label>`;
+const bloqueTutor = (pre, u) => `<fieldset class="hab-caja full tutor-caja" data-tutor hidden><legend>Contacto de emergencia de sus tutores</legend>
+  <p class="muted" style="margin:0 0 12px">Obligatorio para alumnos y pilotos que no son de Argentina: a quién llamar ante una emergencia.</p>
+  <div class="form-grid">
+    <label class="campo">Nombre y apellido del tutor<input id="${pre}-tnom" name="tutor_nombre" value="${esc(u?.tutor_nombre || '')}"></label>
+    <label class="campo">Parentesco o vínculo<input id="${pre}-tpar" name="tutor_parentesco" value="${esc(u?.tutor_parentesco || '')}" placeholder="Ej: madre, padre, tutor legal"></label>
+    <label class="campo"><span>Teléfono <span class="op">(con código de país)</span></span><input id="${pre}-ttel" name="tutor_telefono" type="tel" value="${esc(u?.tutor_telefono || '')}" placeholder="Ej: +598 99 123 456"></label>
+    <label class="campo"><span>Email <span class="op">(opcional)</span></span><input id="${pre}-tmail" name="tutor_email" type="email" value="${esc(u?.tutor_email || '')}"></label>
+  </div></fieldset>`;
+// muestra el bloque de tutores según nacionalidad y tipo de usuario
+function activarTutor(form, rolDe) {
+  const sel = $('select[name=nacionalidad]', form); const caja = $('[data-tutor]', form);
+  const ajustar = () => { caja.hidden = !(sel.value && sel.value !== 'Argentina' && ['alumno', 'ppa'].includes(rolDe())); };
+  sel.addEventListener('change', ajustar); ajustar(); return ajustar;
+}
+
 // =====================================================================
 //                              PERFIL
 // =====================================================================
@@ -3922,12 +3951,15 @@ VISTAS.perfil = async function vistaPerfil(v) {
   }[u.rol];
   const campo = (n, l, t = 'text', extra = '') => `<label class="campo ${extra}">${l}<input id="pf-${n}" type="${t}" name="${n}" value="${esc(u[n] || '')}"></label>`;
   v.innerHTML = hero('Mi perfil', 'Mantené tus datos y tu documentación al día.') + `
+    ${u.nacionalidad ? '' : '<div class="aviso-perfil anim"><b>Falta tu nacionalidad.</b> Elegila en tus datos personales y guardá los cambios.</div>'}
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Datos personales</h3></div>
       <form id="f-perfil" class="form-grid">
         ${campo('nombre', 'Nombre completo')} ${campo('apellido', 'Apellido')} ${campo('email', 'Email', 'email')} ${campo('telefono', 'Teléfono', 'tel')}
         ${campo('direccion', 'Dirección', 'text', 'full')} ${campo('dni', 'DNI')} ${campo('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
         ${u.rol !== 'admin' ? `${campo('licencia_nro', 'N° de licencia <span class="op">(si corresponde)</span>')} ${u.rol !== 'mecanico' ? campo('vencimiento_cma', 'Vencimiento del CMA', 'date') : ''}` : ''}
+        ${selectNacionalidad('pf-nacionalidad', u.nacionalidad)}
         ${campo('contacto_emergencia', 'Contacto de emergencia <span class="op">(nombre y teléfono)</span>', 'text', 'full')}
+        ${bloqueTutor('pf', u)}
         <div class="full" style="display:flex;justify-content:flex-end"><button class="btn" type="submit">Guardar cambios</button></div>
       </form></div>
     ${docs.length ? `<div class="card anim" style="--i:2"><div class="card-head"><h3>Documentación</h3><span class="muted">Solo PDF · máx. 10 MB · arrastrá el archivo o hacé clic</span></div>
@@ -3941,7 +3973,9 @@ VISTAS.perfil = async function vistaPerfil(v) {
         <label class="campo">Nueva contraseña<input id="pw-n" type="password" name="nueva" autocomplete="new-password" minlength="6" required></label>
         <div class="full" style="display:flex;justify-content:flex-end"><button class="btn sec" type="submit">Actualizar contraseña</button></div>
       </form></div>`;
-  $('#f-perfil', v).onsubmit = async (e) => { e.preventDefault(); const r = await hacer(async () => await Store.guardarPerfil(Object.fromEntries(new FormData(e.target))), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; } };
+  activarTutor($('#f-perfil', v), () => u.rol);
+  $('#f-perfil', v).onsubmit = async (e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); d.nacionalidad = $('#pf-nacionalidad', v).value; if ($('[data-tutor]', v).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
+    const r = await hacer(async () => await Store.guardarPerfil(d), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; $('.aviso-perfil', v)?.remove(); } };
   $('#f-pass', v).onsubmit = async (e) => { e.preventDefault(); const f = e.target; if (await hacer(async () => { await Store.cambiarPassword(f.actual.value, f.nueva.value); return true; }, 'Contraseña actualizada')) f.reset(); };
   $$('.doc', v).forEach((d) => {
     const tipo = d.dataset.doc; const input = $('input[type=file]', d);
@@ -4000,7 +4034,10 @@ async function fichaPiloto(id) {
         <div><small>Email</small><span>${esc(p.email)}</span></div><div><small>Teléfono</small><span>${esc(p.telefono || '—')}</span></div>
         <div><small>DNI</small><span>${esc(p.dni || '—')}</span></div><div><small>Fecha de nacimiento</small><span>${p.fecha_nacimiento ? esc(fmtCorta(p.fecha_nacimiento)) : '—'}</span></div>
         <div style="grid-column:1/-1"><small>Dirección</small><span>${esc(p.direccion || '—')}</span></div>
+        <div><small>Nacionalidad</small><span>${esc(p.nacionalidad || 'Sin cargar')}</span></div>
         <div><small>Contacto de emergencia</small><span>${esc(p.contacto_emergencia || '—')}</span></div><div><small>N° de licencia</small><span>${esc(p.licencia_nro || '—')}</span></div>
+        ${p.tutor_nombre ? `<div style="grid-column:1/-1" class="tutor-ficha"><small>Tutor · contacto de emergencia</small><span><b>${esc(p.tutor_nombre)}</b> (${esc(p.tutor_parentesco || '')}) ·
+          <a href="tel:${esc(String(p.tutor_telefono).replace(/[^\d+]/g, ''))}">${esc(p.tutor_telefono)}</a>${p.tutor_email ? ` · <a href="mailto:${esc(p.tutor_email)}">${esc(p.tutor_email)}</a>` : ''}</span></div>` : ''}
         <div><small>Vencimiento CMA</small><span>${p.vencimiento_cma ? `${esc(fmtCorta(p.vencimiento_cma))} ${venc ? '<span class="badge danger">Vencido</span>' : ''}` : '—'}</span></div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:18px">${doc('cma', 'CMA')} ${doc('licencia', 'Licencia PPA')} ${doc('autorizacion', 'Autorización de menor')}
@@ -4414,7 +4451,8 @@ async function editarUsuario(u, despues, rolElegido) {
       ${c('nombre', 'Nombre completo')} ${c('apellido', 'Apellido')} ${c('email', 'Email (con este inicia sesión)', 'email')} ${c('telefono', 'Teléfono', 'tel')}
       ${c('direccion', 'Dirección', 'text', '', 'full')} ${c('dni', 'DNI')} ${c('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
-      ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${c('contacto_emergencia', 'Contacto de emergencia')}
+      ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)} ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
+      ${bloqueTutor('u', u)}
       <label class="campo full">${u ? 'Nueva contraseña <span class="op">(dejar vacío para no cambiarla)</span>' : 'Contraseña inicial <span class="op">(se la pasás al usuario para que ingrese)</span>'}<input id="u-password" type="text" name="password" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
       <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Habilitaciones</legend>
         <div class="marcas">
@@ -4435,11 +4473,14 @@ async function editarUsuario(u, despues, rolElegido) {
     $('#u-desc', m.el).textContent = ROL_INFO[r][1];
     
   };
-  $('#u-rol', m.el).onchange = ajustar; ajustar();
+  const ajustarTutor = activarTutor($('#f-u', m.el), () => $('#u-rol', m.el).value);
+  $('#u-rol', m.el).onchange = () => { ajustar(); ajustarTutor(); }; ajustar();
   $('#u-ok', m.el).onclick = async () => {
     const d = Object.fromEntries(new FormData($('#f-u', m.el)));
     if (yoMismo) d.rol = u.rol;
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
+    if ($('[data-tutor]', m.el).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
+    d.nacionalidad = $('#u-nacionalidad', m.el).value;
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
     const guardado = await hacer(async () => {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);

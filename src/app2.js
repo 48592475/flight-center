@@ -549,9 +549,10 @@ VISTAS.panel = async function vistaPanel(v) {
         ${items.length ? `<div class="agenda-hoy">${items.map((x) => `<div class="agenda-fila"><span class="mono">${rango(x.b)}</span><span>${x.t}</span></div>`).join('')}</div>` : vacio('No hay actividad programada hoy.')}</div>
       <div class="card anim" style="--i:8"><div class="card-head"><h3>Alertas</h3></div>
         ${p.vence.map((u) => `<div class="aviso ${u.vencido ? 'warn' : ''}"><div><strong>${esc(u.nombre)} ${esc(u.apellido)} · CMA ${u.vencido ? 'vencido' : 'por vencer'}</strong>${esc(ROLES[u.rol])} · vence ${esc(fmtCorta(u.vencimiento_cma))}</div></div>`).join('')}
+        ${(p.tardesHoy || []).map((a) => `<div class="aviso warn"><div><strong>${esc(a.instructor)} llegó ${a.minutos_tarde} min tarde</strong>Registró su llegada a las ${esc(a.hora)}; su primer turno era a las ${hh(a.primer_bloque)}.</div></div>`).join('')}
         ${p.reportadas ? `<div class="aviso warn"><div><strong>${p.reportadas} reporte(s) de flota sin revisar</strong>El mecánico todavía no los revisó.</div></div>` : ''}
         ${p.sinInstructor.length ? `<div class="aviso"><div><strong>Instructores sin turnos hoy</strong>${p.sinInstructor.map((i) => esc(`${i.nombre} ${i.apellido}`)).join(', ')}</div></div>` : ''}
-        ${!p.vence.length && !p.reportadas && !p.sinInstructor.length ? vacio('Sin alertas.') : ''}
+        ${!p.vence.length && !p.reportadas && !p.sinInstructor.length && !(p.tardesHoy || []).length ? vacio('Sin alertas.') : ''}
         <button class="btn sec sm" id="ir-dispo" style="margin-top:8px">Asignar instructores</button></div>
     </div>`;
   animarNumeros(v);

@@ -931,6 +931,9 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .foto-prev img { width: 100%; height: 100%; object-fit: cover; }
 .foto-card { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
 
+/* asistencia de instructores */
+.llegada-check.tarde { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 46px; font-weight: 800; color: #fff; }
+
 </style>
 </head>
 <body>
@@ -1063,6 +1066,11 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // asistencia de instructores de ejemplo
+    db.asistencia_inst = []; db.seq.ai = 0;
+    const asis = (inst, dias, hora, primer) => { const [h, m] = hora.split(':').map(Number); const mins = h * 60 + m - primer * 60;
+      db.asistencia_inst.push({ id: ++db.seq.ai, instructor_id: inst, fecha: dia(dias), hora, primer_bloque: primer, tarde: mins > 10, minutos_tarde: Math.max(0, mins) }); };
+    asis(sofia, -40, '07:40', 8); asis(martin, -25, '09:50', 10); asis(martin, -12, '14:25', 14); asis(martin, -2, '09:45', 10); asis(sofia, -9, '09:35', 10);
     // fotos de ejemplo (ilustraciones), salvo Valentina
     const COLORES = ['#1565c0', '#0f3460', '#1e88e5', '#00838f', '#5e35b1', '#2e7d32', '#ad1457'];
     db.usuarios.filter((u) => u.id !== vale).forEach((u, i) => {
@@ -1146,6 +1154,8 @@ function crearStore(opts = {}) {
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
+    if (!d.asistencia_inst) { d.asistencia_inst = []; d.seq.ai = 0; }
+    if (d.config.tolerancia_inst == null) d.config.tolerancia_inst = 10;
     if (!d.movimientos) reconstruirCuentas(d);
     if (!d.notificaciones) { d.notificaciones = []; d.seq.nt = 0; }
     if (!d.planes) { d.planes = []; d.seq.p = 0; }
@@ -1656,7 +1666,8 @@ function crearStore(opts = {}) {
         .map((u) => ({ ...pub(u), vencido: u.vencimiento_cma < h }));
       return { hoyRes, hoyCla, semana, aviones: db.recursos.filter((r) => r.tipo === 'avion'), sims: db.recursos.filter((r) => r.tipo === 'simulador'),
         reportadas: db.novedades.filter((n) => n.estado === 'reportada').length, alumnos: db.usuarios.filter((u) => u.rol === 'alumno' && u.activo).length,
-        sinInstructor: db.usuarios.filter((u) => u.rol === 'instructor' && u.activo && !(db.disponibilidad[`${u.id}|${h}`] || []).length).map(pub), vence };
+        sinInstructor: db.usuarios.filter((u) => u.rol === 'instructor' && u.activo && !(db.disponibilidad[`${u.id}|${h}`] || []).length).map(pub), vence,
+        tardesHoy: db.asistencia_inst.filter((a) => a.fecha === h && a.tarde).map((a) => ({ ...a, instructor: nombre(usuario(a.instructor_id)) })) };
     },
     todasReservas({ desde, hasta, tipo, estado } = {}) {
       exigir('admin');
@@ -1789,8 +1800,54 @@ function crearStore(opts = {}) {
     guardar(); return { ...db.config };
   };
   // el alumno o piloto escanea el QR de la escuela: queda presente en lo que tenga ahora
+  // ---------- asistencia de instructores ----------
+  // el instructor escanea el mismo QR al llegar; si llega después de su primer turno (más la tolerancia) queda como tarde
+  const actividadesInst = (id, f) => [
+    ...db.reservas.filter((r) => r.instructor_id === id && r.fecha === f && r.estado !== 'cancelado').map((r) => ({ tipo: r.tipo, bloque: r.bloque, recurso: recurso(r.recurso_id)?.nombre || '', con: nombre(usuario(r.piloto_id)), rid: r.id })),
+    ...db.clases.filter((c) => c.instructor_id === id && c.fecha === f && c.estado !== 'cancelada').map((c) => ({ tipo: 'teorica', bloque: c.bloque, recurso: c.aula, titulo: `${c.teo} · ${LECCIONES[c.teo]?.titulo || ''}` })),
+  ].sort((a, b) => a.bloque - b.bloque);
+  function llegadaInstructor(u, h, min, hora) {
+    const acts = actividadesInst(u.id, h);
+    if (!acts.length) fail('Hoy no tenés vuelos, simuladores ni clases asignados.');
+    const ya = db.asistencia_inst.find((a) => a.instructor_id === u.id && a.fecha === h);
+    const items = acts.map(({ rid, ...a }) => a);
+    if (ya) return { instructor: true, ya: true, nombre: u.nombre, ...ya, items };
+    const primer = acts[0].bloque;
+    if (min < primer * 60 - 90) fail(`Podés registrar tu llegada desde 1 h 30 min antes de tu primer turno (${hh(primer)}).`);
+    const minutos = Math.max(0, min - primer * 60); const tol = db.config.tolerancia_inst ?? 10;
+    const reg = { id: ++db.seq.ai, instructor_id: u.id, fecha: h, hora, primer_bloque: primer, tarde: minutos > tol, minutos_tarde: minutos };
+    db.asistencia_inst.push(reg);
+    for (const a of acts) if (a.rid) { const r = db.reservas.find((x) => x.id === a.rid); if (r) r.llegada_instructor = hora; }
+    if (reg.tarde) for (const ad of db.usuarios.filter((x) => x.rol === 'admin' && x.activo))
+      notificar(ad, 'instructor_tarde', { instructor: nombre(u), fecha: h, hora, primer_bloque: primer, minutos, actividades: items }, { soloEmail: true });
+    guardar();
+    return { instructor: true, ya: false, nombre: u.nombre, ...reg, items, tolerancia: tol };
+  }
+  // historial: cada día con actividad asignada, con la llegada registrada (a tiempo o tarde) o sin registro
+  function historialInstructor(id, dias = 60) {
+    const h = hoy(); const desde = dia(-dias); const fechas = new Set();
+    for (const r of db.reservas) if (r.instructor_id === id && r.estado !== 'cancelado' && r.fecha >= desde && r.fecha <= h) fechas.add(r.fecha);
+    for (const c of db.clases) if (c.instructor_id === id && c.estado !== 'cancelada' && c.fecha >= desde && c.fecha <= h) fechas.add(c.fecha);
+    for (const a of db.asistencia_inst) if (a.instructor_id === id && a.fecha >= desde) fechas.add(a.fecha);
+    const ahoraMin = new Date().getHours() * 60 + new Date().getMinutes(); const tol = db.config.tolerancia_inst ?? 10;
+    const filas = [...fechas].sort().reverse().map((f) => {
+      const reg = db.asistencia_inst.find((a) => a.instructor_id === id && a.fecha === f);
+      const acts = actividadesInst(id, f); const primer = reg?.primer_bloque ?? acts[0]?.bloque;
+      if (reg) return { fecha: f, estado: reg.tarde ? 'tarde' : 'a_tiempo', hora: reg.hora, primer_bloque: primer, minutos_tarde: reg.minutos_tarde, actividades: acts.length };
+      if (f === h && (primer == null || ahoraMin <= primer * 60 + tol)) return null; // hoy todavía está a tiempo
+      return { fecha: f, estado: 'sin_registro', hora: null, primer_bloque: primer, minutos_tarde: null, actividades: acts.length };
+    }).filter(Boolean);
+    return { filas, a_tiempo: filas.filter((x) => x.estado === 'a_tiempo').length, tarde: filas.filter((x) => x.estado === 'tarde').length, sin_registro: filas.filter((x) => x.estado === 'sin_registro').length, tolerancia: tol };
+  }
+  api.miAsistencia = () => { const u = exigir('instructor'); return historialInstructor(u.id); };
+  api.asistenciaInstructores = () => {
+    exigir('admin');
+    return db.usuarios.filter((u) => u.rol === 'instructor' && u.activo).map((u) => ({ ...pub(u), ...historialInstructor(u.id) }));
+  };
+  api.asistenciaDeInstructor = (id) => { exigir('admin'); const u = usuario(id); if (!u || u.rol !== 'instructor') fail('Instructor no encontrado'); return { ...pub(u), ...historialInstructor(u.id, 365) }; };
+  api.guardarTolerancia = (min) => { exigir('admin'); const n = Math.round(Number(min)); if (!(n >= 0 && n <= 60)) fail('La tolerancia tiene que estar entre 0 y 60 minutos'); db.config.tolerancia_inst = n; guardar(); return n; };
   api.registrarLlegada = (codigo, pos) => {
-    const u = exigir('alumno', 'ppa');
+    const u = exigir('alumno', 'ppa', 'instructor');
     if (String(codigo || '') !== db.config.qr) fail('Este QR no es válido. Escaneá el QR de asistencia que está en la escuela.');
     if (!navegador && opts.exigirUbicacion !== false) {
       if (!pos || pos.lat == null) fail('Para registrar tu llegada necesitamos la ubicación del celular. Activala y volvé a escanear el QR.');
@@ -1800,6 +1857,7 @@ function crearStore(opts = {}) {
     const h = hoy(); const ahoraH = new Date(); const min = ahoraH.getHours() * 60 + ahoraH.getMinutes();
     const enVentana = (b) => min >= b * 60 - 90 && min < (b + 2) * 60; // desde 1 h 30 antes hasta el final del bloque
     const hora = `${String(ahoraH.getHours()).padStart(2, '0')}:${String(ahoraH.getMinutes()).padStart(2, '0')}`;
+    if (u.rol === 'instructor') return llegadaInstructor(u, h, min, hora);
     const items = [];
     const res = db.reservas.filter((r) => r.piloto_id === u.id && r.fecha === h && r.estado === 'pendiente' && enVentana(r.bloque));
     // si tiene varios bloques seguidos, queda presente en todos
@@ -2087,6 +2145,14 @@ const contenidoAviso = (() => {
       return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'instructor_tarde') {
+      const d = n.datos;
+      return { asunto: `Llegada tarde · ${d.instructor} · ${fechaCorta(d.fecha)} ${d.hora}`, titulo: 'Un instructor llegó tarde',
+        intro: `${d.instructor} registró su llegada a la escuela con el QR a las ${d.hora}, ${d.minutos} minutos después de su primer turno del día.`,
+        filas: [['Instructor', d.instructor], ['Fecha', fechaLarga(d.fecha)], ['Primer turno', `${hh(d.primer_bloque)} hs`], ['Llegada', `${d.hora} hs (${d.minutos} min tarde)`],
+          ...d.actividades.map((a) => [`${hh(a.bloque)} hs`, a.tipo === 'teorica' ? `Clase ${a.titulo} · ${a.recurso}` : `${a.tipo === 'simulador' ? 'Simulador' : 'Vuelo'} ${a.recurso}${a.con ? ` con ${a.con}` : ''}`])],
+        notas: ['Quedó registrado en el historial de asistencia del instructor (Administración → Instructores).'], wpp: [] };
     }
     if (n.tipo === 'turno_liberado') {
       const d = n.datos; const sim = d.tipo === 'simulador'; const bl = d.bloques;
@@ -5485,9 +5551,10 @@ VISTAS.panel = async function vistaPanel(v) {
         ${items.length ? `<div class="agenda-hoy">${items.map((x) => `<div class="agenda-fila"><span class="mono">${rango(x.b)}</span><span>${x.t}</span></div>`).join('')}</div>` : vacio('No hay actividad programada hoy.')}</div>
       <div class="card anim" style="--i:8"><div class="card-head"><h3>Alertas</h3></div>
         ${p.vence.map((u) => `<div class="aviso ${u.vencido ? 'warn' : ''}"><div><strong>${esc(u.nombre)} ${esc(u.apellido)} · CMA ${u.vencido ? 'vencido' : 'por vencer'}</strong>${esc(ROLES[u.rol])} · vence ${esc(fmtCorta(u.vencimiento_cma))}</div></div>`).join('')}
+        ${(p.tardesHoy || []).map((a) => `<div class="aviso warn"><div><strong>${esc(a.instructor)} llegó ${a.minutos_tarde} min tarde</strong>Registró su llegada a las ${esc(a.hora)}; su primer turno era a las ${hh(a.primer_bloque)}.</div></div>`).join('')}
         ${p.reportadas ? `<div class="aviso warn"><div><strong>${p.reportadas} reporte(s) de flota sin revisar</strong>El mecánico todavía no los revisó.</div></div>` : ''}
         ${p.sinInstructor.length ? `<div class="aviso"><div><strong>Instructores sin turnos hoy</strong>${p.sinInstructor.map((i) => esc(`${i.nombre} ${i.apellido}`)).join(', ')}</div></div>` : ''}
-        ${!p.vence.length && !p.reportadas && !p.sinInstructor.length ? vacio('Sin alertas.') : ''}
+        ${!p.vence.length && !p.reportadas && !p.sinInstructor.length && !(p.tardesHoy || []).length ? vacio('Sin alertas.') : ''}
         <button class="btn sec sm" id="ir-dispo" style="margin-top:8px">Asignar instructores</button></div>
     </div>`;
   animarNumeros(v);
@@ -5960,7 +6027,7 @@ function verMensajes(lista) {
 
 // ---------- vista de avisos ----------
 const ESTADO_ENVIO = { enviado: 'Enviado ✓', pendiente: 'En cola de envío', error: 'No se pudo enviar', sin_configurar: 'No enviado: el canal todavía no está configurado en el servidor', demo: 'Demo' };
-const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido', foro_respuesta: 'Respuesta en el foro', ausencia: 'Ausencia registrada', turno_liberado: 'Turno liberado' };
+const TIPO_AVISO = { reserva: 'Reserva confirmada', clase: 'Inscripción a clase', deuda: 'Recordatorio de pago', tp_nuevo: 'Nuevo trabajo práctico', correccion: 'Trabajo corregido', foro_respuesta: 'Respuesta en el foro', ausencia: 'Ausencia registrada', turno_liberado: 'Turno liberado', instructor_tarde: 'Instructor tarde' };
 VISTAS.avisos = async function vistaAvisos(v) {
   const esAdmin = state.user.rol === 'admin';
   const l = esAdmin ? await Store.notificaciones() : await Store.misNotificaciones();
@@ -6425,13 +6492,14 @@ function ubicacion() {
   });
 }
 async function procesarLlegada(codigo) {
-  if (!['alumno', 'ppa'].includes(state.user?.rol)) return toast('El QR de asistencia es para alumnos y pilotos.', 'error');
+  if (!['alumno', 'ppa', 'instructor'].includes(state.user?.rol)) return toast('El QR de asistencia es para alumnos, pilotos e instructores.', 'error');
   let pos = null;
   if (MODO === 'servidor') {
     toast('Verificando tu ubicación…');
     try { pos = await ubicacion(); } catch (e) { return toast(e.message, 'error'); }
   }
   const r = await hacer(() => Store.registrarLlegada(codigo, pos)); if (!r) return;
+  if (r.instructor) return llegadaInstructorUI(r);
   const yaEstaba = r.items.every((x) => x.ya);
   const e = document.createElement('div'); e.className = 'llegada-escena';
   e.innerHTML = `<div class="llegada-card">
@@ -6443,6 +6511,63 @@ async function procesarLlegada(codigo) {
     <button class="btn block" id="ll-ok" style="margin-top:18px">Listo</button></div>`;
   document.body.append(e);
   $('#ll-ok', e).onclick = () => { e.style.animation = 'fadeIn .25s reverse both'; setTimeout(() => e.remove(), 220); if (state.tab === 'reservas') renderApp(); };
+}
+
+function llegadaInstructorUI(r) {
+  const e = document.createElement('div'); e.className = 'llegada-escena';
+  const titulo = r.ya ? 'Tu llegada ya estaba registrada' : r.tarde ? `Llegaste ${r.minutos_tarde} min tarde` : `¡Buen día, ${esc(r.nombre)}!`;
+  e.innerHTML = `<div class="llegada-card">
+    <div class="llegada-check ${r.tarde ? 'tarde' : ''}">${r.tarde ? '!' : ICON_CHECK}</div>
+    <h2>${titulo}</h2>
+    <div class="hora" ${r.tarde ? 'style="color:#d97706"' : ''}>${esc(r.hora)}</div>
+    <p class="muted" style="margin:0 0 6px">${r.ya ? 'No hace falta volver a escanear.' : r.tarde ? `Tu primer turno era a las ${hh(r.primer_bloque)}. Quedó registrado en tu historial y se avisó a la administración.` : 'Llegada registrada a tiempo. Tus alumnos ya te ven en la escuela.'}</p>
+    ${r.items.map((x) => `<div class="llegada-item"><b>${TIPO_RES[x.tipo]}</b> · ${rango(x.bloque)} · ${esc(x.titulo || x.recurso)}${x.con ? `<br><span class="muted">con ${esc(x.con)}</span>` : ''}</div>`).join('')}
+    <button class="btn block" id="ll-ok" style="margin-top:18px">Listo</button></div>`;
+  document.body.append(e);
+  $('#ll-ok', e).onclick = () => { e.style.animation = 'fadeIn .25s reverse both'; setTimeout(() => e.remove(), 220); if (state.tab === 'agenda') renderApp(); };
+}
+const ESTADO_ASIS = { a_tiempo: '<span class="badge ok">A tiempo</span>', tarde: '<span class="badge danger">Tarde</span>', sin_registro: '<span class="badge gris">Sin registro</span>' };
+const filaAsis = (x) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(x.fecha))}</td><td class="mono">${x.primer_bloque != null ? hh(x.primer_bloque) : '—'}</td><td class="mono">${esc(x.hora || '—')}</td>
+  <td>${ESTADO_ASIS[x.estado]}${x.estado === 'tarde' ? ` <span class="muted">${x.minutos_tarde} min</span>` : ''}</td><td class="muted">${x.actividades} ${x.actividades === 1 ? 'turno' : 'turnos'}</td></tr>`;
+const tablaAsis = (filas) => filas.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Primer turno</th><th>Llegada</th><th>Estado</th><th>Actividad</th></tr></thead><tbody>${filas.map(filaAsis).join('')}</tbody></table></div>` : vacio('Todavía no hay registros.');
+// instructor: su propio historial en la agenda
+{
+  const agenda = VISTAS.agenda;
+  VISTAS.agenda = async function (v, ...a) {
+    await agenda(v, ...a);
+    const h = await Store.miAsistencia();
+    const card = document.createElement('div'); card.className = 'card anim';
+    card.innerHTML = `<div class="card-head"><h3>Mi asistencia</h3><span class="muted">Escaneá el QR de la escuela al llegar · tolerancia ${h.tolerancia} min · últimos 60 días</span></div>
+      <div class="flujo" style="margin-bottom:12px"><span class="badge ok">${h.a_tiempo} a tiempo</span><span class="badge danger">${h.tarde} tarde</span><span class="badge gris">${h.sin_registro} sin registro</span></div>
+      ${tablaAsis(h.filas.slice(0, 8))}`;
+    v.append(card);
+  };
+}
+// administración: historial de cada instructor
+async function historialInstructorUI(id) {
+  const h = await hacer(async () => await Store.asistenciaDeInstructor(id)); if (!h) return;
+  modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center">${avatarDe(h, 48)}<div><h3>${esc(h.nombre)} ${esc(h.apellido)}</h3><div class="muted">Asistencia del último año</div></div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <div class="modal-body"><div class="flujo" style="margin-bottom:14px"><span class="badge ok">${h.a_tiempo} a tiempo</span><span class="badge danger">${h.tarde} tarde</span><span class="badge gris">${h.sin_registro} sin registro</span></div>${tablaAsis(h.filas)}</div>`, { ancho: true });
+}
+{
+  const dispo = VISTAS.dispo;
+  VISTAS.dispo = async function (v, ...a) {
+    await dispo(v, ...a);
+    const l = await Store.asistenciaInstructores(); const tol = l[0]?.tolerancia ?? 10;
+    const card = document.createElement('div'); card.className = 'card anim';
+    card.innerHTML = `<div class="card-head"><h3>Asistencia de instructores</h3>
+        <div class="flujo"><span class="muted">Últimos 60 días · tolerancia</span><input id="tol" type="number" min="0" max="60" value="${tol}" style="width:76px" aria-label="Tolerancia en minutos"><span class="muted">min</span></div></div>
+      <p class="muted" style="margin:-4px 0 14px">Los instructores escanean el mismo QR que los alumnos al llegar. Si llegan después de su primer turno más la tolerancia, queda como tarde y te llega un aviso.</p>
+      ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Instructor</th><th>A tiempo</th><th>Tarde</th><th>Sin registro</th><th>Última llegada</th><th></th></tr></thead><tbody>
+        ${l.map((i) => { const ult = i.filas.find((x) => x.hora);
+          return `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(i, 34)}<strong>${esc(i.nombre)} ${esc(i.apellido)}</strong></div></td>
+          <td><span class="badge ok">${i.a_tiempo}</span></td><td><span class="badge ${i.tarde ? 'danger' : 'gris'}">${i.tarde}</span></td><td><span class="badge gris">${i.sin_registro}</span></td>
+          <td>${ult ? `${esc(fmtCorta(ult.fecha))} ${esc(ult.hora)} ${ESTADO_ASIS[ult.estado]}` : '—'}</td><td style="text-align:right"><button class="btn sec sm" data-hist="${i.id}">Ver historial</button></td></tr>`; }).join('')}
+      </tbody></table></div>` : vacio('No hay instructores activos.')}`;
+    v.append(card);
+    $$('[data-hist]', card).forEach((b) => b.onclick = () => historialInstructorUI(Number(b.dataset.hist)));
+    $('#tol', card).onchange = async (e) => { if (await hacer(async () => await Store.guardarTolerancia(e.target.value), 'Tolerancia actualizada') !== undefined) await VISTAS.dispo(v, ...a); };
+  };
 }
 
 // ---------- instructor y administración: actualización automática ----------

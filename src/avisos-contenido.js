@@ -45,6 +45,14 @@ const contenidoAviso = (() => {
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
     }
+    if (n.tipo === 'instructor_tarde') {
+      const d = n.datos;
+      return { asunto: `Llegada tarde · ${d.instructor} · ${fechaCorta(d.fecha)} ${d.hora}`, titulo: 'Un instructor llegó tarde',
+        intro: `${d.instructor} registró su llegada a la escuela con el QR a las ${d.hora}, ${d.minutos} minutos después de su primer turno del día.`,
+        filas: [['Instructor', d.instructor], ['Fecha', fechaLarga(d.fecha)], ['Primer turno', `${hh(d.primer_bloque)} hs`], ['Llegada', `${d.hora} hs (${d.minutos} min tarde)`],
+          ...d.actividades.map((a) => [`${hh(a.bloque)} hs`, a.tipo === 'teorica' ? `Clase ${a.titulo} · ${a.recurso}` : `${a.tipo === 'simulador' ? 'Simulador' : 'Vuelo'} ${a.recurso}${a.con ? ` con ${a.con}` : ''}`])],
+        notas: ['Quedó registrado en el historial de asistencia del instructor (Administración → Instructores).'], wpp: [] };
+    }
     if (n.tipo === 'turno_liberado') {
       const d = n.datos; const sim = d.tipo === 'simulador'; const bl = d.bloques;
       const horario = `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs`;

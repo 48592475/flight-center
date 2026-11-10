@@ -121,6 +121,11 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // asistencia de instructores de ejemplo
+    db.asistencia_inst = []; db.seq.ai = 0;
+    const asis = (inst, dias, hora, primer) => { const [h, m] = hora.split(':').map(Number); const mins = h * 60 + m - primer * 60;
+      db.asistencia_inst.push({ id: ++db.seq.ai, instructor_id: inst, fecha: dia(dias), hora, primer_bloque: primer, tarde: mins > 10, minutos_tarde: Math.max(0, mins) }); };
+    asis(sofia, -40, '07:40', 8); asis(martin, -25, '09:50', 10); asis(martin, -12, '14:25', 14); asis(martin, -2, '09:45', 10); asis(sofia, -9, '09:35', 10);
     // fotos de ejemplo (ilustraciones), salvo Valentina
     const COLORES = ['#1565c0', '#0f3460', '#1e88e5', '#00838f', '#5e35b1', '#2e7d32', '#ad1457'];
     db.usuarios.filter((u) => u.id !== vale).forEach((u, i) => {
@@ -204,6 +209,8 @@ function crearStore(opts = {}) {
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
+    if (!d.asistencia_inst) { d.asistencia_inst = []; d.seq.ai = 0; }
+    if (d.config.tolerancia_inst == null) d.config.tolerancia_inst = 10;
     if (!d.movimientos) reconstruirCuentas(d);
     if (!d.notificaciones) { d.notificaciones = []; d.seq.nt = 0; }
     if (!d.planes) { d.planes = []; d.seq.p = 0; }
@@ -714,7 +721,8 @@ function crearStore(opts = {}) {
         .map((u) => ({ ...pub(u), vencido: u.vencimiento_cma < h }));
       return { hoyRes, hoyCla, semana, aviones: db.recursos.filter((r) => r.tipo === 'avion'), sims: db.recursos.filter((r) => r.tipo === 'simulador'),
         reportadas: db.novedades.filter((n) => n.estado === 'reportada').length, alumnos: db.usuarios.filter((u) => u.rol === 'alumno' && u.activo).length,
-        sinInstructor: db.usuarios.filter((u) => u.rol === 'instructor' && u.activo && !(db.disponibilidad[`${u.id}|${h}`] || []).length).map(pub), vence };
+        sinInstructor: db.usuarios.filter((u) => u.rol === 'instructor' && u.activo && !(db.disponibilidad[`${u.id}|${h}`] || []).length).map(pub), vence,
+        tardesHoy: db.asistencia_inst.filter((a) => a.fecha === h && a.tarde).map((a) => ({ ...a, instructor: nombre(usuario(a.instructor_id)) })) };
     },
     todasReservas({ desde, hasta, tipo, estado } = {}) {
       exigir('admin');
@@ -847,8 +855,54 @@ function crearStore(opts = {}) {
     guardar(); return { ...db.config };
   };
   // el alumno o piloto escanea el QR de la escuela: queda presente en lo que tenga ahora
+  // ---------- asistencia de instructores ----------
+  // el instructor escanea el mismo QR al llegar; si llega después de su primer turno (más la tolerancia) queda como tarde
+  const actividadesInst = (id, f) => [
+    ...db.reservas.filter((r) => r.instructor_id === id && r.fecha === f && r.estado !== 'cancelado').map((r) => ({ tipo: r.tipo, bloque: r.bloque, recurso: recurso(r.recurso_id)?.nombre || '', con: nombre(usuario(r.piloto_id)), rid: r.id })),
+    ...db.clases.filter((c) => c.instructor_id === id && c.fecha === f && c.estado !== 'cancelada').map((c) => ({ tipo: 'teorica', bloque: c.bloque, recurso: c.aula, titulo: `${c.teo} · ${LECCIONES[c.teo]?.titulo || ''}` })),
+  ].sort((a, b) => a.bloque - b.bloque);
+  function llegadaInstructor(u, h, min, hora) {
+    const acts = actividadesInst(u.id, h);
+    if (!acts.length) fail('Hoy no tenés vuelos, simuladores ni clases asignados.');
+    const ya = db.asistencia_inst.find((a) => a.instructor_id === u.id && a.fecha === h);
+    const items = acts.map(({ rid, ...a }) => a);
+    if (ya) return { instructor: true, ya: true, nombre: u.nombre, ...ya, items };
+    const primer = acts[0].bloque;
+    if (min < primer * 60 - 90) fail(`Podés registrar tu llegada desde 1 h 30 min antes de tu primer turno (${hh(primer)}).`);
+    const minutos = Math.max(0, min - primer * 60); const tol = db.config.tolerancia_inst ?? 10;
+    const reg = { id: ++db.seq.ai, instructor_id: u.id, fecha: h, hora, primer_bloque: primer, tarde: minutos > tol, minutos_tarde: minutos };
+    db.asistencia_inst.push(reg);
+    for (const a of acts) if (a.rid) { const r = db.reservas.find((x) => x.id === a.rid); if (r) r.llegada_instructor = hora; }
+    if (reg.tarde) for (const ad of db.usuarios.filter((x) => x.rol === 'admin' && x.activo))
+      notificar(ad, 'instructor_tarde', { instructor: nombre(u), fecha: h, hora, primer_bloque: primer, minutos, actividades: items }, { soloEmail: true });
+    guardar();
+    return { instructor: true, ya: false, nombre: u.nombre, ...reg, items, tolerancia: tol };
+  }
+  // historial: cada día con actividad asignada, con la llegada registrada (a tiempo o tarde) o sin registro
+  function historialInstructor(id, dias = 60) {
+    const h = hoy(); const desde = dia(-dias); const fechas = new Set();
+    for (const r of db.reservas) if (r.instructor_id === id && r.estado !== 'cancelado' && r.fecha >= desde && r.fecha <= h) fechas.add(r.fecha);
+    for (const c of db.clases) if (c.instructor_id === id && c.estado !== 'cancelada' && c.fecha >= desde && c.fecha <= h) fechas.add(c.fecha);
+    for (const a of db.asistencia_inst) if (a.instructor_id === id && a.fecha >= desde) fechas.add(a.fecha);
+    const ahoraMin = new Date().getHours() * 60 + new Date().getMinutes(); const tol = db.config.tolerancia_inst ?? 10;
+    const filas = [...fechas].sort().reverse().map((f) => {
+      const reg = db.asistencia_inst.find((a) => a.instructor_id === id && a.fecha === f);
+      const acts = actividadesInst(id, f); const primer = reg?.primer_bloque ?? acts[0]?.bloque;
+      if (reg) return { fecha: f, estado: reg.tarde ? 'tarde' : 'a_tiempo', hora: reg.hora, primer_bloque: primer, minutos_tarde: reg.minutos_tarde, actividades: acts.length };
+      if (f === h && (primer == null || ahoraMin <= primer * 60 + tol)) return null; // hoy todavía está a tiempo
+      return { fecha: f, estado: 'sin_registro', hora: null, primer_bloque: primer, minutos_tarde: null, actividades: acts.length };
+    }).filter(Boolean);
+    return { filas, a_tiempo: filas.filter((x) => x.estado === 'a_tiempo').length, tarde: filas.filter((x) => x.estado === 'tarde').length, sin_registro: filas.filter((x) => x.estado === 'sin_registro').length, tolerancia: tol };
+  }
+  api.miAsistencia = () => { const u = exigir('instructor'); return historialInstructor(u.id); };
+  api.asistenciaInstructores = () => {
+    exigir('admin');
+    return db.usuarios.filter((u) => u.rol === 'instructor' && u.activo).map((u) => ({ ...pub(u), ...historialInstructor(u.id) }));
+  };
+  api.asistenciaDeInstructor = (id) => { exigir('admin'); const u = usuario(id); if (!u || u.rol !== 'instructor') fail('Instructor no encontrado'); return { ...pub(u), ...historialInstructor(u.id, 365) }; };
+  api.guardarTolerancia = (min) => { exigir('admin'); const n = Math.round(Number(min)); if (!(n >= 0 && n <= 60)) fail('La tolerancia tiene que estar entre 0 y 60 minutos'); db.config.tolerancia_inst = n; guardar(); return n; };
   api.registrarLlegada = (codigo, pos) => {
-    const u = exigir('alumno', 'ppa');
+    const u = exigir('alumno', 'ppa', 'instructor');
     if (String(codigo || '') !== db.config.qr) fail('Este QR no es válido. Escaneá el QR de asistencia que está en la escuela.');
     if (!navegador && opts.exigirUbicacion !== false) {
       if (!pos || pos.lat == null) fail('Para registrar tu llegada necesitamos la ubicación del celular. Activala y volvé a escanear el QR.');
@@ -858,6 +912,7 @@ function crearStore(opts = {}) {
     const h = hoy(); const ahoraH = new Date(); const min = ahoraH.getHours() * 60 + ahoraH.getMinutes();
     const enVentana = (b) => min >= b * 60 - 90 && min < (b + 2) * 60; // desde 1 h 30 antes hasta el final del bloque
     const hora = `${String(ahoraH.getHours()).padStart(2, '0')}:${String(ahoraH.getMinutes()).padStart(2, '0')}`;
+    if (u.rol === 'instructor') return llegadaInstructor(u, h, min, hora);
     const items = [];
     const res = db.reservas.filter((r) => r.piloto_id === u.id && r.fecha === h && r.estado === 'pendiente' && enVentana(r.bloque));
     // si tiene varios bloques seguidos, queda presente en todos
@@ -1129,6 +1184,14 @@ const contenidoAviso = (() => {
       return { asunto: `Nuevo trabajo práctico · ${t.titulo}`, titulo: 'Nuevo trabajo práctico en el campus', intro: 'Se publicó un nuevo trabajo práctico en el campus de Flight Center.',
         filas: [['Trabajo', t.titulo], ['Lección', t.leccion === 'GENERAL' ? 'General' : t.leccion], ['Fecha límite', t.fecha_limite ? fechaLarga(t.fecha_limite) : 'Sin fecha límite']],
         notas: ['Ingresá al campus para ver la consigna y hacer tu entrega.'], wpp: [] };
+    }
+    if (n.tipo === 'instructor_tarde') {
+      const d = n.datos;
+      return { asunto: `Llegada tarde · ${d.instructor} · ${fechaCorta(d.fecha)} ${d.hora}`, titulo: 'Un instructor llegó tarde',
+        intro: `${d.instructor} registró su llegada a la escuela con el QR a las ${d.hora}, ${d.minutos} minutos después de su primer turno del día.`,
+        filas: [['Instructor', d.instructor], ['Fecha', fechaLarga(d.fecha)], ['Primer turno', `${hh(d.primer_bloque)} hs`], ['Llegada', `${d.hora} hs (${d.minutos} min tarde)`],
+          ...d.actividades.map((a) => [`${hh(a.bloque)} hs`, a.tipo === 'teorica' ? `Clase ${a.titulo} · ${a.recurso}` : `${a.tipo === 'simulador' ? 'Simulador' : 'Vuelo'} ${a.recurso}${a.con ? ` con ${a.con}` : ''}`])],
+        notas: ['Quedó registrado en el historial de asistencia del instructor (Administración → Instructores).'], wpp: [] };
     }
     if (n.tipo === 'turno_liberado') {
       const d = n.datos; const sim = d.tipo === 'simulador'; const bl = d.bloques;

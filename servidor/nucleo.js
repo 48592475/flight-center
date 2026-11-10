@@ -153,6 +153,10 @@ function crearStore(opts = {}) {
     mov(juan, dia(-10), 'Pago · efectivo', 'pago', 400000, 'pago:2');
     mov(lucia, dia(-30), 'Pago · transferencia', 'pago', 300000, 'pago:3');
     mov(lucia, dia(-1), 'Pago · tarjeta de débito', 'pago', 700000, 'pago:4');
+    // pack de horas de ejemplo: Lucía compró 10 h de vuelo con 10% de descuento
+    db.horas_mov = [{ id: 1, usuario_id: lucia, fecha: dia(-1), tipo: 'vuelo', horas: 10, concepto: 'Pack de 10 h de vuelo', ref: 'pack:1' }]; db.seq.hm = 1;
+    mov(lucia, dia(-1), 'Pack de 10 h de vuelo (10% de descuento)', 'cargo', 1764000, 'pack:1');
+    mov(lucia, dia(-1), 'Pago · transferencia · pack de horas', 'pago', 1764000, 'pago:5');
     // EJEMPLO para la demo: la administración o un instructor pega el METAR/TAF oficial vigente
     const obs = new Date(Date.now() - 25 * 60000); const z = (n) => String(n).padStart(2, '0');
     db.meteo = { metar: `METAR SADM ${z(obs.getUTCDate())}${z(obs.getUTCHours())}00Z 03008KT 9999 FEW030 24/12 Q1016`, taf: '', fecha: ahora(), autor_id: martin, ejemplo: true };
@@ -210,6 +214,7 @@ function crearStore(opts = {}) {
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
     if (!d.config) d.config = configInicial();
     if (!d.asistencia_inst) { d.asistencia_inst = []; d.seq.ai = 0; }
+    if (!d.horas_mov) { d.horas_mov = []; d.seq.hm = 0; }
     if (d.config.tolerancia_inst == null) d.config.tolerancia_inst = 10;
     if (!d.movimientos) reconstruirCuentas(d);
     if (!d.notificaciones) { d.notificaciones = []; d.seq.nt = 0; }
@@ -664,7 +669,10 @@ function crearStore(opts = {}) {
         r.leccion = leccion; r.notas = Object.fromEntries(Object.entries(notas || {}).filter(([, v]) => ['MB', 'B', 'R'].includes(v)));
       }
       r.estado = 'completado'; r.horas = h; r.observaciones = String(observaciones || '').trim() || null;
-      movimiento(r.piloto_id, `${r.tipo === 'vuelo' ? 'Vuelo' : 'Simulador'} ${recurso(r.recurso_id).nombre} · ${String(h).replace('.', ',')} h${r.leccion ? ` · ${r.leccion}` : ''}`, 'cargo', h * db.tarifas[r.tipo], `res:${r.id}`, r.fecha);
+      const desc = `${r.tipo === 'vuelo' ? 'Vuelo' : 'Simulador'} ${recurso(r.recurso_id).nombre} · ${String(h).replace('.', ',')} h${r.leccion ? ` · ${r.leccion}` : ''}`;
+      const delPack = Math.min(h, Math.max(0, saldoHoras(r.piloto_id, r.tipo))); const aCobrar = r1(h - delPack);
+      if (delPack > 0) movHoras(r.piloto_id, r.tipo, -delPack, desc, `res:${r.id}`, r.fecha);
+      if (aCobrar > 0) movimiento(r.piloto_id, delPack > 0 ? `${desc} (${String(r1(delPack)).replace('.', ',')} h del pack, ${String(aCobrar).replace('.', ',')} h a cobrar)` : desc, 'cargo', aCobrar * db.tarifas[r.tipo], `res:${r.id}`, r.fecha);
       guardar();
       return p.rol === 'alumno' ? { leccion: r.leccion, ...estadoLeccion(p.id, r.leccion) } : null;
     },
@@ -796,24 +804,63 @@ function crearStore(opts = {}) {
 
 
   // ---------- estado de cuenta ----------
+  // ---------- cuenta de horas (packs) ----------
+  const r1 = (x) => Math.round(x * 10) / 10;
+  const saldoHoras = (uid, tipo) => r1(db.horas_mov.filter((m) => m.usuario_id === uid && m.tipo === tipo).reduce((s, m) => s + m.horas, 0));
+  const movHoras = (usuario_id, tipo, horas, concepto, ref, fecha = hoy()) => {
+    if (ref && db.horas_mov.some((m) => m.ref === ref)) return;
+    db.horas_mov.push({ id: ++db.seq.hm, usuario_id, fecha, tipo, horas: r1(horas), concepto, ref });
+  };
+  const horasDe = (u) => {
+    const saldo = { vuelo: 0, simulador: 0 };
+    const movs = db.horas_mov.filter((m) => m.usuario_id === u.id).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id)
+      .map((m) => { saldo[m.tipo] = r1(saldo[m.tipo] + m.horas); return { ...m, saldo: saldo[m.tipo] }; });
+    const compradas = (t) => r1(movs.filter((m) => m.tipo === t && m.horas > 0).reduce((s, m) => s + m.horas, 0));
+    const usadas = (t) => r1(-movs.filter((m) => m.tipo === t && m.horas < 0).reduce((s, m) => s + m.horas, 0));
+    return { vuelo: saldo.vuelo, simulador: saldo.simulador, compradas: { vuelo: compradas('vuelo'), simulador: compradas('simulador') },
+      usadas: { vuelo: usadas('vuelo'), simulador: usadas('simulador') }, movimientos: movs.reverse() };
+  };
   const cuentaDe = (u) => {
     let saldo = 0;
     const movs = db.movimientos.filter((m) => m.usuario_id === u.id).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id)
       .map((m) => { saldo += m.tipo === 'cargo' ? m.importe : -m.importe; return { ...m, saldo }; });
     const cargos = movs.filter((m) => m.tipo === 'cargo').reduce((s, m) => s + m.importe, 0);
     const pagos = movs.filter((m) => m.tipo === 'pago').reduce((s, m) => s + m.importe, 0);
-    return { usuario: pub(u), movimientos: movs.reverse(), saldo, cargos, pagos, tarifas: { ...db.tarifas } };
+    return { usuario: pub(u), movimientos: movs.reverse(), saldo, cargos, pagos, tarifas: { ...db.tarifas }, horas: horasDe(u) };
   };
   api.tarifas = () => { yo(); return { ...db.tarifas }; };
   api.miCuenta = () => cuentaDe(exigir('alumno', 'ppa'));
   api.cuenta = (uid) => { exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente'); return cuentaDe(u); };
-  api.cuentas = () => { exigir('admin'); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, ultimo: c.movimientos[0]?.fecha || null }; }); };
+  api.cuentas = () => { exigir('admin'); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, ultimo: c.movimientos[0]?.fecha || null, horas_vuelo: c.horas.vuelo, horas_sim: c.horas.simulador }; }); };
   api.registrarPago = (uid, { monto, medio, fecha, nota }) => {
     exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');
     const m = Math.round(Number(String(monto).replace(/\./g, '').replace(',', '.')));
     if (!(m > 0)) fail('Ingresá el monto del pago');
     movimiento(u.id, `Pago · ${medio || 'efectivo'}${nota ? ` · ${String(nota).trim()}` : ''}`, 'pago', m, `pago:${Date.now()}`, /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy());
     guardar();
+  };
+  const numero = (v) => Number(String(v ?? '').replace(/\./g, '').replace(',', '.'));
+  api.venderPack = (uid, { tipo, horas, precio, pagado, medio, fecha }) => {
+    exigir('admin'); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
+    if (!['vuelo', 'simulador'].includes(tipo)) fail('Elegí si el pack es de vuelo o de simulador');
+    const h = r1(Number(String(horas).replace(',', '.'))); if (!(h > 0 && h <= 300)) fail('Indicá la cantidad de horas del pack (hasta 300)');
+    const p = Math.round(numero(precio)); if (!(p >= 0)) fail('Revisá el precio del pack');
+    const f = /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy();
+    const lista = r1(h * db.tarifas[tipo]); const desc = lista > 0 ? Math.round((1 - p / lista) * 100) : 0;
+    const nombrePack = `Pack de ${String(h).replace('.', ',')} h de ${tipo === 'vuelo' ? 'vuelo' : 'simulador'}`;
+    const ref = `pack:${Date.now()}:${u.id}`;
+    movHoras(u.id, tipo, h, nombrePack, ref, f);
+    if (p > 0) movimiento(u.id, `${nombrePack}${desc > 0 ? ` (${desc}% de descuento)` : ''}`, 'cargo', p, ref, f);
+    if (pagado && p > 0) movimiento(u.id, `Pago · ${medio || 'efectivo'} · ${nombrePack.toLowerCase()}`, 'pago', p, `pago:${ref}`, f);
+    guardar(); return horasDe(u);
+  };
+  api.ajusteHoras = (uid, { tipo, horas, concepto }) => {
+    exigir('admin'); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
+    if (!['vuelo', 'simulador'].includes(tipo)) fail('Elegí vuelo o simulador');
+    const h = r1(Number(String(horas).replace(',', '.'))); if (!h) fail('Indicá las horas (en negativo para descontar)');
+    if (!String(concepto || '').trim()) fail('Escribí el motivo del ajuste');
+    if (saldoHoras(u.id, tipo) + h < 0) fail('El ajuste deja el saldo de horas en negativo');
+    movHoras(u.id, tipo, h, String(concepto).trim(), `ajh:${Date.now()}`); guardar(); return horasDe(u);
   };
   api.ajusteCuenta = (uid, { monto, concepto, tipo }) => {
     exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');

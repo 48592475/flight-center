@@ -232,3 +232,6 @@
 .notas button[data-v="N"].on { background: var(--danger); color: #fff; border-color: var(--danger); }
 
 .turno-bloq:has(input:checked) { background: #fdecec; border-color: #f2b8b8; color: #9b2c2c; }
+
+.lista-alumnos { display: flex; flex-wrap: wrap; gap: 8px; max-height: 190px; overflow: auto; padding: 4px 0; }
+.lista-alumnos .marca:has(input:checked) { background: var(--celeste-claro); border-color: var(--azul-2); }

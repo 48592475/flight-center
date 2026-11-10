@@ -946,6 +946,9 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 
 .turno-bloq:has(input:checked) { background: #fdecec; border-color: #f2b8b8; color: #9b2c2c; }
 
+.lista-alumnos { display: flex; flex-wrap: wrap; gap: 8px; max-height: 190px; overflow: auto; padding: 4px 0; }
+.lista-alumnos .marca:has(input:checked) { background: var(--celeste-claro); border-color: var(--azul-2); }
+
 </style>
 </head>
 <body>
@@ -4324,7 +4327,8 @@ VISTAS.clases = async function vistaClases(v) {
   const prox = clases.filter((k) => k.fecha >= hoy && k.estado === 'programada'); const resto = clases.filter((k) => !prox.includes(k)).reverse();
   const fila = (k, i) => `<div class="clase-card anim" style="--i:${i}"><div class="teo">${esc(k.teo)}</div>
     <div><strong>${esc(k.titulo)}</strong> ${k.estado === 'dictada' ? '<span class="badge ok">Dictada</span>' : k.estado === 'cancelada' ? '<span class="badge gris">Cancelada</span>' : '<span class="badge">Programada</span>'}
-      <div class="vuelo-info"><div class="meta"><span class="cap">${esc(fmtFecha(k.fecha))}</span><span class="mono">${rango(k.bloque)}</span><span>${esc(k.aula)}</span>${esAdmin ? `<span>${esc(k.instructor)}</span>` : ''}<span>${k.inscriptos}/${k.cupo} inscriptos</span></div></div></div>
+      <div class="vuelo-info"><div class="meta"><span class="cap">${esc(fmtFecha(k.fecha))}</span><span class="mono">${rango(k.bloque)}</span><span>${esc(k.aula)}</span>${esAdmin ? `<span>${esc(k.instructor)}</span>` : ''}<span>${k.inscriptos}/${k.cupo} inscriptos</span></div>
+        <div class="muted" style="margin-top:4px;font-size:13px">${k.alumnos.length ? `<b>Para:</b> ${k.alumnos.map((a) => esc(a.alumno)).join(', ')}` : 'Todavía no hay alumnos anotados'}</div></div></div>
     <div class="flujo">${k.estado !== 'cancelada' ? `<button class="btn sm ${k.estado === 'dictada' ? 'sec' : 'ok'}" data-asis="${k.id}">${k.estado === 'dictada' ? 'Ver asistencia' : 'Tomar asistencia'}</button>` : ''}
       ${esAdmin && k.estado === 'programada' ? `<button class="btn sec sm" data-edit="${k.id}">Editar</button><button class="btn danger sm" data-canc="${k.id}">Cancelar</button>` : ''}</div></div>`;
   v.innerHTML = hero('Clases teóricas', esAdmin ? 'Programá las clases del syllabus (TEO 1 a TEO 8). Los alumnos se inscriben desde su panel.' : 'Las clases que dictás. Al tomar asistencia calificás la clase en el syllabus de cada alumno.',
@@ -4338,7 +4342,8 @@ VISTAS.clases = async function vistaClases(v) {
   const n = $('#nueva', v); if (n) n.onclick = async () => await editarClase(null, recargar);
 };
 async function editarClase(k, despues) {
-  const insts = await Store.instructores();
+  const [insts, alumnos] = await Promise.all([Store.instructores(), Store.usuarios('alumno')]);
+  const elegidos = new Set((k?.alumnos || []).filter((a) => a.estado !== 'cancelado').map((a) => a.alumno_id));
   const m = modal(`<div class="modal-head"><h3>${k ? 'Editar clase' : 'Programar clase teórica'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <form class="modal-body form-grid" id="f-clase">
       <label class="campo full">Clase<select id="k-teo" name="teo">${SYLLABUS.teorica.map((t) => `<option value="${t.id}" ${k?.teo === t.id ? 'selected' : ''}>${t.id} · ${esc(t.titulo)}</option>`).join('')}</select></label>
@@ -4347,8 +4352,17 @@ async function editarClase(k, despues) {
       <label class="campo">Instructor<select id="k-inst" name="instructor_id">${insts.filter((i) => !i.actividades || i.actividades.includes('teorica')).map((i) => `<option value="${i.id}" ${k?.instructor_id === i.id ? 'selected' : ''}>${esc(i.nombre)} ${esc(i.apellido)}</option>`).join('')}</select></label>
       <label class="campo">Cupo<input id="k-cupo" type="number" min="1" name="cupo" value="${k?.cupo || 10}"></label>
       <label class="campo full">Aula<input id="k-aula" name="aula" value="${esc(k?.aula || 'Aula 1')}"></label>
+      <div class="campo full"><span>¿Para quién es la clase? <span class="op">(los elegidos quedan inscriptos y reciben el aviso; el resto de los lugares quedan libres para que se anoten solos)</span></span>
+        <div class="flujo" style="margin:6px 0"><input id="k-buscar" placeholder="Buscar alumno" style="flex:1;min-width:180px"><span class="badge" id="k-cuenta"></span></div>
+        <div class="lista-alumnos" id="k-alumnos">${alumnos.filter((a) => a.activo).sort((a, b) => a.apellido.localeCompare(b.apellido)).map((a) => `<label class="marca" data-nombre="${esc(`${a.nombre} ${a.apellido}`.toLowerCase())}"><input type="checkbox" value="${a.id}" ${elegidos.has(a.id) ? 'checked' : ''}> ${esc(a.nombre)} ${esc(a.apellido)}</label>`).join('') || '<span class="muted">No hay alumnos activos.</span>'}</div></div>
     </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="k-ok">Guardar</button></div>`);
-  $('#k-ok', m.el).onclick = async () => { if (await hacer(async () => await Store.guardarClase({ ...Object.fromEntries(new FormData($('#f-clase', m.el))), id: k?.id }), 'Clase guardada')) { m.cerrar(); despues(); } };
+  const contar = () => { $('#k-cuenta', m.el).textContent = `${$$('#k-alumnos input:checked', m.el).length} elegidos · cupo ${$('#k-cupo', m.el).value}`; };
+  $$('#k-alumnos input', m.el).forEach((x) => x.onchange = contar); $('#k-cupo', m.el).oninput = contar; contar();
+  $('#k-buscar', m.el).oninput = (e) => { const q = e.target.value.toLowerCase(); $$('#k-alumnos label', m.el).forEach((l) => { l.hidden = q && !l.dataset.nombre.includes(q); }); };
+  $('#k-ok', m.el).onclick = async () => {
+    const d = { ...Object.fromEntries(new FormData($('#f-clase', m.el))), id: k?.id, alumnos: $$('#k-alumnos input:checked', m.el).map((x) => Number(x.value)) };
+    if (await hacer(async () => await Store.guardarClase(d), d.alumnos.length ? `Clase guardada para ${d.alumnos.length} alumno(s)` : 'Clase guardada')) { m.cerrar(); despues(); }
+  };
 }
 async function asistencia(k, despues) {
   const reg = Object.fromEntries(k.alumnos.map((a) => [a.id, { estado: a.estado === 'inscripto' ? (a.llegada || k.fecha !== isoLocal(new Date()) ? 'presente' : 'ausente') : a.estado, nota: a.nota || 'B' }]));

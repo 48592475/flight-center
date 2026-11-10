@@ -664,9 +664,24 @@ function crearStore(opts = {}) {
       if (!instPuede(inst, 'teorica')) fail(`${nombre(inst)} no es instructor de teoría. Elegí otro instructor.`);
       if (!(Number(cupo) > 0)) fail('El cupo debe ser mayor a 0');
       if (ocupacionPersona(inst.id, fecha, Number(bloque), { ignorarClase: Number(id) })) fail(`${nombre(inst)} ya tiene otra actividad en ese horario`);
+      // alumnos asignados por la administración (quedan inscriptos y se les avisa)
+      const asignados = Array.isArray(datos.alumnos) ? [...new Set(datos.alumnos.map(Number))].map(usuario).filter((a) => a && a.rol === 'alumno' && a.activo) : null;
+      if (asignados) {
+        if (asignados.length > Number(cupo)) fail(`Elegiste ${asignados.length} alumnos y el cupo es de ${Number(cupo)}. Subí el cupo o sacá alumnos.`);
+        for (const a of asignados) if (ocupacionPersona(a.id, fecha, Number(bloque), { ignorarClase: Number(id) })) fail(`${nombre(a)} ya tiene otra actividad en ese horario`);
+      }
       let c = id ? db.clases.find((x) => x.id === Number(id)) : null;
       if (!c) { c = { id: ++db.seq.c, estado: 'programada' }; db.clases.push(c); }
       Object.assign(c, { teo, fecha, bloque: Number(bloque), instructor_id: inst.id, cupo: Number(cupo), aula: String(aula || '').trim() || 'Aula 1' });
+      if (asignados) {
+        const ids = new Set(asignados.map((a) => a.id));
+        for (const x of db.inscripciones.filter((y) => y.clase_id === c.id && y.estado === 'inscripto' && !ids.has(y.alumno_id))) x.estado = 'cancelado';
+        for (const a of asignados) {
+          if (db.inscripciones.some((y) => y.clase_id === c.id && y.alumno_id === a.id && y.estado !== 'cancelado')) continue;
+          db.inscripciones.push({ id: ++db.seq.i, clase_id: c.id, alumno_id: a.id, estado: 'inscripto', nota: null, asignada: true });
+          notificar(a, 'clase', { clase: expandirClase(c) });
+        }
+      }
       const k = `${inst.id}|${fecha}`; db.disponibilidad[k] = [...new Set([...(db.disponibilidad[k] || []), Number(bloque)])].sort((a, b) => a - b);
       void me; guardar(); return expandirClase(c);
     },

@@ -37,7 +37,8 @@ function crearStore(opts = {}) {
         contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {}, nacionalidad: 'Argentina', ...extra };
       db.usuarios.push(u); return u.id;
     };
-    const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
+    const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { rango: 'contabilidad', telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
+    U('admin', 'Nicolás', 'Vega', 'programador@flightcenter.com', { rango: 'programador', telefono: '+54 9 11 5555-0002', direccion: 'Aeródromo de Morón, Haedo' });
     const mec = U('mecanico', 'Carlos', 'Medina', 'mecanico@flightcenter.com', { telefono: '+54 9 11 5555-0002', licencia_nro: 'MMA-2231', direccion: 'Castelar, Buenos Aires' });
     const martin = U('instructor', 'Martín', 'Gómez', 'instructor@flightcenter.com', { dni: '25111222', fecha_nacimiento: '1980-03-12', direccion: 'Av. Libertador 1200, San Fernando', telefono: '+54 9 11 5555-1001', contacto_emergencia: 'Laura Gómez +54 9 11 5555-2001', licencia_nro: 'INV-4521', vencimiento_cma: '2027-05-30', horas_previas: 3250 });
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
@@ -275,6 +276,11 @@ function crearStore(opts = {}) {
   const recurso = (id) => db.recursos.find((r) => r.id === Number(id));
   const yo = () => { const u = sesion && usuario(sesion); if (!u || !u.activo) fail('Sesión no iniciada'); return u; };
   const exigir = (...roles) => { const u = yo(); if (!roles.includes(u.rol)) fail('No tenés permiso para esta acción'); return u; };
+  // rangos dentro de cada tipo de usuario (por ahora, administración)
+  const RANGOS = { admin: ['contabilidad', 'programador'] };
+  const rangoDe = (u) => (u.rol === 'admin' ? (u.rango || 'contabilidad') : null);
+  // contabilidad: estados de cuenta, pagos, packs, tarifas y cotización. El rango "programador" no tiene acceso.
+  const exigirContable = () => { const u = exigir('admin'); if (rangoDe(u) !== 'contabilidad') fail('Tu rango (programador) no tiene acceso a la contabilidad.'); return u; };
   const nombre = (u) => (u ? `${u.nombre} ${u.apellido}` : '');
   // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
   const BLOQUES_EXTRANJEROS = [8, 14, 16];
@@ -283,7 +289,7 @@ function crearStore(opts = {}) {
   const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (u.rol === 'admin') r.rango = rangoDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -390,6 +396,8 @@ function crearStore(opts = {}) {
     guardarPerfil(datos, uid) {
       const me = yo(); const u = uid ? usuario(uid) : me;
       if (!u || (u.id !== me.id && me.rol !== 'admin')) fail('No tenés permiso para editar este perfil');
+      if (me.rol === 'admin' && rangoDe(me) !== 'contabilidad' && u.id !== me.id && (rangoDe(u) === 'contabilidad' && u.email || datos.rango === 'contabilidad'))
+        fail('Un programador no puede crear ni modificar usuarios del rango contabilidad.');
       if (!String(datos.nombre || '').trim() || !String(datos.apellido || '').trim()) fail('Nombre y apellido son obligatorios');
       if (!/^\S+@\S+\.\S+$/.test(String(datos.email || ''))) fail('El email no es válido');
       if (db.usuarios.some((x) => x.id !== u.id && x.email.toLowerCase() === datos.email.trim().toLowerCase())) fail('Ese email ya está registrado');
@@ -410,6 +418,9 @@ function crearStore(opts = {}) {
       if (me.rol === 'admin') {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
         if (['ARS', 'USD'].includes(datos.moneda)) u.moneda = datos.moneda;
+        const rolNuevo = datos.rol && u.id !== me.id ? datos.rol : u.rol;
+        if (rolNuevo === 'admin' && RANGOS.admin.includes(datos.rango) && u.id !== me.id) u.rango = datos.rango;
+        if (rolNuevo !== 'admin') delete u.rango;
         if (datos.rol && u.id !== me.id) u.rol = datos.rol;
         if ('activo' in datos && u.id !== me.id) u.activo = !!datos.activo;
         if (datos.password) { if (String(datos.password).length < 6) fail('La contraseña debe tener al menos 6 caracteres'); u.password = hashPass(datos.password); }
@@ -749,6 +760,7 @@ function crearStore(opts = {}) {
       exigir('admin');
       if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
       if (['alumno', 'ppa'].includes(datos.rol) && !['ARS', 'USD'].includes(datos.moneda)) fail('Elegí la moneda del estado de cuenta (pesos o dólares)');
+      if (datos.rol === 'admin' && !RANGOS.admin.includes(datos.rango)) fail('Elegí el rango del administrador (contabilidad o programador)');
       if (!String(datos.nacionalidad || '').trim()) fail('Elegí la nacionalidad');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
       const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };
@@ -850,7 +862,7 @@ function crearStore(opts = {}) {
   const fmtM = (valor, moneda) => moneda === 'USD' ? `US$ ${r2(valor).toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : `$ ${Math.round(valor).toLocaleString('es-AR')}`;
   api.cotizacion = () => { yo(); return db.config.cotizacion ? { ...db.config.cotizacion, casa_elegida: db.config.cotizacion_casa || 'oficial' } : { casa_elegida: db.config.cotizacion_casa || 'oficial' }; };
   api.guardarCotizacion = ({ casa, manual }) => {
-    exigir('admin');
+    exigirContable();
     if (casa === 'manual') {
       const v = monto(manual); if (!(v > 0)) fail('Ingresá el valor del dólar en pesos');
       db.config.cotizacion_casa = 'manual'; db.config.cotizacion = { venta: r2(v), compra: r2(v), casa: 'manual', fecha: ahora(), fuente: 'cargada a mano' }; congelarUsd();
@@ -867,10 +879,10 @@ function crearStore(opts = {}) {
     db.config.cotizacion = { venta: r2(Number(venta)), compra: r2(Number(compra) || Number(venta)), casa, fecha: fecha || ahora(), fuente }; congelarUsd(); guardar();
   };
   api.miCuenta = () => cuentaDe(exigir('alumno', 'ppa'));
-  api.cuenta = (uid) => { exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente'); return cuentaDe(u); };
-  api.cuentas = () => { exigir('admin'); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, saldo_usd: c.saldo_usd, cargos_usd: c.cargos_usd, pagos_usd: c.pagos_usd, moneda: c.moneda, ultimo: c.movimientos[0]?.fecha || null, horas_vuelo: c.horas.vuelo, horas_sim: c.horas.simulador }; }); };
+  api.cuenta = (uid) => { exigirContable(); const u = usuario(uid); if (!u) fail('Usuario inexistente'); return cuentaDe(u); };
+  api.cuentas = () => { exigirContable(); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, saldo_usd: c.saldo_usd, cargos_usd: c.cargos_usd, pagos_usd: c.pagos_usd, moneda: c.moneda, ultimo: c.movimientos[0]?.fecha || null, horas_vuelo: c.horas.vuelo, horas_sim: c.horas.simulador }; }); };
   api.registrarPago = (uid, { monto: valor, medio, fecha, nota, moneda }) => {
-    exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');
+    exigirContable(); const u = usuario(uid); if (!u) fail('Usuario inexistente');
     const v = monto(valor); if (!(v > 0)) fail('Ingresá el monto del pago');
     const { ars, usd } = enPesos(v, moneda);
     movimiento(u.id, `Pago · ${medio || 'efectivo'}${moneda === 'USD' ? ` · ${fmtM(v, 'USD')}` : ''}${nota ? ` · ${String(nota).trim()}` : ''}`, 'pago', ars, `pago:${Date.now()}`, /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy(), usd);
@@ -878,7 +890,7 @@ function crearStore(opts = {}) {
   };
   const numero = (v) => Number(String(v ?? '').replace(/\./g, '').replace(',', '.'));
   api.venderPack = (uid, { tipo, horas, precio, pagado, medio, fecha, moneda }) => {
-    exigir('admin'); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
+    exigirContable(); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
     if (!['vuelo', 'simulador'].includes(tipo)) fail('Elegí si el pack es de vuelo o de simulador');
     const h = r1(Number(String(horas).replace(',', '.'))); if (!(h > 0 && h <= 300)) fail('Indicá la cantidad de horas del pack (hasta 300)');
     const pv = monto(precio); if (!(pv >= 0)) fail('Revisá el precio del pack');
@@ -893,7 +905,7 @@ function crearStore(opts = {}) {
     guardar(); return horasDe(u);
   };
   api.ajusteHoras = (uid, { tipo, horas, concepto }) => {
-    exigir('admin'); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
+    exigirContable(); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
     if (!['vuelo', 'simulador'].includes(tipo)) fail('Elegí vuelo o simulador');
     const h = r1(Number(String(horas).replace(',', '.'))); if (!h) fail('Indicá las horas (en negativo para descontar)');
     if (!String(concepto || '').trim()) fail('Escribí el motivo del ajuste');
@@ -901,13 +913,13 @@ function crearStore(opts = {}) {
     movHoras(u.id, tipo, h, String(concepto).trim(), `ajh:${Date.now()}`); guardar(); return horasDe(u);
   };
   api.ajusteCuenta = (uid, { monto: valor, concepto, tipo, moneda }) => {
-    exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');
+    exigirContable(); const u = usuario(uid); if (!u) fail('Usuario inexistente');
     const v = monto(valor); if (!(v > 0) || !String(concepto || '').trim()) fail('Completá concepto y monto');
     const { ars, usd } = enPesos(v, moneda);
     movimiento(u.id, String(concepto).trim(), tipo === 'pago' ? 'pago' : 'cargo', ars, `ajuste:${Date.now()}`, hoy(), usd); guardar();
   };
   api.guardarTarifas = (t) => {
-    exigir('admin');
+    exigirContable();
     const n = (v) => Math.round(Number(String(v).replace(/\./g, '').replace(',', '.')));
     const nt = { vuelo: n(t.vuelo), simulador: n(t.simulador), teorica: n(t.teorica), recargo: Number(t.recargo), horas_aviso: Number(t.horas_aviso), ausencia: Number(t.ausencia ?? db.tarifas.ausencia ?? 100) };
     if (nt.recargo > 100 || nt.ausencia > 100) fail('Los porcentajes no pueden superar el 100%');
@@ -928,7 +940,7 @@ function crearStore(opts = {}) {
     if (n) guardar();
     return n;
   };
-  api.enviarRecordatoriosAhora = () => { exigir('admin'); return api.recordatoriosDeuda(); };
+  api.enviarRecordatoriosAhora = () => { exigirContable(); return api.recordatoriosDeuda(); };
   // ---------- asistencia por QR ----------
   const distancia = (a, b, c, d) => { const R = 6371000, r = Math.PI / 180; const x = Math.sin((c - a) * r / 2) ** 2 + Math.cos(a * r) * Math.cos(c * r) * Math.sin((d - b) * r / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
   api.qrAsistencia = () => { exigir('admin'); return { ...db.config }; };
@@ -1212,7 +1224,7 @@ function crearStore(opts = {}) {
     guardar(); return pub(u);
   };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
-  api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
+  api.notificaciones = ({ dia } = {}) => { const me = exigir('admin'); const contable = rangoDe(me) === 'contabilidad'; return db.notificaciones.filter((x) => (contable || x.tipo !== 'deuda') && (!dia || x.dia === dia)).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
   api.guardarPreferencias = ({ email, whatsapp, liberados }) => { const u = yo(); u.notif = { email: !!email, whatsapp: !!whatsapp, liberados: liberados !== false }; guardar(); return pub(u); };
   // ---------- uso interno del servidor (no se exponen a la interfaz) ----------

@@ -612,7 +612,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <input id="fq" placeholder="Buscar por nombre o email" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>Teléfono</th><th>CMA</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(ROLES[u.rol])}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
+      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.rol === 'alumno' ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
@@ -651,6 +651,10 @@ async function editarUsuario(u, despues, rolElegido) {
       ${c('direccion', 'Dirección', 'text', '', 'full')} ${c('dni', 'DNI')} ${c('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
       ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)}
+      <label class="campo" data-roles="admin"><span>Rango</span><select id="u-rango" name="rango">
+        <option value="" ${u?.rol === 'admin' ? '' : 'selected'} disabled>Elegí el rango</option>
+        ${Object.entries(RANGOS.admin).map(([k, [t]]) => `<option value="${k}" ${u?.rol === 'admin' && (u.rango || 'contabilidad') === k ? 'selected' : ''} ${k === 'contabilidad' && !esContable() ? 'disabled' : ''}>${t}</option>`).join('')}</select></label>
+      <p class="muted full" data-roles="admin" id="u-rango-desc" style="margin:-6px 0 0;font-size:13px"></p>
       <label class="campo" data-roles="alumno ppa"><span>Moneda del estado de cuenta</span><select id="u-moneda" name="moneda">
         <option value="" ${u ? '' : 'selected'} disabled>Elegí la moneda</option>
         <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
@@ -676,13 +680,15 @@ async function editarUsuario(u, despues, rolElegido) {
     
   };
   const ajustarTutor = activarTutor($('#f-u', m.el), () => $('#u-rol', m.el).value);
+  const descRango = () => { const r = $('#u-rango', m.el).value; $('#u-rango-desc', m.el).textContent = r ? RANGOS.admin[r][1] : 'Contabilidad tiene acceso total. Programador ve y maneja todo menos la contabilidad.'; };
+  $('#u-rango', m.el).onchange = descRango; descRango();
   $('#u-rol', m.el).onchange = () => { ajustar(); ajustarTutor(); }; ajustar();
   $('#u-ok', m.el).onclick = async () => {
     const d = Object.fromEntries(new FormData($('#f-u', m.el)));
     if (yoMismo) d.rol = u.rol;
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if ($('[data-tutor]', m.el).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
-    d.nacionalidad = $('#u-nacionalidad', m.el).value; d.moneda = $('#u-moneda', m.el).value;
+    d.nacionalidad = $('#u-nacionalidad', m.el).value; d.moneda = $('#u-moneda', m.el).value; d.rango = $('#u-rango', m.el).value;
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
     const guardado = await hacer(async () => {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);

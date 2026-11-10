@@ -60,6 +60,9 @@ function pantallaFoto(u) {
   $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
 }
 const ROLES = { alumno: 'Alumno piloto', ppa: 'Piloto privado · PPA', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
+const RANGOS = { admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
+const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : ROLES[u.rol]);
+const esContable = () => state.user?.rol === 'admin' && (state.user.rango || 'contabilidad') === 'contabilidad';
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
 const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular' };
 const codigoReserva = (id, p = 'FC') => `${p}-${String(id).padStart(5, '0')}`;
@@ -134,7 +137,7 @@ async function render() { if (!state.user) return renderLogin(); await renderApp
 function renderLogin() {
   const nubes = Array.from({ length: 7 }, (_, i) => { const w = 120 + Math.random() * 160;
     return `<div class="cloud" style="width:${w}px;height:${w * 0.32}px;top:${8 + i * 12}%;animation-duration:${38 + Math.random() * 40}s;animation-delay:-${Math.random() * 60}s"></div>`; }).join('');
-  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Administración', 'admin@flightcenter.com']];
+  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Administración', 'admin@flightcenter.com'], ['Programador', 'programador@flightcenter.com']];
   app.innerHTML = `<section class="login">${nubes}
     <div class="plane-fly">${ICON.avion.replace('<svg', '<svg style="transform:rotate(80deg)"')}</div>
     <div class="login-card">
@@ -184,10 +187,10 @@ async function renderApp() {
   if (!conCampus) state.portal = 'reservas';
   if (!state.portal) { try { state.portal = sessionStorage.getItem('fc-portal'); } catch { /* sin storage */ } }
   if (!state.portal) return renderPortal(u);
-  const tabs = (state.portal === 'campus' ? TABS_CAMPUS : TABS)[u.rol];
+  const tabs = (state.portal === 'campus' ? TABS_CAMPUS : TABS)[u.rol].filter(([k]) => k !== 'cuentas' || esContable());
   if (!state.tab || !tabs.some(([k]) => k === state.tab)) state.tab = tabs[0][0];
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
-      ${logo(state.portal === 'campus' ? 'Campus' : ROLES[u.rol])}
+      ${logo(state.portal === 'campus' ? 'Campus' : nombreRol(u))}
       <nav class="tabs">${tabs.map(([k, t]) => `<button class="tab ${k === state.tab ? 'activo' : ''}" data-tab="${k}">${t}</button>`).join('')}</nav>
       <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}${avatarDe(u)}<span class="nombre">${esc(u.nombre)}</span>
         <button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>

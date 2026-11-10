@@ -45,7 +45,7 @@ VISTAS.avisos = async function vistaAvisos(v) {
   const hoyD = isoLocal(new Date());
   const deudasHoy = esAdmin ? grupos.filter((g) => g[0].tipo === 'deuda' && g[0].dia === hoyD).length : 0;
   v.innerHTML = hero('Avisos', esAdmin ? 'Todos los emails y WhatsApp que envía el sistema: confirmaciones de reserva y el recordatorio diario a quienes tienen saldo pendiente.' : 'Las confirmaciones de tus reservas, los turnos que se liberan y los recordatorios que te enviamos por email y WhatsApp.') + `
-    ${esAdmin ? `<div class="stats"><div class="stat dest anim" style="--i:1"><div class="lbl">Recordatorios de deuda hoy</div><div class="val">${deudasHoy}</div></div>
+    ${esAdmin && esContable() ? `<div class="stats"><div class="stat dest anim" style="--i:1"><div class="lbl">Recordatorios de deuda hoy</div><div class="val">${deudasHoy}</div></div>
       <div class="stat anim" style="--i:2"><div class="lbl">Avisos enviados</div><div class="val">${grupos.length}</div></div></div>
       <div class="aviso anim" style="--i:2"><div style="flex:1"><strong>Recordatorio diario de deuda</strong>${MODO === 'servidor' ? 'Sale solo todos los días a las 9:00 a quienes tienen saldo a pagar.' : 'En la demo se genera al iniciar sesión.'} Si hoy ya salió, no se repite.</div><button class="btn sec sm" id="rec-ahora">Enviar ahora</button></div>` : ''}
     <div class="card anim" style="--i:3"><div class="card-head"><h3>${esAdmin ? 'Historial de avisos' : 'Mis avisos'}</h3><span class="badge">${grupos.length}</span></div>

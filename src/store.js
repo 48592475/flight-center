@@ -43,7 +43,7 @@ function crearStore(opts = {}) {
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
-    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
+    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
     const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
     void admin;
 
@@ -119,6 +119,8 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    if (!db.config) db.config = configInicial();
+    db.config.cotizacion = { venta: 1455, compra: 1405, casa: 'oficial', fecha: ahora(), fuente: 'valor de ejemplo' };
     // asistencia de instructores de ejemplo
     db.asistencia_inst = []; db.seq.ai = 0;
     const asis = (inst, dias, hora, primer) => { const [h, m] = hora.split(':').map(Number); const mins = h * 60 + m - primer * 60;
@@ -155,6 +157,7 @@ function crearStore(opts = {}) {
     db.horas_mov = [{ id: 1, usuario_id: lucia, fecha: dia(-1), tipo: 'vuelo', horas: 10, concepto: 'Pack de 10 h de vuelo', ref: 'pack:1' }]; db.seq.hm = 1;
     mov(lucia, dia(-1), 'Pack de 10 h de vuelo (10% de descuento)', 'cargo', 1764000, 'pack:1');
     mov(lucia, dia(-1), 'Pago · transferencia · pack de horas', 'pago', 1764000, 'pago:5');
+    for (const m of db.movimientos) if (m.usd == null) { m.usd = Math.round(m.importe / 1455 * 100) / 100; m.tc = 1455; } // demo: dólar de ejemplo
     // EJEMPLO para la demo: la administración o un instructor pega el METAR/TAF oficial vigente
     const obs = new Date(Date.now() - 25 * 60000); const z = (n) => String(n).padStart(2, '0');
     db.meteo = { metar: `METAR SADM ${z(obs.getUTCDate())}${z(obs.getUTCHours())}00Z 03008KT 9999 FEW030 24/12 Q1016`, taf: '', fecha: ahora(), autor_id: martin, ejemplo: true };
@@ -251,9 +254,15 @@ function crearStore(opts = {}) {
     return canales.length;
   }
   // ---------- helpers ----------
-  const movimiento = (usuario_id, concepto, tipo, importe, ref, fecha = hoy()) => {
+  const r2 = (x) => Math.round(x * 100) / 100;
+  const tc = () => Number(db.config?.cotizacion?.venta) || null;
+  // movimientos de antes de tener cotización: quedan fijos en dólares con la primera que haya
+  const congelarUsd = () => { const t = tc(); if (!t) return false; let n = 0; for (const m of db.movimientos || []) if (m.usd == null) { m.usd = r2(m.importe / t); m.tc = t; n++; } return n > 0; };
+  // cada movimiento guarda su valor en pesos y en dólares al tipo de cambio del día en que se generó
+  const movimiento = (usuario_id, concepto, tipo, importe, ref, fecha = hoy(), usdExacto = null) => {
     if (ref && db.movimientos.some((m) => m.ref === ref)) return;
-    db.movimientos.push({ id: ++db.seq.m, usuario_id, fecha, concepto, tipo, importe: Math.round(importe), ref });
+    const t = tc();
+    db.movimientos.push({ id: ++db.seq.m, usuario_id, fecha, concepto, tipo, importe: Math.round(importe), ref, tc: t, usd: usdExacto != null ? r2(usdExacto) : t ? r2(importe / t) : null });
   };
   const horasHasta = (f, b) => (new Date(`${f}T${hh(b)}:00`) - new Date()) / 3600000;
   const valorBloque = (tipo) => tipo === 'teorica' ? db.tarifas.teorica : db.tarifas[tipo] * 2; // un bloque = 2 hs
@@ -400,6 +409,7 @@ function crearStore(opts = {}) {
       if (!pideTutor) for (const c of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) delete u[c];
       if (me.rol === 'admin') {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
+        if (['ARS', 'USD'].includes(datos.moneda)) u.moneda = datos.moneda;
         if (datos.rol && u.id !== me.id) u.rol = datos.rol;
         if ('activo' in datos && u.id !== me.id) u.activo = !!datos.activo;
         if (datos.password) { if (String(datos.password).length < 6) fail('La contraseña debe tener al menos 6 caracteres'); u.password = hashPass(datos.password); }
@@ -532,7 +542,7 @@ function crearStore(opts = {}) {
       const cargo = justificada ? 0 : Math.round(valorBloque(r.tipo) * (db.tarifas.ausencia ?? 100) / 100);
       if (cargo) movimiento(r.piloto_id, `Ausencia sin aviso · ${r.tipo === 'vuelo' ? 'vuelo' : 'simulador'} ${r.fecha.split('-').reverse().join('/')} ${hh(r.bloque)} (${db.tarifas.ausencia ?? 100}% del bloque)`, 'cargo', cargo, `aus:${r.id}`, r.fecha);
       const p = usuario(r.piloto_id);
-      if (p?.activo) notificar(p, 'ausencia', { reserva: expandir(r), cargo, justificada: !!justificada, motivo: m || null }, { soloEmail: true });
+      if (p?.activo) notificar(p, 'ausencia', { reserva: expandir(r), cargo, cargo_usd: tc() ? r2(cargo / tc()) : null, moneda: p.moneda || 'ARS', justificada: !!justificada, motivo: m || null }, { soloEmail: true });
       guardar(); return cargo;
     },
     anularAusencia(id) {
@@ -738,6 +748,7 @@ function crearStore(opts = {}) {
     crearUsuario(datos) {
       exigir('admin');
       if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
+      if (['alumno', 'ppa'].includes(datos.rol) && !['ARS', 'USD'].includes(datos.moneda)) fail('Elegí la moneda del estado de cuenta (pesos o dólares)');
       if (!String(datos.nacionalidad || '').trim()) fail('Elegí la nacionalidad');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
       const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };
@@ -819,37 +830,66 @@ function crearStore(opts = {}) {
       usadas: { vuelo: usadas('vuelo'), simulador: usadas('simulador') }, movimientos: movs.reverse() };
   };
   const cuentaDe = (u) => {
-    let saldo = 0;
+    let saldo = 0, saldoUsd = 0; const t = tc();
     const movs = db.movimientos.filter((m) => m.usuario_id === u.id).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id)
-      .map((m) => { saldo += m.tipo === 'cargo' ? m.importe : -m.importe; return { ...m, saldo }; });
-    const cargos = movs.filter((m) => m.tipo === 'cargo').reduce((s, m) => s + m.importe, 0);
-    const pagos = movs.filter((m) => m.tipo === 'pago').reduce((s, m) => s + m.importe, 0);
-    return { usuario: pub(u), movimientos: movs.reverse(), saldo, cargos, pagos, tarifas: { ...db.tarifas }, horas: horasDe(u) };
+      .map((m) => { const usd = m.usd ?? (t ? r2(m.importe / t) : 0); saldo += m.tipo === 'cargo' ? m.importe : -m.importe; saldoUsd = r2(saldoUsd + (m.tipo === 'cargo' ? usd : -usd));
+        return { ...m, usd, saldo, saldo_usd: saldoUsd }; });
+    const suma = (tipo, k) => movs.filter((m) => m.tipo === tipo).reduce((s, m) => s + m[k], 0);
+    return { usuario: pub(u), movimientos: movs.reverse(), saldo, cargos: suma('cargo', 'importe'), pagos: suma('pago', 'importe'),
+      saldo_usd: saldoUsd, cargos_usd: r2(suma('cargo', 'usd')), pagos_usd: r2(suma('pago', 'usd')), moneda: u.moneda || 'ARS',
+      tarifas: { ...db.tarifas, tc: t }, cotizacion: db.config.cotizacion ? { ...db.config.cotizacion } : null, horas: horasDe(u) };
   };
-  api.tarifas = () => { yo(); return { ...db.tarifas }; };
+  api.tarifas = () => { yo(); return { ...db.tarifas, tc: tc() }; };
+  // montos que carga la administración: en pesos o en dólares
+  const monto = (v) => { let s = String(v ?? '').trim().replace(/\s|\$|US/g, ''); if (s.includes(',')) s = s.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); return Number(s); };
+  const enPesos = (valor, moneda) => {
+    if (moneda !== 'USD') return { ars: Math.round(valor), usd: null };
+    if (!tc()) fail('Todavía no hay cotización del dólar. Cargala en Cuentas → Cotización del dólar.');
+    return { ars: Math.round(valor * tc()), usd: r2(valor) };
+  };
+  const fmtM = (valor, moneda) => moneda === 'USD' ? `US$ ${r2(valor).toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : `$ ${Math.round(valor).toLocaleString('es-AR')}`;
+  api.cotizacion = () => { yo(); return db.config.cotizacion ? { ...db.config.cotizacion, casa_elegida: db.config.cotizacion_casa || 'oficial' } : { casa_elegida: db.config.cotizacion_casa || 'oficial' }; };
+  api.guardarCotizacion = ({ casa, manual }) => {
+    exigir('admin');
+    if (casa === 'manual') {
+      const v = monto(manual); if (!(v > 0)) fail('Ingresá el valor del dólar en pesos');
+      db.config.cotizacion_casa = 'manual'; db.config.cotizacion = { venta: r2(v), compra: r2(v), casa: 'manual', fecha: ahora(), fuente: 'cargada a mano' }; congelarUsd();
+    } else {
+      if (!['oficial', 'bolsa', 'blue', 'tarjeta', 'mayorista'].includes(casa)) fail('Elegí el tipo de dólar');
+      db.config.cotizacion_casa = casa;
+    }
+    guardar(); return api.cotizacion();
+  };
+  api._casaCotizacion = () => db.config.cotizacion_casa || 'oficial';
+  api._cotizacion = () => (db.config.cotizacion ? { ...db.config.cotizacion, casa_elegida: db.config.cotizacion_casa || 'oficial' } : { casa_elegida: db.config.cotizacion_casa || 'oficial' });
+  api._setCotizacion = ({ venta, compra, fecha, casa, fuente }) => {
+    if ((db.config.cotizacion_casa || 'oficial') === 'manual' || !(Number(venta) > 0)) return;
+    db.config.cotizacion = { venta: r2(Number(venta)), compra: r2(Number(compra) || Number(venta)), casa, fecha: fecha || ahora(), fuente }; congelarUsd(); guardar();
+  };
   api.miCuenta = () => cuentaDe(exigir('alumno', 'ppa'));
   api.cuenta = (uid) => { exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente'); return cuentaDe(u); };
-  api.cuentas = () => { exigir('admin'); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, ultimo: c.movimientos[0]?.fecha || null, horas_vuelo: c.horas.vuelo, horas_sim: c.horas.simulador }; }); };
-  api.registrarPago = (uid, { monto, medio, fecha, nota }) => {
+  api.cuentas = () => { exigir('admin'); return db.usuarios.filter((u) => ['alumno', 'ppa'].includes(u.rol)).map((u) => { const c = cuentaDe(u); return { ...c.usuario, saldo: c.saldo, cargos: c.cargos, pagos: c.pagos, saldo_usd: c.saldo_usd, cargos_usd: c.cargos_usd, pagos_usd: c.pagos_usd, moneda: c.moneda, ultimo: c.movimientos[0]?.fecha || null, horas_vuelo: c.horas.vuelo, horas_sim: c.horas.simulador }; }); };
+  api.registrarPago = (uid, { monto: valor, medio, fecha, nota, moneda }) => {
     exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');
-    const m = Math.round(Number(String(monto).replace(/\./g, '').replace(',', '.')));
-    if (!(m > 0)) fail('Ingresá el monto del pago');
-    movimiento(u.id, `Pago · ${medio || 'efectivo'}${nota ? ` · ${String(nota).trim()}` : ''}`, 'pago', m, `pago:${Date.now()}`, /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy());
+    const v = monto(valor); if (!(v > 0)) fail('Ingresá el monto del pago');
+    const { ars, usd } = enPesos(v, moneda);
+    movimiento(u.id, `Pago · ${medio || 'efectivo'}${moneda === 'USD' ? ` · ${fmtM(v, 'USD')}` : ''}${nota ? ` · ${String(nota).trim()}` : ''}`, 'pago', ars, `pago:${Date.now()}`, /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy(), usd);
     guardar();
   };
   const numero = (v) => Number(String(v ?? '').replace(/\./g, '').replace(',', '.'));
-  api.venderPack = (uid, { tipo, horas, precio, pagado, medio, fecha }) => {
+  api.venderPack = (uid, { tipo, horas, precio, pagado, medio, fecha, moneda }) => {
     exigir('admin'); const u = usuario(uid); if (!u || !['alumno', 'ppa'].includes(u.rol)) fail('Elegí un alumno o piloto');
     if (!['vuelo', 'simulador'].includes(tipo)) fail('Elegí si el pack es de vuelo o de simulador');
     const h = r1(Number(String(horas).replace(',', '.'))); if (!(h > 0 && h <= 300)) fail('Indicá la cantidad de horas del pack (hasta 300)');
-    const p = Math.round(numero(precio)); if (!(p >= 0)) fail('Revisá el precio del pack');
+    const pv = monto(precio); if (!(pv >= 0)) fail('Revisá el precio del pack');
+    const { ars: p, usd: pUsd } = enPesos(pv, moneda);
     const f = /^\d{4}-\d{2}-\d{2}$/.test(fecha || '') ? fecha : hoy();
     const lista = r1(h * db.tarifas[tipo]); const desc = lista > 0 ? Math.round((1 - p / lista) * 100) : 0;
     const nombrePack = `Pack de ${String(h).replace('.', ',')} h de ${tipo === 'vuelo' ? 'vuelo' : 'simulador'}`;
     const ref = `pack:${Date.now()}:${u.id}`;
     movHoras(u.id, tipo, h, nombrePack, ref, f);
-    if (p > 0) movimiento(u.id, `${nombrePack}${desc > 0 ? ` (${desc}% de descuento)` : ''}`, 'cargo', p, ref, f);
-    if (pagado && p > 0) movimiento(u.id, `Pago · ${medio || 'efectivo'} · ${nombrePack.toLowerCase()}`, 'pago', p, `pago:${ref}`, f);
+    if (p > 0) movimiento(u.id, `${nombrePack}${desc > 0 ? ` (${desc}% de descuento)` : ''}`, 'cargo', p, ref, f, pUsd);
+    if (pagado && p > 0) movimiento(u.id, `Pago · ${medio || 'efectivo'} · ${nombrePack.toLowerCase()}`, 'pago', p, `pago:${ref}`, f, pUsd);
     guardar(); return horasDe(u);
   };
   api.ajusteHoras = (uid, { tipo, horas, concepto }) => {
@@ -860,11 +900,11 @@ function crearStore(opts = {}) {
     if (saldoHoras(u.id, tipo) + h < 0) fail('El ajuste deja el saldo de horas en negativo');
     movHoras(u.id, tipo, h, String(concepto).trim(), `ajh:${Date.now()}`); guardar(); return horasDe(u);
   };
-  api.ajusteCuenta = (uid, { monto, concepto, tipo }) => {
+  api.ajusteCuenta = (uid, { monto: valor, concepto, tipo, moneda }) => {
     exigir('admin'); const u = usuario(uid); if (!u) fail('Usuario inexistente');
-    const m = Math.round(Number(String(monto).replace(/\./g, '').replace(',', '.')));
-    if (!(m > 0) || !String(concepto || '').trim()) fail('Completá concepto y monto');
-    movimiento(u.id, String(concepto).trim(), tipo === 'pago' ? 'pago' : 'cargo', m, `ajuste:${Date.now()}`); guardar();
+    const v = monto(valor); if (!(v > 0) || !String(concepto || '').trim()) fail('Completá concepto y monto');
+    const { ars, usd } = enPesos(v, moneda);
+    movimiento(u.id, String(concepto).trim(), tipo === 'pago' ? 'pago' : 'cargo', ars, `ajuste:${Date.now()}`, hoy(), usd); guardar();
   };
   api.guardarTarifas = (t) => {
     exigir('admin');
@@ -881,9 +921,9 @@ function crearStore(opts = {}) {
     let n = 0;
     for (const u of db.usuarios.filter((x) => x.activo && ['alumno', 'ppa'].includes(x.rol))) {
       const c = cuentaDe(u);
-      if (c.saldo <= 0) continue;
+      if ((c.moneda === 'USD' ? c.saldo_usd : c.saldo) <= 0.009) continue;
       if (db.notificaciones.some((x) => x.usuario_id === u.id && x.tipo === 'deuda' && x.dia === hoy())) continue;
-      n += notificar(u, 'deuda', { saldo: c.saldo, ultimos: c.movimientos.filter((m) => m.tipo === 'cargo').slice(0, 4), tarifas: c.tarifas });
+      n += notificar(u, 'deuda', { saldo: c.saldo, saldo_usd: c.saldo_usd, moneda: c.moneda, ultimos: c.movimientos.filter((m) => m.tipo === 'cargo').slice(0, 4), tarifas: c.tarifas });
     }
     if (n) guardar();
     return n;

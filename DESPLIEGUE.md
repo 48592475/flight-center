@@ -112,6 +112,10 @@ Si algún día la escuela pasa Render a un plan pago, también se puede usar Gma
 
 El METAR y el TAF funcionan sin clave (Aviation Weather Center, NOAA).
 
+## 5c. Cotización del dólar (cuentas en USD)
+
+No hace falta configurar nada. El servidor trae la cotización del dólar de https://dolarapi.com (gratis, sin clave) al arrancar y cada hora. Desde **Cuentas → Cotización del dólar** se elige el tipo de dólar (oficial, MEP, blue, tarjeta o mayorista) o se carga un valor a mano. Cada cargo de una cuenta en dólares queda fijo en USD al tipo de cambio del día en que se genera.
+
 ## 6. Recordatorio diario de deuda
 
 Sale todos los días a las 9:00 (hora de Argentina) a cada alumno o piloto con saldo a pagar, por email y WhatsApp, gracias a la tarea de cron-job.org del paso 2b. La administración también puede enviarlo en el momento desde **Avisos → Enviar ahora**. Nunca se manda más de uno por día a la misma persona.

@@ -16,6 +16,10 @@ const fmtFecha = (s, o = { weekday: 'long', day: 'numeric', month: 'long' }) => 
 const fmtCorta = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
 const fmtDM = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 const fmtHoras = (n) => (Math.round((n || 0) * 10) / 10).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const usd = (n) => `US$ ${(Math.round((n || 0) * 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// montos para el propio alumno o piloto: en la moneda de su cuenta
+const monedaMia = () => (state.user?.moneda === 'USD' && state.tc ? 'USD' : 'ARS');
+const plata = (ars, usdVal) => (monedaMia() === 'USD' ? usd(usdVal ?? ars / state.tc) : pesos(ars));
 const iniciales = (u) => `${(u.nombre || '?')[0]}${(u.apellido || '')[0] || ''}`.toUpperCase();
 // avatar con la foto de perfil (o las iniciales si no tiene)
 const avatarDe = (u, px = 0, foto = u?.foto_url) => `<div class="avatar ${foto ? 'con-foto' : ''}" ${px ? `style="width:${px}px;height:${px}px;font-size:${Math.round(px * 0.34)}px"` : ''}>${foto ? `<img src="${esc(foto)}" alt="">` : esc(iniciales(u || {}))}</div>`;
@@ -173,6 +177,7 @@ async function renderApp() {
   const u = await Store.yo();
   if (!u) { state.user = null; return renderLogin(); }
   state.user = u;
+  try { state.tc = (await Store.cotizacion())?.venta || null; } catch { state.tc = null; }
   if (u.falta_foto) return pantallaFoto(u);
   // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
   const conCampus = u.rol !== 'mecanico';
@@ -346,8 +351,8 @@ async function reservarTeorica(c) {
   });
   $$('[data-baja]', c).forEach((b) => b.onclick = async () => {
     const info = await Store.infoCancelacion(b.dataset.baja, 'teorica');
-    if (await confirmar('Darte de baja', `¿Querés liberar tu lugar en esta clase? ${textoCargo(info)}`, info.cargo ? `Darme de baja y pagar ${pesos(info.cargo)}` : 'Darme de baja')) {
-      const cargo = await hacer(async () => await Store.darseDeBaja(b.dataset.baja)); if (cargo !== undefined) toast(cargo ? `Baja registrada. Se cargó ${pesos(cargo)} a tu cuenta.` : 'Te diste de baja de la clase', 'ok'); await reservarTeorica(c); }
+    if (await confirmar('Darte de baja', `¿Querés liberar tu lugar en esta clase? ${textoCargo(info)}`, info.cargo ? `Darme de baja y pagar ${plata(info.cargo)}` : 'Darme de baja')) {
+      const cargo = await hacer(async () => await Store.darseDeBaja(b.dataset.baja)); if (cargo !== undefined) toast(cargo ? `Baja registrada. Se cargó ${plata(cargo)} a tu cuenta.` : 'Te diste de baja de la clase', 'ok'); await reservarTeorica(c); }
   });
 }
 
@@ -443,9 +448,9 @@ VISTAS.reservas = async function vistaMisReservas(v) {
     const bc = $('[data-cancelar]', el); if (bc) bc.onclick = async () => {
       const grupo = id.startsWith('g') ? prox[Number(id.slice(1))] : null;
       const info = grupo ? await Store.infoCancelacion(grupo.map((r) => r.id)) : await Store.infoCancelacion(id.slice(1), 'teorica');
-      if (!(await confirmar('Cancelar reserva', `¿Cancelar ${TIPO_RES[pase.tipo].toLowerCase()} del ${fmtFecha(pase.fecha)} (${pase.horario})? ${textoCargo(info)}`, info.cargo ? `Cancelar y pagar ${pesos(info.cargo)}` : 'Sí, cancelar'))) return;
+      if (!(await confirmar('Cancelar reserva', `¿Cancelar ${TIPO_RES[pase.tipo].toLowerCase()} del ${fmtFecha(pase.fecha)} (${pase.horario})? ${textoCargo(info)}`, info.cargo ? `Cancelar y pagar ${plata(info.cargo)}` : 'Sí, cancelar'))) return;
       const cargo = await hacer(async () => { if (!grupo) return await Store.darseDeBaja(id.slice(1)); return await Store.cancelarReservas(grupo.map((r) => r.id)); });
-      if (cargo !== undefined) toast(cargo ? `Cancelada. Se cargó ${pesos(cargo)} a tu estado de cuenta.` : 'Reserva cancelada sin cargo', 'ok');
+      if (cargo !== undefined) toast(cargo ? `Cancelada. Se cargó ${plata(cargo)} a tu estado de cuenta.` : 'Reserva cancelada sin cargo', 'ok');
       await VISTAS.reservas(v);
     };
   });

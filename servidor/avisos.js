@@ -92,7 +92,7 @@ function plantillaWhatsapp(n) {
     return { nombre: env.WHATSAPP_TPL_LIBERADO || 'turno_liberado', params: [n.nombre, d.tipo === 'simulador' ? 'simulador' : 'vuelo', fecha, `${hh(bl[0])} a ${hh(bl.at(-1) + 2)} hs`,
       `${d.recurso}${d.modelo ? ` (${d.modelo})` : ''}`, d.instructor || 'sin instructor asignado'] };
   }
-  return { nombre: env.WHATSAPP_TPL_DEUDA || 'recordatorio_pago', params: [n.nombre, `$ ${Math.round(d.saldo).toLocaleString('es-AR')}`] };
+  return { nombre: env.WHATSAPP_TPL_DEUDA || 'recordatorio_pago', params: [n.nombre, d.moneda === 'USD' && d.saldo_usd != null ? `US$ ${d.saldo_usd.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : `$ ${Math.round(d.saldo).toLocaleString('es-AR')}`] };
 }
 
 async function enviarWhatsapp(n) {

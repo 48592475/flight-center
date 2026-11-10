@@ -650,7 +650,10 @@ async function editarUsuario(u, despues, rolElegido) {
       ${c('nombre', 'Nombre completo')} ${c('apellido', 'Apellido')} ${c('email', 'Email (con este inicia sesión)', 'email')} ${c('telefono', 'Teléfono', 'tel')}
       ${c('direccion', 'Dirección', 'text', '', 'full')} ${c('dni', 'DNI')} ${c('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
-      ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)} ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
+      ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)}
+      <label class="campo" data-roles="alumno ppa"><span>Moneda del estado de cuenta</span><select id="u-moneda" name="moneda">
+        <option value="" ${u ? '' : 'selected'} disabled>Elegí la moneda</option>
+        <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
       ${bloqueTutor('u', u)}
       <label class="campo full">${u ? 'Nueva contraseña <span class="op">(dejar vacío para no cambiarla)</span>' : 'Contraseña inicial <span class="op">(se la pasás al usuario para que ingrese)</span>'}<input id="u-password" type="text" name="password" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
       <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Habilitaciones</legend>
@@ -679,7 +682,7 @@ async function editarUsuario(u, despues, rolElegido) {
     if (yoMismo) d.rol = u.rol;
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if ($('[data-tutor]', m.el).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
-    d.nacionalidad = $('#u-nacionalidad', m.el).value;
+    d.nacionalidad = $('#u-nacionalidad', m.el).value; d.moneda = $('#u-moneda', m.el).value;
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
     const guardado = await hacer(async () => {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);

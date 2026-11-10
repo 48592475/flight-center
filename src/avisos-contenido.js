@@ -5,6 +5,7 @@ const contenidoAviso = (() => {
   const fmtFecha = (s, o) => parseISO(s).toLocaleDateString('es-AR', o);
   const codigoReserva = (id, p = 'FC') => `${p}-${String(id).padStart(5, '0')}`;
   const pesos = (n) => `$ ${Math.round(n || 0).toLocaleString('es-AR')}`;
+  const usd = (n) => `US$ ${(Math.round((n || 0) * 100) / 100).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const fechaLarga = (f) => { const t = fmtFecha(f, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); return t[0].toUpperCase() + t.slice(1); };
   const fechaCorta = (f) => f.split('-').reverse().join('/');
   const saludo = (n) => `Estimado/a ${n.nombre} ${n.apellido}`;
@@ -70,7 +71,7 @@ const contenidoAviso = (() => {
         intro: `${saludo(n)}, no te presentaste a tu ${sim ? 'turno de simulador' : 'vuelo'} y la reserva quedó registrada como ausente${n.datos.justificada ? ' (justificada)' : ''}.`,
         filas: [['Código de reserva', codigoReserva(r.id, sim ? 'SIM' : 'FC')], ['Fecha', fechaLarga(r.fecha)], ['Horario', `${hh(r.bloque)} a ${hh(r.bloque + 2)} hs`],
           [sim ? 'Simulador' : 'Aeronave', `${r.recurso} · ${r.modelo}`], ['Instructor', r.instructor || 'Sin instructor'],
-          ...(n.datos.motivo ? [['Motivo', n.datos.motivo]] : []), ['Cargo', n.datos.cargo ? pesos(n.datos.cargo) : 'Sin cargo']],
+          ...(n.datos.motivo ? [['Motivo', n.datos.motivo]] : []), ['Cargo', n.datos.cargo ? (n.datos.moneda === 'USD' && n.datos.cargo_usd != null ? usd(n.datos.cargo_usd) : pesos(n.datos.cargo)) : 'Sin cargo']],
         notas: ['Si no podés venir, cancelá con anticipación desde Mis reservas para evitar el cargo por ausencia.', 'Si creés que es un error, comunicate con la escuela.'], wpp: [] };
     }
     if (n.tipo === 'foro_respuesta') {
@@ -84,13 +85,13 @@ const contenidoAviso = (() => {
         filas: [['Trabajo', c.tp.titulo], ['Resultado', c.estado === 'aprobado' ? 'Aprobado' : 'A rehacer'], ...(c.nota != null ? [['Nota', String(c.nota)]] : []), ...(c.comentario ? [['Comentario', c.comentario]] : [])],
         notas: [c.estado === 'aprobado' ? '¡Felicitaciones! Seguí así.' : 'Revisá el comentario y volvé a entregar el trabajo desde el campus.'], wpp: [] };
     }
-    const d = n.datos;
+    const d = n.datos; const enUsd = d.moneda === 'USD'; const plata = (ars, u) => enUsd && u != null ? usd(u) : pesos(ars);
     return {
-      asunto: `Recordatorio de saldo pendiente · ${pesos(d.saldo)}`, titulo: 'Recordatorio de saldo pendiente',
-      intro: `Le recordamos que al día de la fecha su cuenta en Flight Center registra un saldo pendiente de pago de ${pesos(d.saldo)}.`,
-      filas: [['Saldo a pagar', pesos(d.saldo)], ...d.ultimos.map((m) => [`${fechaCorta(m.fecha)} · ${m.concepto}`, pesos(m.importe)])],
+      asunto: `Recordatorio de saldo pendiente · ${plata(d.saldo, d.saldo_usd)}`, titulo: 'Recordatorio de saldo pendiente',
+      intro: `Le recordamos que al día de la fecha su cuenta en Flight Center registra un saldo pendiente de pago de ${plata(d.saldo, d.saldo_usd)}.`,
+      filas: [['Saldo a pagar', plata(d.saldo, d.saldo_usd)], ...d.ultimos.map((m) => [`${fechaCorta(m.fecha)} · ${m.concepto}`, plata(m.importe, m.usd)])],
       notas: ['Puede abonar en la oficina de la escuela en efectivo, con tarjeta o por transferencia bancaria / Mercado Pago.', 'Si ya realizó el pago, por favor desestime este mensaje.', 'Este recordatorio se envía una vez por día mientras haya saldo pendiente.'],
-      wpp: ['💳 *Flight Center* · Recordatorio de pago', '', `Hola ${n.nombre}, tu cuenta registra un saldo pendiente de *${pesos(d.saldo)}*.`, '', 'Podés abonar en la oficina de la escuela en efectivo, tarjeta, transferencia o Mercado Pago.', '', '_Si ya pagaste, desestimá este mensaje. ¡Gracias!_'],
+      wpp: ['💳 *Flight Center* · Recordatorio de pago', '', `Hola ${n.nombre}, tu cuenta registra un saldo pendiente de *${plata(d.saldo, d.saldo_usd)}*.`, '', 'Podés abonar en la oficina de la escuela en efectivo, tarjeta, transferencia o Mercado Pago.', '', '_Si ya pagaste, desestimá este mensaje. ¡Gracias!_'],
     };
   }
   return datosAviso;

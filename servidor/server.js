@@ -11,6 +11,7 @@ const { crearStore } = require('./nucleo');
 const persistencia = require('./persistencia');
 const avisos = require('./avisos');
 const meteo = require('./meteo');
+const cotizacion = require('./cotizacion');
 
 const PORT = Number(process.env.PORT || 3000);
 const PRODUCCION = process.env.NODE_ENV === 'production';
@@ -88,6 +89,7 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
       Store._como(uid);
       const r = Store[m](...args);
       if (m === 'yo' && !r && uid) req.session = null;
+      if (m === 'guardarCotizacion' && args[0]?.casa !== 'manual') { Store._como(null); await cotizacion.actualizar(Store); return res.json({ r: Store._cotizacion() }); }
       return res.json({ r: r === undefined ? null : r });
     } catch (e) {
       const msg = e && e.message ? e.message : 'Error interno';
@@ -134,6 +136,9 @@ const PRODUCCION = process.env.NODE_ENV === 'production';
   cron.schedule(process.env.HORA_RECORDATORIO || '0 9 * * *', () => {
     try { console.log('Recordatorios de deuda enviados:', Store.recordatoriosDeuda()); } catch (e) { console.error('Recordatorios:', e.message); }
   }, { timezone: 'America/Argentina/Buenos_Aires' });
+
+  // cotización del dólar: al arrancar y cada hora
+  cotizacion.iniciar(Store);
 
   // avisos que quedaron en cola si el servidor se reinició
   for (const n of Store._pendientes()) avisos.enviar(Store, n);

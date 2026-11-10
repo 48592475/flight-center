@@ -297,7 +297,7 @@ async function verTemaForo(v, id) {
   const t = await hacer(() => Store.foroTema(id));
   if (!t) { state.foroTema = null; return VISTAS['c-foro'](v); }
   const post = (p, esTema) => `<article class="post ${p.mejor ? 'mejor' : ''} ${['instructor', 'admin'].includes(p.autor_rol) ? 'docente' : ''}">
-    <div class="post-head"><div class="avatar" style="width:34px;height:34px;font-size:12px">${esc(p.autor.split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase())}</div>
+    <div class="post-head">${avatarDe({ nombre: p.autor.split(' ')[0], apellido: p.autor.split(' ').slice(-1)[0] }, 34, p.autor_foto)}
       <div><b>${esc(p.autor)}</b> ${['instructor', 'admin'].includes(p.autor_rol) ? `<span class="badge">${esc(ROL_FORO[p.autor_rol])}</span>` : `<span class="muted" style="font-size:12.5px">${esc(ROL_FORO[p.autor_rol] || '')}</span>`}
         <div class="muted" style="font-size:12px">${esc(cuando(p.fecha))}${p.editado ? ' · editado' : ''}</div></div>
       ${p.mejor ? '<span class="badge ok" style="margin-left:auto">✓ Respuesta destacada</span>' : ''}</div>

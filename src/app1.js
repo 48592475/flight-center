@@ -17,6 +17,44 @@ const fmtCorta = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit'
 const fmtDM = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 const fmtHoras = (n) => (Math.round((n || 0) * 10) / 10).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const iniciales = (u) => `${(u.nombre || '?')[0]}${(u.apellido || '')[0] || ''}`.toUpperCase();
+// avatar con la foto de perfil (o las iniciales si no tiene)
+const avatarDe = (u, px = 0, foto = u?.foto_url) => `<div class="avatar ${foto ? 'con-foto' : ''}" ${px ? `style="width:${px}px;height:${px}px;font-size:${Math.round(px * 0.34)}px"` : ''}>${foto ? `<img src="${esc(foto)}" alt="">` : esc(iniciales(u || {}))}</div>`;
+// elige una foto (galería o cámara), la recorta cuadrada y la achica a 400 px para que pese poco
+function elegirFoto({ camara = false } = {}) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; if (camara) inp.capture = 'user';
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return resolve(null);
+      if (!/^image\//.test(f.type)) { toast('Elegí una imagen (JPG o PNG)', 'error'); return resolve(null); }
+      const url = URL.createObjectURL(f); const img = new Image();
+      img.onload = () => {
+        const lado = Math.min(img.width, img.height); const c = document.createElement('canvas'); c.width = c.height = 400;
+        c.getContext('2d').drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 400, 400);
+        URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo leer la imagen. Probá con otra (JPG o PNG).', 'error'); resolve(null); };
+      img.src = url;
+    };
+    inp.click();
+  });
+}
+// pantalla obligatoria: sin foto de perfil no se puede usar la app
+function pantallaFoto(u) {
+  let foto = null;
+  app.innerHTML = `<section class="portal">
+    <div class="portal-head anim">${logo('', 'oscuro')}<button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
+    <div class="portal-cuerpo"><div class="foto-oblig anim" style="--i:1">
+      <div class="foto-prev" id="fp-prev">${esc(iniciales(u))}</div>
+      <h2>Hola, ${esc(u.nombre)}: subí tu foto de perfil</h2>
+      <p>Es obligatoria para usar Flight Center. Así los instructores, el mecánico y la escuela saben con quién vuelan. Usá una foto de tu cara, de frente y con buena luz.</p>
+      <div class="flujo" style="justify-content:center"><button class="btn sec" id="fp-galeria">Elegir una foto</button><button class="btn sec" id="fp-camara">Sacar una foto</button></div>
+      <button class="btn" id="fp-ok" disabled style="margin-top:6px">Guardar y continuar</button>
+    </div></div></section>`;
+  const poner = async (camara) => { const d = await elegirFoto({ camara }); if (!d) return; foto = d; $('#fp-prev').innerHTML = `<img src="${d}" alt="">`; $('#fp-prev').classList.add('con-foto'); $('#fp-ok').disabled = false; };
+  $('#fp-galeria').onclick = () => poner(false); $('#fp-camara').onclick = () => poner(true);
+  $('#fp-ok').onclick = async () => { const r = await hacer(async () => await Store.subirFoto({ data: foto }), '¡Listo! Foto guardada'); if (r) { state.user = r; await renderApp(); } };
+  $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
+}
 const ROLES = { alumno: 'Alumno piloto', ppa: 'Piloto privado · PPA', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
 const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular' };
@@ -135,6 +173,7 @@ async function renderApp() {
   const u = await Store.yo();
   if (!u) { state.user = null; return renderLogin(); }
   state.user = u;
+  if (u.falta_foto) return pantallaFoto(u);
   // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
   const conCampus = u.rol !== 'mecanico';
   if (!conCampus) state.portal = 'reservas';
@@ -145,7 +184,7 @@ async function renderApp() {
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
       ${logo(state.portal === 'campus' ? 'Campus' : ROLES[u.rol])}
       <nav class="tabs">${tabs.map(([k, t]) => `<button class="tab ${k === state.tab ? 'activo' : ''}" data-tab="${k}">${t}</button>`).join('')}</nav>
-      <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}<div class="avatar">${esc(iniciales(u))}</div><span class="nombre">${esc(u.nombre)}</span>
+      <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}${avatarDe(u)}<span class="nombre">${esc(u.nombre)}</span>
         <button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
     </div></header><main id="vista"></main>`;
   $$('.tab').forEach((b) => b.onclick = async () => await irA(b.dataset.tab));

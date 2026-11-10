@@ -121,6 +121,17 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // fotos de ejemplo (ilustraciones), salvo Valentina
+    const COLORES = ['#1565c0', '#0f3460', '#1e88e5', '#00838f', '#5e35b1', '#2e7d32', '#ad1457'];
+    db.usuarios.filter((u) => u.id !== vale).forEach((u, i) => {
+      const ini = `${u.nombre[0]}${u.apellido[0] || ''}`.toUpperCase(); const c = COLORES[i % COLORES.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="${c}"/><circle cx="60" cy="47" r="22" fill="#ffffff" opacity=".9"/><path d="M18 120c4-26 22-40 42-40s38 14 42 40z" fill="#ffffff" opacity=".9"/><text x="60" y="54" font-family="Arial" font-weight="700" font-size="17" fill="${c}" text-anchor="middle">${ini}</text></svg>`;
+      const id = ++db.seq.ar; const data = `data:image/svg+xml;base64,${typeof btoa === 'function' ? btoa(svg) : Buffer.from(svg).toString('base64')}`;
+      const meta = { id, nombre: `foto-${u.id}.svg`, tam: svg.length, tipo: 'image/svg+xml', autor_id: u.id, fecha: ahora(), ambito: 'foto' };
+      if (opts.archivos) opts.archivos.guardar(id, data); else meta.data = data;
+      db.archivos.push(meta);
+      u.foto = id;
+    });
     // foro: ejemplos de la demo
     db.foro_temas = []; db.foro_respuestas = []; db.seq.ft = 0; db.seq.fr = 0;
     const tema = (autor, titulo, cuerpo, seccion, dias, extra = {}) => { db.foro_temas.push({ id: ++db.seq.ft, autor_id: autor, titulo, cuerpo, seccion, fecha: dia(dias) + ' 19:30', actividad: dia(dias) + ' 19:30', resuelto: false, fijado: false, ...extra }); return db.seq.ft; };
@@ -249,7 +260,11 @@ function crearStore(opts = {}) {
   // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
   const BLOQUES_EXTRANJEROS = [8, 14, 16];
   const bloquesPermitidos = (u) => u && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina' ? BLOQUES_EXTRANJEROS : null;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  // foto de perfil: obligatoria para todos menos la administración
+  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
+  const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
+  const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -426,6 +441,7 @@ function crearStore(opts = {}) {
     },
     reservar({ tipo, fecha, bloques, instructor_id, recurso_id, destino }) {
       const u = exigir('alumno', 'ppa');
+      if (faltaFoto(u)) fail('Antes de reservar tenés que subir tu foto de perfil.');
       const esPPA = u.rol === 'ppa';
       if (!['vuelo', 'simulador'].includes(tipo)) fail('Tipo de reserva inválido');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''))) fail('Elegí un día');
@@ -902,7 +918,7 @@ function crearStore(opts = {}) {
     if (!id) return; db.archivos = db.archivos.filter((a) => a.id !== id); if (opts.archivos) opts.archivos.borrar(id);
   }
   const metaArchivo = (id) => { const a = db.archivos.find((x) => x.id === id); if (!a) return null; const { data, ...m } = a; return m; };
-  const puedeVerArchivo = (me, a) => a && (a.ambito === 'material' || a.ambito === 'tp' || a.ambito === `entrega:${me.id}` || DOCENTES.includes(me.rol));
+  const puedeVerArchivo = (me, a) => a && (a.ambito === 'foto' || a.ambito === 'material' || a.ambito === 'tp' || a.ambito === `entrega:${me.id}` || DOCENTES.includes(me.rol));
   const conAutor = (x) => ({ ...x, autor: nombre(usuario(x.autor_id)), archivo: metaArchivo(x.archivo_id) });
 
   api.campusResumen = () => {
@@ -993,7 +1009,7 @@ function crearStore(opts = {}) {
   api._archivoPermitido = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); return puedeVerArchivo(me, a) ? metaArchivo(a.id) : null; };
   // ---------- foro de consultas ----------
   const EN_FORO = ['alumno', 'ppa', 'instructor', 'admin'];
-  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol } : { autor: 'Usuario eliminado', autor_rol: '' }; };
+  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol, autor_foto: fotoUrl(u) } : { autor: 'Usuario eliminado', autor_rol: '' }; };
   const textoForo = (t, min, max, que) => { t = String(t || '').trim(); if (t.length < min) fail(`${que} es muy corto`); if (t.length > max) fail(`${que} es muy largo (máximo ${max} caracteres)`); return t; };
   const temaPub = (t) => { const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id);
     return { ...t, ...autorForo(t.autor_id), respuestas: rs.length, responde_instructor: rs.some((r) => DOCENTES.includes(usuario(r.autor_id)?.rol)) }; };
@@ -1046,6 +1062,15 @@ function crearStore(opts = {}) {
     r.mejor = !r.mejor; t.resuelto = db.foro_respuestas.some((x) => x.tema_id === t.id && x.mejor); guardar(); return r.mejor;
   };
   api.foroFijar = (temaId) => { exigir(...DOCENTES); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe'); t.fijado = !t.fijado; guardar(); return t.fijado; };
+  api.subirFoto = (foto) => {
+    const u = yo();
+    if (!foto || !/^data:image\/(jpeg|png|webp);base64,/.test(String(foto.data || ''))) fail('Elegí una foto (JPG o PNG)');
+    if (String(foto.data).length > 1.5 * 1024 * 1024) fail('La foto es muy pesada. Probá con otra.');
+    const anterior = u.foto;
+    u.foto = guardarArchivo({ nombre: `foto-${u.id}.jpg`, tam: Math.round(foto.data.length * 0.75), tipo: 'image/jpeg', data: foto.data }, u, 'foto');
+    if (anterior) borrarArchivo(anterior);
+    guardar(); return pub(u);
+  };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };

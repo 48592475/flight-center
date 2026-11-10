@@ -145,6 +145,8 @@ VISTAS.perfil = async function vistaPerfil(v) {
   const campo = (n, l, t = 'text', extra = '') => `<label class="campo ${extra}">${l}<input id="pf-${n}" type="${t}" name="${n}" value="${esc(u[n] || '')}"></label>`;
   v.innerHTML = hero('Mi perfil', 'Mantené tus datos y tu documentación al día.') + `
     ${u.nacionalidad ? '' : '<div class="aviso-perfil anim"><b>Falta tu nacionalidad.</b> Elegila en tus datos personales y guardá los cambios.</div>'}
+    <div class="card anim foto-card" style="--i:1">${avatarDe(u, 88)}<div><h3>Foto de perfil</h3><p class="muted" style="margin:4px 0 12px">${u.rol === 'admin' ? 'Opcional para la administración.' : 'Obligatoria. La ven tus instructores, compañeros y la escuela.'}</p>
+      <div class="flujo"><button class="btn sec sm" id="foto-galeria">${u.foto_url ? 'Cambiar foto' : 'Subir foto'}</button><button class="btn sec sm" id="foto-camara">Sacar una foto</button></div></div></div>
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Datos personales</h3></div>
       <form id="f-perfil" class="form-grid">
         ${campo('nombre', 'Nombre completo')} ${campo('apellido', 'Apellido')} ${campo('email', 'Email', 'email')} ${campo('telefono', 'Teléfono', 'tel')}
@@ -166,6 +168,9 @@ VISTAS.perfil = async function vistaPerfil(v) {
         <label class="campo">Nueva contraseña<input id="pw-n" type="password" name="nueva" autocomplete="new-password" minlength="6" required></label>
         <div class="full" style="display:flex;justify-content:flex-end"><button class="btn sec" type="submit">Actualizar contraseña</button></div>
       </form></div>`;
+  const cambiarFoto = async (camara) => { const d = await elegirFoto({ camara }); if (!d) return; const r = await hacer(async () => await Store.subirFoto({ data: d }), 'Foto actualizada');
+    if (r) { state.user = r; $('.user-chip .avatar')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: avatarDe(r) }).firstElementChild); await VISTAS.perfil(v); } };
+  $('#foto-galeria', v).onclick = () => cambiarFoto(false); $('#foto-camara', v).onclick = () => cambiarFoto(true);
   activarTutor($('#f-perfil', v), () => u.rol);
   $('#f-perfil', v).onsubmit = async (e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); d.nacionalidad = $('#pf-nacionalidad', v).value; if ($('[data-tutor]', v).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
     const r = await hacer(async () => await Store.guardarPerfil(d), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; $('.aviso-perfil', v)?.remove(); } };
@@ -217,7 +222,7 @@ async function fichaPiloto(id) {
   const p = await hacer(async () => await Store.fichaPiloto(id)); if (!p) return;
   const doc = (t, n) => p.docs[t] ? `<button class="btn sec sm" data-verdoc="${p.id}|${t}|${n}">${n} (PDF)</button>` : `<span class="badge gris">${n}: no cargado</span>`;
   const venc = p.vencimiento_cma && p.vencimiento_cma < isoLocal(new Date());
-  const m = modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar" style="width:44px;height:44px">${esc(iniciales(p))}</div>
+  const m = modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center">${avatarDe(p, 56)}
       <div><h3>${esc(p.nombre)} ${esc(p.apellido)}</h3><span class="badge">${esc(ROLES[p.rol])}</span></div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body">
       <div class="stats" style="margin-bottom:18px"><div class="stat dest"><div class="lbl">Horas totales</div><div class="val">${fmtHoras(p.horas_totales)}<small>hs</small></div></div>
@@ -606,7 +611,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <input id="fq" placeholder="Buscar por nombre o email" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>Teléfono</th><th>CMA</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong></td><td><span class="badge">${esc(ROLES[u.rol])}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
+      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(ROLES[u.rol])}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.rol === 'alumno' ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}

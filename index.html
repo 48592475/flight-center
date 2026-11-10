@@ -921,6 +921,16 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .aviso-perfil { background: #fff4e0; border: 1px solid #f3cf8c; color: #6b4300; border-radius: 14px; padding: 14px 18px; margin-bottom: 18px; }
 .tutor-ficha { background: #fffaf0; border-radius: 10px; padding: 8px 10px; }
 
+/* foto de perfil */
+.avatar.con-foto { padding: 0; overflow: hidden; background: #dbe6f1; }
+.avatar.con-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.foto-oblig { background: #fff; color: var(--texto); border-radius: 24px; padding: 32px 28px; max-width: 520px; margin: 0 auto; text-align: center; display: grid; gap: 14px; justify-items: center; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, .5); }
+.foto-oblig h2 { color: var(--navy); font-size: 24px; }
+.foto-oblig p { color: var(--muted); margin: 0; line-height: 1.5; }
+.foto-prev { width: 140px; height: 140px; border-radius: 50%; display: grid; place-items: center; font-size: 44px; font-weight: 800; color: #fff; background: linear-gradient(135deg, var(--azul), var(--celeste)); overflow: hidden; border: 4px solid var(--celeste-claro); }
+.foto-prev img { width: 100%; height: 100%; object-fit: cover; }
+.foto-card { display: flex; gap: 20px; align-items: center; flex-wrap: wrap; }
+
 </style>
 </head>
 <body>
@@ -1053,6 +1063,17 @@ function crearStore(opts = {}) {
     const tp = (leccion, titulo, consigna, limite, autor) => { db.tps.push({ id: ++db.seq.tp, leccion, titulo, consigna, fecha_limite: limite, archivo_id: null, autor_id: autor, fecha: dia(-3) + ' 09:00' }); return db.seq.tp; };
     const tp1 = tp('TEO 4', 'TP 1 · Interpretación de METAR', 'Decodificá estos tres METAR y explicá si las condiciones permiten un vuelo VFR local en Morón:\n1) METAR SADM 061200Z 03008KT 9999 FEW030 24/12 Q1016\n2) METAR SADP 061200Z 36012G22KT 6000 -RA BKN012 OVC030 19/17 Q1009\n3) METAR SAEZ 061200Z 18015KT 3000 BR OVC005 12/11 Q1020', dia(5), diego);
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
+    // fotos de ejemplo (ilustraciones), salvo Valentina
+    const COLORES = ['#1565c0', '#0f3460', '#1e88e5', '#00838f', '#5e35b1', '#2e7d32', '#ad1457'];
+    db.usuarios.filter((u) => u.id !== vale).forEach((u, i) => {
+      const ini = `${u.nombre[0]}${u.apellido[0] || ''}`.toUpperCase(); const c = COLORES[i % COLORES.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="${c}"/><circle cx="60" cy="47" r="22" fill="#ffffff" opacity=".9"/><path d="M18 120c4-26 22-40 42-40s38 14 42 40z" fill="#ffffff" opacity=".9"/><text x="60" y="54" font-family="Arial" font-weight="700" font-size="17" fill="${c}" text-anchor="middle">${ini}</text></svg>`;
+      const id = ++db.seq.ar; const data = `data:image/svg+xml;base64,${typeof btoa === 'function' ? btoa(svg) : Buffer.from(svg).toString('base64')}`;
+      const meta = { id, nombre: `foto-${u.id}.svg`, tam: svg.length, tipo: 'image/svg+xml', autor_id: u.id, fecha: ahora(), ambito: 'foto' };
+      if (opts.archivos) opts.archivos.guardar(id, data); else meta.data = data;
+      db.archivos.push(meta);
+      u.foto = id;
+    });
     // foro: ejemplos de la demo
     db.foro_temas = []; db.foro_respuestas = []; db.seq.ft = 0; db.seq.fr = 0;
     const tema = (autor, titulo, cuerpo, seccion, dias, extra = {}) => { db.foro_temas.push({ id: ++db.seq.ft, autor_id: autor, titulo, cuerpo, seccion, fecha: dia(dias) + ' 19:30', actividad: dia(dias) + ' 19:30', resuelto: false, fijado: false, ...extra }); return db.seq.ft; };
@@ -1181,7 +1202,11 @@ function crearStore(opts = {}) {
   // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
   const BLOQUES_EXTRANJEROS = [8, 14, 16];
   const bloquesPermitidos = (u) => u && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina' ? BLOQUES_EXTRANJEROS : null;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  // foto de perfil: obligatoria para todos menos la administración
+  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
+  const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
+  const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -1358,6 +1383,7 @@ function crearStore(opts = {}) {
     },
     reservar({ tipo, fecha, bloques, instructor_id, recurso_id, destino }) {
       const u = exigir('alumno', 'ppa');
+      if (faltaFoto(u)) fail('Antes de reservar tenés que subir tu foto de perfil.');
       const esPPA = u.rol === 'ppa';
       if (!['vuelo', 'simulador'].includes(tipo)) fail('Tipo de reserva inválido');
       if (!/^\d{4}-\d{2}-\d{2}$/.test(String(fecha || ''))) fail('Elegí un día');
@@ -1834,7 +1860,7 @@ function crearStore(opts = {}) {
     if (!id) return; db.archivos = db.archivos.filter((a) => a.id !== id); if (opts.archivos) opts.archivos.borrar(id);
   }
   const metaArchivo = (id) => { const a = db.archivos.find((x) => x.id === id); if (!a) return null; const { data, ...m } = a; return m; };
-  const puedeVerArchivo = (me, a) => a && (a.ambito === 'material' || a.ambito === 'tp' || a.ambito === `entrega:${me.id}` || DOCENTES.includes(me.rol));
+  const puedeVerArchivo = (me, a) => a && (a.ambito === 'foto' || a.ambito === 'material' || a.ambito === 'tp' || a.ambito === `entrega:${me.id}` || DOCENTES.includes(me.rol));
   const conAutor = (x) => ({ ...x, autor: nombre(usuario(x.autor_id)), archivo: metaArchivo(x.archivo_id) });
 
   api.campusResumen = () => {
@@ -1925,7 +1951,7 @@ function crearStore(opts = {}) {
   api._archivoPermitido = (id) => { const me = yo(); const a = db.archivos.find((x) => x.id === Number(id)); return puedeVerArchivo(me, a) ? metaArchivo(a.id) : null; };
   // ---------- foro de consultas ----------
   const EN_FORO = ['alumno', 'ppa', 'instructor', 'admin'];
-  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol } : { autor: 'Usuario eliminado', autor_rol: '' }; };
+  const autorForo = (id) => { const u = usuario(id); return u ? { autor: nombre(u), autor_rol: u.rol, autor_foto: fotoUrl(u) } : { autor: 'Usuario eliminado', autor_rol: '' }; };
   const textoForo = (t, min, max, que) => { t = String(t || '').trim(); if (t.length < min) fail(`${que} es muy corto`); if (t.length > max) fail(`${que} es muy largo (máximo ${max} caracteres)`); return t; };
   const temaPub = (t) => { const rs = db.foro_respuestas.filter((r) => r.tema_id === t.id);
     return { ...t, ...autorForo(t.autor_id), respuestas: rs.length, responde_instructor: rs.some((r) => DOCENTES.includes(usuario(r.autor_id)?.rol)) }; };
@@ -1978,6 +2004,15 @@ function crearStore(opts = {}) {
     r.mejor = !r.mejor; t.resuelto = db.foro_respuestas.some((x) => x.tema_id === t.id && x.mejor); guardar(); return r.mejor;
   };
   api.foroFijar = (temaId) => { exigir(...DOCENTES); const t = db.foro_temas.find((x) => x.id === Number(temaId)); if (!t) fail('La consulta ya no existe'); t.fijado = !t.fijado; guardar(); return t.fijado; };
+  api.subirFoto = (foto) => {
+    const u = yo();
+    if (!foto || !/^data:image\/(jpeg|png|webp);base64,/.test(String(foto.data || ''))) fail('Elegí una foto (JPG o PNG)');
+    if (String(foto.data).length > 1.5 * 1024 * 1024) fail('La foto es muy pesada. Probá con otra.');
+    const anterior = u.foto;
+    u.foto = guardarArchivo({ nombre: `foto-${u.id}.jpg`, tam: Math.round(foto.data.length * 0.75), tipo: 'image/jpeg', data: foto.data }, u, 'foto');
+    if (anterior) borrarArchivo(anterior);
+    guardar(); return pub(u);
+  };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { exigir('admin'); return db.notificaciones.filter((x) => !dia || x.dia === dia).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
@@ -4415,6 +4450,44 @@ const fmtCorta = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit'
 const fmtDM = (s) => parseISO(s).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
 const fmtHoras = (n) => (Math.round((n || 0) * 10) / 10).toLocaleString('es-AR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const iniciales = (u) => `${(u.nombre || '?')[0]}${(u.apellido || '')[0] || ''}`.toUpperCase();
+// avatar con la foto de perfil (o las iniciales si no tiene)
+const avatarDe = (u, px = 0, foto = u?.foto_url) => `<div class="avatar ${foto ? 'con-foto' : ''}" ${px ? `style="width:${px}px;height:${px}px;font-size:${Math.round(px * 0.34)}px"` : ''}>${foto ? `<img src="${esc(foto)}" alt="">` : esc(iniciales(u || {}))}</div>`;
+// elige una foto (galería o cámara), la recorta cuadrada y la achica a 400 px para que pese poco
+function elegirFoto({ camara = false } = {}) {
+  return new Promise((resolve) => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; if (camara) inp.capture = 'user';
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return resolve(null);
+      if (!/^image\//.test(f.type)) { toast('Elegí una imagen (JPG o PNG)', 'error'); return resolve(null); }
+      const url = URL.createObjectURL(f); const img = new Image();
+      img.onload = () => {
+        const lado = Math.min(img.width, img.height); const c = document.createElement('canvas'); c.width = c.height = 400;
+        c.getContext('2d').drawImage(img, (img.width - lado) / 2, (img.height - lado) / 2, lado, lado, 0, 0, 400, 400);
+        URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); toast('No se pudo leer la imagen. Probá con otra (JPG o PNG).', 'error'); resolve(null); };
+      img.src = url;
+    };
+    inp.click();
+  });
+}
+// pantalla obligatoria: sin foto de perfil no se puede usar la app
+function pantallaFoto(u) {
+  let foto = null;
+  app.innerHTML = `<section class="portal">
+    <div class="portal-head anim">${logo('', 'oscuro')}<button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
+    <div class="portal-cuerpo"><div class="foto-oblig anim" style="--i:1">
+      <div class="foto-prev" id="fp-prev">${esc(iniciales(u))}</div>
+      <h2>Hola, ${esc(u.nombre)}: subí tu foto de perfil</h2>
+      <p>Es obligatoria para usar Flight Center. Así los instructores, el mecánico y la escuela saben con quién vuelan. Usá una foto de tu cara, de frente y con buena luz.</p>
+      <div class="flujo" style="justify-content:center"><button class="btn sec" id="fp-galeria">Elegir una foto</button><button class="btn sec" id="fp-camara">Sacar una foto</button></div>
+      <button class="btn" id="fp-ok" disabled style="margin-top:6px">Guardar y continuar</button>
+    </div></div></section>`;
+  const poner = async (camara) => { const d = await elegirFoto({ camara }); if (!d) return; foto = d; $('#fp-prev').innerHTML = `<img src="${d}" alt="">`; $('#fp-prev').classList.add('con-foto'); $('#fp-ok').disabled = false; };
+  $('#fp-galeria').onclick = () => poner(false); $('#fp-camara').onclick = () => poner(true);
+  $('#fp-ok').onclick = async () => { const r = await hacer(async () => await Store.subirFoto({ data: foto }), '¡Listo! Foto guardada'); if (r) { state.user = r; await renderApp(); } };
+  $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
+}
 const ROLES = { alumno: 'Alumno piloto', ppa: 'Piloto privado · PPA', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
 const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular' };
@@ -4533,6 +4606,7 @@ async function renderApp() {
   const u = await Store.yo();
   if (!u) { state.user = null; return renderLogin(); }
   state.user = u;
+  if (u.falta_foto) return pantallaFoto(u);
   // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
   const conCampus = u.rol !== 'mecanico';
   if (!conCampus) state.portal = 'reservas';
@@ -4543,7 +4617,7 @@ async function renderApp() {
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
       ${logo(state.portal === 'campus' ? 'Campus' : ROLES[u.rol])}
       <nav class="tabs">${tabs.map(([k, t]) => `<button class="tab ${k === state.tab ? 'activo' : ''}" data-tab="${k}">${t}</button>`).join('')}</nav>
-      <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}<div class="avatar">${esc(iniciales(u))}</div><span class="nombre">${esc(u.nombre)}</span>
+      <div class="user-chip">${conCampus ? `<button class="cambio-portal" id="cambio-portal" title="Cambiar de sección">${state.portal === 'campus' ? 'Ir a Reservas' : 'Ir al Campus'}</button>` : ''}${avatarDe(u)}<span class="nombre">${esc(u.nombre)}</span>
         <button class="logout" title="Cerrar sesión" aria-label="Cerrar sesión" id="logout">${ICON.salir}</button></div>
     </div></header><main id="vista"></main>`;
   $$('.tab').forEach((b) => b.onclick = async () => await irA(b.dataset.tab));
@@ -5007,6 +5081,8 @@ VISTAS.perfil = async function vistaPerfil(v) {
   const campo = (n, l, t = 'text', extra = '') => `<label class="campo ${extra}">${l}<input id="pf-${n}" type="${t}" name="${n}" value="${esc(u[n] || '')}"></label>`;
   v.innerHTML = hero('Mi perfil', 'Mantené tus datos y tu documentación al día.') + `
     ${u.nacionalidad ? '' : '<div class="aviso-perfil anim"><b>Falta tu nacionalidad.</b> Elegila en tus datos personales y guardá los cambios.</div>'}
+    <div class="card anim foto-card" style="--i:1">${avatarDe(u, 88)}<div><h3>Foto de perfil</h3><p class="muted" style="margin:4px 0 12px">${u.rol === 'admin' ? 'Opcional para la administración.' : 'Obligatoria. La ven tus instructores, compañeros y la escuela.'}</p>
+      <div class="flujo"><button class="btn sec sm" id="foto-galeria">${u.foto_url ? 'Cambiar foto' : 'Subir foto'}</button><button class="btn sec sm" id="foto-camara">Sacar una foto</button></div></div></div>
     <div class="card anim" style="--i:1"><div class="card-head"><h3>Datos personales</h3></div>
       <form id="f-perfil" class="form-grid">
         ${campo('nombre', 'Nombre completo')} ${campo('apellido', 'Apellido')} ${campo('email', 'Email', 'email')} ${campo('telefono', 'Teléfono', 'tel')}
@@ -5028,6 +5104,9 @@ VISTAS.perfil = async function vistaPerfil(v) {
         <label class="campo">Nueva contraseña<input id="pw-n" type="password" name="nueva" autocomplete="new-password" minlength="6" required></label>
         <div class="full" style="display:flex;justify-content:flex-end"><button class="btn sec" type="submit">Actualizar contraseña</button></div>
       </form></div>`;
+  const cambiarFoto = async (camara) => { const d = await elegirFoto({ camara }); if (!d) return; const r = await hacer(async () => await Store.subirFoto({ data: d }), 'Foto actualizada');
+    if (r) { state.user = r; $('.user-chip .avatar')?.replaceWith(Object.assign(document.createElement('div'), { innerHTML: avatarDe(r) }).firstElementChild); await VISTAS.perfil(v); } };
+  $('#foto-galeria', v).onclick = () => cambiarFoto(false); $('#foto-camara', v).onclick = () => cambiarFoto(true);
   activarTutor($('#f-perfil', v), () => u.rol);
   $('#f-perfil', v).onsubmit = async (e) => { e.preventDefault(); const d = Object.fromEntries(new FormData(e.target)); d.nacionalidad = $('#pf-nacionalidad', v).value; if ($('[data-tutor]', v).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
     const r = await hacer(async () => await Store.guardarPerfil(d), 'Perfil actualizado'); if (r) { state.user = r; $('.user-chip .nombre').textContent = r.nombre; $('.aviso-perfil', v)?.remove(); } };
@@ -5079,7 +5158,7 @@ async function fichaPiloto(id) {
   const p = await hacer(async () => await Store.fichaPiloto(id)); if (!p) return;
   const doc = (t, n) => p.docs[t] ? `<button class="btn sec sm" data-verdoc="${p.id}|${t}|${n}">${n} (PDF)</button>` : `<span class="badge gris">${n}: no cargado</span>`;
   const venc = p.vencimiento_cma && p.vencimiento_cma < isoLocal(new Date());
-  const m = modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center"><div class="avatar" style="width:44px;height:44px">${esc(iniciales(p))}</div>
+  const m = modal(`<div class="modal-head"><div style="display:flex;gap:12px;align-items:center">${avatarDe(p, 56)}
       <div><h3>${esc(p.nombre)} ${esc(p.apellido)}</h3><span class="badge">${esc(ROLES[p.rol])}</span></div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body">
       <div class="stats" style="margin-bottom:18px"><div class="stat dest"><div class="lbl">Horas totales</div><div class="val">${fmtHoras(p.horas_totales)}<small>hs</small></div></div>
@@ -5468,7 +5547,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <input id="fq" placeholder="Buscar por nombre o email" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>Teléfono</th><th>CMA</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong></td><td><span class="badge">${esc(ROLES[u.rol])}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
+      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(ROLES[u.rol])}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.rol === 'alumno' ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
@@ -6236,7 +6315,7 @@ async function verTemaForo(v, id) {
   const t = await hacer(() => Store.foroTema(id));
   if (!t) { state.foroTema = null; return VISTAS['c-foro'](v); }
   const post = (p, esTema) => `<article class="post ${p.mejor ? 'mejor' : ''} ${['instructor', 'admin'].includes(p.autor_rol) ? 'docente' : ''}">
-    <div class="post-head"><div class="avatar" style="width:34px;height:34px;font-size:12px">${esc(p.autor.split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase())}</div>
+    <div class="post-head">${avatarDe({ nombre: p.autor.split(' ')[0], apellido: p.autor.split(' ').slice(-1)[0] }, 34, p.autor_foto)}
       <div><b>${esc(p.autor)}</b> ${['instructor', 'admin'].includes(p.autor_rol) ? `<span class="badge">${esc(ROL_FORO[p.autor_rol])}</span>` : `<span class="muted" style="font-size:12.5px">${esc(ROL_FORO[p.autor_rol] || '')}</span>`}
         <div class="muted" style="font-size:12px">${esc(cuando(p.fecha))}${p.editado ? ' · editado' : ''}</div></div>
       ${p.mejor ? '<span class="badge ok" style="margin-left:auto">✓ Respuesta destacada</span>' : ''}</div>

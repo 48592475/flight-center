@@ -220,3 +220,13 @@
 
 /* asistencia de instructores */
 .llegada-check.tarde { background: linear-gradient(135deg, #f59e0b, #d97706); font-size: 46px; font-weight: 800; color: #fff; }
+
+/* escala PCA: S+ / S / S- / N */
+.planilla td.n.Sp { color: var(--mb); background: #e3f6ee; font-weight: 800; }
+.planilla td.n.S { color: var(--b); background: #eef4fc; }
+.planilla td.n.Sm { color: var(--r); background: #fbf0e8; }
+.planilla td.n.N { color: var(--danger); background: #fdecec; font-weight: 800; }
+.notas button[data-v="Sp"].on { background: var(--mb); color: #fff; border-color: var(--mb); }
+.notas button[data-v="S"].on { background: var(--b); color: #fff; border-color: var(--b); }
+.notas button[data-v="Sm"].on { background: var(--r); color: #fff; border-color: var(--r); }
+.notas button[data-v="N"].on { background: var(--danger); color: #fff; border-color: var(--danger); }

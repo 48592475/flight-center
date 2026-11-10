@@ -19,7 +19,14 @@ function crearStore(opts = {}) {
 
   // ---------- syllabus ----------
   const TRACKS = { teorica: SYLLABUS.teorica, vuelo: SYLLABUS.vuelo, simulador: SYLLABUS.simulador };
-  const LECCIONES = Object.fromEntries([...SYLLABUS.teorica, ...SYLLABUS.vuelo, ...SYLLABUS.simulador].map((l) => [l.id, l]));
+  const LECCIONES = Object.fromEntries([...SYLLABUS.teorica, ...SYLLABUS.vuelo, ...SYLLABUS.simulador, ...SYLLABUS_PCA.vuelo, ...SYLLABUS_PCA.simulador].map((l) => [l.id, l]));
+  // programas de instrucción: cada uno con sus lecciones, normas y escala de calificación
+  const PROGRAMAS = {
+    ppa: { nombre: 'Piloto Privado de Avión con habilitación VFR controlado', corto: 'PPA – VFR controlado', tracks: { teorica: SYLLABUS.teorica, vuelo: SYLLABUS.vuelo, simulador: SYLLABUS.simulador },
+      reglas: SYLLABUS.reglas, escala: ['MB', 'B', 'R'], ok: ['MB', 'B'] },
+    pca: { nombre: SYLLABUS_PCA.nombre, corto: 'PCA c/HVI', tracks: { vuelo: SYLLABUS_PCA.vuelo, simulador: SYLLABUS_PCA.simulador },
+      reglas: SYLLABUS_PCA.reglas, escala: ['S+', 'S', 'S-', 'N'], ok: ['S+', 'S'] },
+  };
   // datos de cada modelo para el plan de vuelo (casillas 9, 10, 15, 19)
   const DATOS_MODELO = [
     [/152/, { oaci: 'C152', estela: 'L', equipo: 'S/C', velocidad: 'N0090', autonomia: '0330', color: 'BLANCO Y AZUL' }],
@@ -45,7 +52,8 @@ function crearStore(opts = {}) {
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { rango: 'teoria_simulador', telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
     const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
-    const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
+    const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { rango: 'privado', dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
+    const agus = U('ppa', 'Agustín', 'Molina', 'comercial@flightcenter.com', { rango: 'alumno_comercial', dni: '40555666', fecha_nacimiento: '1998-09-12', direccion: 'Av. Rivadavia 18000, Morón', telefono: '+54 9 11 5555-3004', contacto_emergencia: 'Laura Molina +54 9 11 5555-4004', licencia_nro: 'PPA-30122', vencimiento_cma: '2027-06-30', horas_previas: 62 });
     void admin;
 
     const R = (tipo, nombre, modelo, estado = 'operativa') => { db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado, ...(tipo === 'avion' ? datosModelo(modelo) : {}) }); return db.seq.rec; };
@@ -84,6 +92,10 @@ function crearStore(opts = {}) {
     res('simulador', lucia, null, frasca, dia(-6), 16, 'completado', { horas: 1.0, observaciones: 'Práctica VOR por su cuenta.' });
     res('vuelo', lucia, martin, fcb, dia(2), 14, 'pendiente');
     res('vuelo', lucia, martin, fcb, dia(2), 16, 'pendiente');
+    // Agustín (alumno a piloto comercial): FL 1 del syllabus PCA aprobada y la FL 2 programada
+    const notasPCA = (lecId, debajo = []) => Object.fromEntries(itemKeys(LECCIONES[lecId]).map((k, i) => [k, debajo.includes(i) ? 'S-' : (i % 4 === 0 ? 'S+' : 'S')]));
+    res('vuelo', agus, martin, fcc, dia(-8), 10, 'completado', { horas: 3.2, leccion: 'PCA FL 1', notas: notasPCA('PCA FL 1'), observaciones: 'Muy buen nivel de PPA. Arranca bien con la capota; suavizar los comandos en los virajes por instrumentos.' });
+    res('vuelo', agus, martin, fcc, dia(4), 10, 'pendiente');
 
     // clases teóricas
     const clase = (teo, f, b, inst, cupo, aula, estado, alumnos = []) => {
@@ -279,8 +291,11 @@ function crearStore(opts = {}) {
   // rangos dentro de cada tipo de usuario (por ahora, administración)
   const ACT_INST = { vuelo: ['vuelo'], teoria: ['teorica'], simulador: ['simulador'], teoria_simulador: ['teorica', 'simulador'],
     vuelo_teoria: ['vuelo', 'teorica'], vuelo_simulador: ['vuelo', 'simulador'], todo: ['vuelo', 'simulador', 'teorica'] };
-  const RANGOS = { admin: ['contabilidad', 'programador'], instructor: Object.keys(ACT_INST) };
-  const rangoDe = (u) => (u.rol === 'admin' ? (u.rango || 'contabilidad') : u.rol === 'instructor' ? (RANGOS.instructor.includes(u.rango) ? u.rango : 'todo') : null);
+  const RANGOS = { admin: ['contabilidad', 'programador'], instructor: Object.keys(ACT_INST), ppa: ['privado', 'alumno_comercial', 'comercial', 'alumno_instructor'] };
+  const rangoDe = (u) => (u.rol === 'admin' ? (u.rango || 'contabilidad') : u.rol === 'instructor' ? (RANGOS.instructor.includes(u.rango) ? u.rango : 'todo')
+    : u.rol === 'ppa' ? (RANGOS.ppa.includes(u.rango) ? u.rango : 'privado') : null);
+  // syllabus de cada uno: alumno → PPA; alumno a piloto comercial → PCA; el resto no tiene
+  const programaDe = (u) => (u?.rol === 'alumno' ? 'ppa' : u?.rol === 'ppa' && rangoDe(u) === 'alumno_comercial' ? 'pca' : null);
   // qué actividades puede dar cada instructor según su tipo (vuelo, simulador, teórica)
   const instPuede = (u, tipo) => u?.rol === 'instructor' && ACT_INST[rangoDe(u)].includes(tipo);
   // contabilidad: estados de cuenta, pagos, packs, tarifas y cotización. El rango "programador" no tiene acceso.
@@ -293,7 +308,7 @@ function crearStore(opts = {}) {
   const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (u.rol === 'admin' || u.rol === 'instructor') r.rango = rangoDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -301,7 +316,7 @@ function crearStore(opts = {}) {
 
   const expandir = (r) => {
     const rec = recurso(r.recurso_id); const p = usuario(r.piloto_id); const i = usuario(r.instructor_id);
-    return { ...r, recurso: rec.nombre, modelo: rec.modelo, piloto: nombre(p), piloto_rol: p.rol, piloto_email: p.email, piloto_telefono: p.telefono,
+    return { ...r, recurso: rec.nombre, modelo: rec.modelo, piloto: nombre(p), piloto_rol: p.rol, piloto_rango: rangoDe(p), piloto_programa: programaDe(p), piloto_email: p.email, piloto_telefono: p.telefono,
       instructor: i ? nombre(i) : null, instructor_telefono: i?.telefono || null };
   };
   const expandirClase = (c) => {
@@ -335,13 +350,15 @@ function crearStore(opts = {}) {
     const its = intentos(alumnoId, lecId);
     if (!its.length) return { estado: 'pendiente', intentos: its };
     const ult = its.at(-1);
-    const keys = itemKeys(LECCIONES[lecId]);
-    const ok = keys.every((k) => NOTAS_OK.includes(ult.notas[k]));
-    const regulares = keys.filter((k) => ult.notas[k] === 'R');
+    const keys = itemKeys(LECCIONES[lecId]); const okNotas = PROGRAMAS[LECCIONES[lecId].programa || 'ppa'].ok;
+    const ok = keys.every((k) => okNotas.includes(ult.notas[k]));
+    const regulares = keys.filter((k) => ult.notas[k] && !okNotas.includes(ult.notas[k]));
     return { estado: ok ? 'aprobada' : 'repetir', intentos: its, ultimo: ult, regulares };
   }
   function leccionActual(alumnoId, track) {
-    for (const l of TRACKS[track]) {
+    const lista = PROGRAMAS[programaDe(usuario(alumnoId))]?.tracks[track];
+    if (!lista) return null;
+    for (const l of lista) {
       const e = estadoLeccion(alumnoId, l.id);
       if (e.estado === 'aprobada') continue;
       if (l.opcional && e.estado === 'pendiente') continue;
@@ -351,16 +368,17 @@ function crearStore(opts = {}) {
   }
   function syllabusDe(alumnoId) {
     const u = usuario(alumnoId);
-    if (!u || u.rol !== 'alumno') fail('Solo los alumnos tienen syllabus');
+    const prog = programaDe(u); if (!prog) fail('Este usuario no tiene syllabus');
     const me = yo();
     const puede = me.id === u.id || me.rol === 'admin' || (me.rol === 'instructor' && activas().some((r) => r.piloto_id === u.id && r.instructor_id === me.id));
     if (!puede) fail('Solo los instructores que vuelan con este alumno pueden ver su syllabus');
     const pistas = {};
-    for (const t of Object.keys(TRACKS)) {
-      const lecciones = TRACKS[t].map((l) => ({ ...l, ...estadoLeccion(u.id, l.id) }));
+    const P = PROGRAMAS[prog];
+    for (const t of Object.keys(P.tracks)) {
+      const lecciones = P.tracks[t].map((l) => ({ ...l, ...estadoLeccion(u.id, l.id) }));
       pistas[t] = { lecciones, actual: leccionActual(u.id, t), aprobadas: lecciones.filter((l) => l.estado === 'aprobada').length, total: lecciones.filter((l) => !l.opcional).length };
     }
-    return { alumno: pub(u), pistas, reglas: SYLLABUS.reglas };
+    return { alumno: pub(u), pistas, reglas: P.reglas, programa: prog, nombre: P.nombre, corto: P.corto, escala: P.escala, ok: P.ok };
   }
 
   // ---------- API pública ----------
@@ -384,7 +402,7 @@ function crearStore(opts = {}) {
     }
   }
   const api = {
-    BLOQUES, LECCIONES, TRACKS, itemKeys, hoy, dia,
+    BLOQUES, LECCIONES, TRACKS, PROGRAMAS, itemKeys, hoy, dia,
 
     reiniciar() { if (!navegador) fail('No disponible'); db = semilla(); sesion = null; guardarSesion(); guardar(); },
     login(email, password) {
@@ -522,12 +540,12 @@ function crearStore(opts = {}) {
         const x = { id: ++db.seq.r, tipo, piloto_id: u.id, instructor_id: inst?.id || null, recurso_id: r.id, fecha, bloque: b, estado: 'pendiente', horas: null, observaciones: null, leccion: null, notas: {}, destino, creado: ahora() };
         db.reservas.push(x); return x;
       });
-      const lec = u.rol === 'alumno' ? leccionActual(u.id, tipo)?.id || null : null;
+      const lec = programaDe(u) ? leccionActual(u.id, tipo)?.id || null : null;
       const exp = nuevas.map((r) => ({ ...expandir(r), leccion_sugerida: lec }));
       notificar(u, 'reserva', { reservas: exp, leccion: lec });
       guardar(); return exp;
     },
-    misReservas() { const u = yo(); const sug = (r) => u.rol === 'alumno' && r.estado === 'pendiente' ? leccionActual(u.id, r.tipo)?.id || null : null;
+    misReservas() { const u = yo(); const sug = (r) => programaDe(u) && r.estado === 'pendiente' ? leccionActual(u.id, r.tipo)?.id || null : null;
       return db.reservas.filter((r) => r.piloto_id === u.id).sort(ord).reverse().map((r) => ({ ...expandir(r), leccion_sugerida: sug(r) })); },
     cancelarReserva(id) {
       const u = yo(); const r = db.reservas.find((x) => x.id === Number(id));
@@ -663,7 +681,7 @@ function crearStore(opts = {}) {
       const delMes = activas().filter((r) => r.instructor_id === me.id && r.fecha.slice(0, 7) === mes).sort(ord).map(expandir);
       const comp = delMes.filter((r) => r.estado === 'completado');
       const pendientes = db.reservas.filter((r) => r.instructor_id === me.id && r.estado === 'pendiente').sort(ord).map(expandir)
-        .map((r) => ({ ...r, leccion_sugerida: usuario(r.piloto_id).rol === 'alumno' ? leccionActual(r.piloto_id, r.tipo)?.id || null : null }));
+        .map((r) => ({ ...r, leccion_sugerida: programaDe(usuario(r.piloto_id)) ? leccionActual(r.piloto_id, r.tipo)?.id || null : null }));
       const clases = clasesActivas().filter((c) => c.instructor_id === me.id);
       return { vuelos_mes: comp.filter((r) => r.tipo === 'vuelo').length, horas_mes: comp.filter((r) => r.tipo === 'vuelo').reduce((s, r) => s + (r.horas || 0), 0),
         sims_mes: comp.filter((r) => r.tipo === 'simulador').length, ausencias_mes: delMes.filter((r) => r.estado === 'ausente').length, clases_mes: clases.filter((c) => c.fecha.slice(0, 7) === mes && c.estado === 'dictada').length,
@@ -673,7 +691,7 @@ function crearStore(opts = {}) {
     misAlumnos() {
       const me = exigir('instructor');
       const ids = [...new Set(activas().filter((r) => r.instructor_id === me.id).map((r) => r.piloto_id))];
-      return ids.map(usuario).filter((u) => u.rol === 'alumno').map((u) => ({ ...pub(u), vuelo: leccionActual(u.id, 'vuelo'), simulador: leccionActual(u.id, 'simulador'),
+      return ids.map(usuario).filter((u) => programaDe(u)).map((u) => ({ ...pub(u), vuelo: leccionActual(u.id, 'vuelo'), simulador: leccionActual(u.id, 'simulador'),
         teorica: leccionActual(u.id, 'teorica'), vuelos_conmigo: activas().filter((r) => r.instructor_id === me.id && r.piloto_id === u.id).length }));
     },
     fichaPiloto(id) {
@@ -681,7 +699,7 @@ function crearStore(opts = {}) {
       if (!p || !['alumno', 'ppa'].includes(p.rol)) fail('Piloto no encontrado');
       const res = activas().filter((r) => r.piloto_id === p.id).sort(ord).reverse().map(expandir);
       const horas = res.filter((r) => r.estado === 'completado' && r.tipo === 'vuelo').reduce((s, r) => s + (r.horas || 0), 0);
-      const veSyllabus = p.rol === 'alumno' && (me.rol === 'admin' || res.some((r) => r.instructor_id === me.id));
+      const veSyllabus = !!programaDe(p) && (me.rol === 'admin' || res.some((r) => r.instructor_id === me.id));
       return { ...pub(p), horas_centro: horas, horas_totales: (p.horas_previas || 0) + horas, reservas: res, veSyllabus, ausencias: res.filter((r) => r.estado === 'ausente' && !r.ausencia?.justificada).length };
     },
     completarReserva(id, { horas, observaciones, leccion, notas }) {
@@ -689,9 +707,10 @@ function crearStore(opts = {}) {
       if (!r) fail('Reserva no encontrada'); if (r.estado !== 'pendiente') fail('Esta reserva ya fue cerrada');
       const h = Number(horas); if (!(h > 0 && h <= 4)) fail('Indicá las horas (entre 0,1 y 4)');
       const p = usuario(r.piloto_id);
-      if (p.rol === 'alumno') {
-        if (!LECCIONES[leccion] || LECCIONES[leccion].track !== r.tipo) fail('Elegí la lección del syllabus');
-        r.leccion = leccion; r.notas = Object.fromEntries(Object.entries(notas || {}).filter(([, v]) => ['MB', 'B', 'R'].includes(v)));
+      const prog = programaDe(p);
+      if (prog) {
+        if (!(PROGRAMAS[prog].tracks[r.tipo] || []).some((l) => l.id === leccion)) fail('Elegí la lección del syllabus');
+        r.leccion = leccion; r.notas = Object.fromEntries(Object.entries(notas || {}).filter(([, v]) => PROGRAMAS[prog].escala.includes(v)));
       }
       r.estado = 'completado'; r.horas = h; r.observaciones = String(observaciones || '').trim() || null;
       const desc = `${r.tipo === 'vuelo' ? 'Vuelo' : 'Simulador'} ${recurso(r.recurso_id).nombre} · ${String(h).replace('.', ',')} h${r.leccion ? ` · ${r.leccion}` : ''}`;
@@ -699,7 +718,7 @@ function crearStore(opts = {}) {
       if (delPack > 0) movHoras(r.piloto_id, r.tipo, -delPack, desc, `res:${r.id}`, r.fecha);
       if (aCobrar > 0) movimiento(r.piloto_id, delPack > 0 ? `${desc} (${String(r1(delPack)).replace('.', ',')} h del pack, ${String(aCobrar).replace('.', ',')} h a cobrar)` : desc, 'cargo', aCobrar * db.tarifas[r.tipo], `res:${r.id}`, r.fecha);
       guardar();
-      return p.rol === 'alumno' ? { leccion: r.leccion, ...estadoLeccion(p.id, r.leccion) } : null;
+      return prog ? { leccion: r.leccion, ...estadoLeccion(p.id, r.leccion) } : null;
     },
     syllabus: syllabusDe,
     leccionActual: (alumnoId, track) => {
@@ -768,6 +787,7 @@ function crearStore(opts = {}) {
       if (['alumno', 'ppa'].includes(datos.rol) && !['ARS', 'USD'].includes(datos.moneda)) fail('Elegí la moneda del estado de cuenta (pesos o dólares)');
       if (datos.rol === 'admin' && !RANGOS.admin.includes(datos.rango)) fail('Elegí el rango del administrador (contabilidad o programador)');
       if (datos.rol === 'instructor' && !RANGOS.instructor.includes(datos.rango)) fail('Elegí el tipo de instructor (vuelo, teoría, simulador o sus combinaciones)');
+      if (datos.rol === 'ppa' && !RANGOS.ppa.includes(datos.rango)) fail('Elegí el tipo de piloto');
       if (!String(datos.nacionalidad || '').trim()) fail('Elegí la nacionalidad');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
       const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };

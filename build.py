@@ -10,7 +10,7 @@ CSS = src('base.css') + src('extra.css') + src('extra3.css')
 APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app7.js', 'app6.js']
 
 def pagina(cliente, store=True):
-    js = '\n'.join(src(f) for f in ['logos.js', 'syllabus.js'] + (['store.js'] if store else []) + [cliente, 'avisos-contenido.js'] + APP)
+    js = '\n'.join(src(f) for f in ['logos.js', 'syllabus.js', 'syllabus_pca.js'] + (['store.js'] if store else []) + [cliente, 'avisos-contenido.js'] + APP)
     return f'''<!doctype html>
 <html lang="es">
 <head>
@@ -50,8 +50,8 @@ print('ok: index.html y servidor/public/index.html')
 # núcleo para el servidor: las mismas reglas del negocio que usa la demo
 quitar = lambda t: '\n'.join(l for l in t.split('\n') if not l.startswith("if (typeof module !== 'undefined')"))
 nucleo = ('/* Archivo generado por build.py a partir de src/. No editar a mano. */\n'
-          + src('syllabus.js') + quitar(src('store.js')) + quitar(src('avisos-contenido.js'))
-          + '\nmodule.exports = { crearStore, contenidoAviso, SYLLABUS };\n')
+          + src('syllabus.js') + src('syllabus_pca.js') + quitar(src('store.js')) + quitar(src('avisos-contenido.js'))
+          + '\nmodule.exports = { crearStore, contenidoAviso, SYLLABUS, SYLLABUS_PCA };\n')
 open(os.path.join(R, 'servidor', 'nucleo.js'), 'w', encoding='utf-8').write(nucleo)
 print('ok: servidor/nucleo.js')
 

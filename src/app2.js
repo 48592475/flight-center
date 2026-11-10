@@ -4,24 +4,26 @@
 //                    LIBRO DEL SYLLABUS
 // =====================================================================
 const TRACK_NOMBRE = { teorica: 'Teoría', vuelo: 'Vuelo', simulador: 'Simulador' };
+const codLeccion = (id) => String(id).replace(/^PCA /, '');
 async function libroSyllabus(cont, alumnoId, { abrir } = {}) {
   let data;
   try { data = await Store.syllabus(alumnoId); } catch (e) { cont.innerHTML = `<div class="card">${vacio(esc(e.message))}</div>`; return; }
-  const lecciones = ['teorica', 'vuelo', 'simulador'].flatMap((t) => data.pistas[t].lecciones);
+  const TR = Object.keys(data.pistas); const pca = data.programa === 'pca';
+  const lecciones = TR.flatMap((t) => data.pistas[t].lecciones);
   const paginas = ['tapa', 'reglas', ...lecciones.map((l) => l.id)];
-  const actuales = new Set(['teorica', 'vuelo', 'simulador'].map((t) => data.pistas[t].actual?.id).filter(Boolean));
+  const actuales = new Set(TR.map((t) => data.pistas[t].actual?.id).filter(Boolean));
   let pag = Math.max(0, paginas.indexOf(abrir || 'tapa'));
   const a = data.alumno;
 
   cont.innerHTML = `<div class="libro">
     <aside class="indice anim"><div class="indice-head"><h3>Índice</h3><div class="muted">${esc(a.nombre)} ${esc(a.apellido)}</div></div>
-      <div class="indice-select"><select id="idx-sel" aria-label="Ir a la página">${paginas.map((p, i) => `<option value="${i}">${p === 'tapa' ? 'Tapa' : p === 'reglas' ? 'Normas del curso' : `${p} · ${esc(Store.LECCIONES[p].titulo)}`}</option>`).join('')}</select></div>
+      <div class="indice-select"><select id="idx-sel" aria-label="Ir a la página">${paginas.map((p, i) => `<option value="${i}">${p === 'tapa' ? 'Tapa' : p === 'reglas' ? 'Normas del curso' : `${codLeccion(p)} · ${esc(Store.LECCIONES[p].titulo)}`}</option>`).join('')}</select></div>
       <div class="indice-lista">
         <button class="indice-item" data-p="0"><span class="punto"></span><span class="cod">—</span><span class="tit">Tapa</span></button>
         <button class="indice-item" data-p="1"><span class="punto"></span><span class="cod">—</span><span class="tit">Normas del curso</span></button>
-        ${['teorica', 'vuelo', 'simulador'].map((t) => `<div class="indice-grupo"><span>${TRACK_NOMBRE[t]}</span><span>${data.pistas[t].aprobadas}/${data.pistas[t].total}</span></div>
+        ${TR.map((t) => `<div class="indice-grupo"><span>${TRACK_NOMBRE[t]}</span><span>${data.pistas[t].aprobadas}/${data.pistas[t].total}</span></div>
           ${data.pistas[t].lecciones.map((l) => `<button class="indice-item" data-p="${paginas.indexOf(l.id)}"><span class="punto ${l.estado !== 'pendiente' ? l.estado : ''} ${actuales.has(l.id) ? 'actual' : ''}"></span>
-            <span class="cod">${esc(l.id)}</span><span class="tit">${esc(l.titulo)}</span></button>`).join('')}`).join('')}
+            <span class="cod">${esc(codLeccion(l.id))}</span><span class="tit">${esc(l.titulo)}</span></button>`).join('')}`).join('')}
       </div></aside>
     <div class="libro-escena" id="escena"></div></div>`;
 
@@ -50,20 +52,29 @@ async function libroSyllabus(cont, alumnoId, { abrir } = {}) {
     const act = (t) => data.pistas[t].actual;
     return `<div class="tapa">
       <img class="tapa-logo" src="${LOGOS.oscuro}" alt="Flight Center">
-      <h2>Libro de instrucción del alumno piloto</h2>
-      <div class="sub">Curso de Piloto Privado de Avión con habilitación VFR controlado</div>
-      <div class="progreso-tapa">${['teorica', 'vuelo', 'simulador'].map(fila).join('')}</div>
+      <h2>Libro de instrucción del ${pca ? 'alumno a piloto comercial' : 'alumno piloto'}</h2>
+      <div class="sub">Curso de ${esc(data.nombre)}</div>
+      <div class="progreso-tapa">${TR.map(fila).join('')}</div>
       <div class="datos">
         <div><small>Alumno piloto</small><span>${esc(a.nombre)} ${esc(a.apellido)}</span></div>
         <div><small>DNI</small><span>${esc(a.dni || '—')}</span></div>
-        <div><small>Próxima lección de vuelo</small><span>${act('vuelo') ? `${esc(act('vuelo').id)}${act('vuelo').estado === 'repetir' ? ' (repetir)' : ''}` : 'Completo'}</span></div>
-        <div><small>Próxima de simulador / teoría</small><span>${esc(act('simulador')?.id || '—')} · ${esc(act('teorica')?.id || '—')}</span></div>
+        <div><small>Próxima lección de vuelo</small><span>${act('vuelo') ? `${esc(codLeccion(act('vuelo').id))}${act('vuelo').estado === 'repetir' ? ' (repetir)' : ''}` : 'Completo'}</span></div>
+        <div><small>Próxima de simulador${pca ? '' : ' / teoría'}</small><span>${esc(codLeccion(act('simulador')?.id || '—'))}${pca ? '' : ` · ${esc(act('teorica')?.id || '—')}`}</span></div>
       </div>
       <div style="position:relative;z-index:1;margin-top:26px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
         <span class="muted" style="color:var(--celeste-2)">Flight Center · Escuela de vuelo</span>
         <button class="btn sm" data-ir="1">Abrir el libro →</button></div></div>`;
   }
   function reglas() {
+    if (pca) return `<article class="hoja"><div class="membrete"><span>Flight Center · Syllabus ${esc(data.corto)}</span><span>Normas del curso</span></div>
+      <h2 class="leccion" style="font-size:32px">Normas del curso</h2>
+      <h4>Cómo se avanza</h4>
+      <p class="reglas-libro">En cada vuelo o simulador el instructor califica cada maniobra como <b>S+</b> (supera el estándar), <b>S</b> (estándar), <b>S-</b> (debajo del estándar) o <b>N</b> (no estándar). La lección se aprueba cuando todas las maniobras del último intento están en S o S+. Con alguna en S- o N, se repite.</p>
+      <h4>Normas y orden del curso</h4>
+      <ul class="lista">${data.reglas.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>
+      <h4>Preparación del alumno</h4>
+      <p class="reglas-libro">Traé estudiados los temas indicados en cada lección. Las navegaciones (NAV) y las lecciones de repaso no frenan el avance: se registran cuando se hacen.</p>
+      ${pie()}</article>`;
     return `<article class="hoja"><div class="membrete"><span>Flight Center · Syllabus PPA – VFR controlado</span><span>Normas del curso</span></div>
       <h2 class="leccion" style="font-size:32px">Normas del curso</h2>
       <h4>Cómo se avanza</h4>
@@ -81,21 +92,22 @@ async function libroSyllabus(cont, alumnoId, { abrir } = {}) {
     const estadoTxt = { aprobada: 'Aprobada', repetir: 'Repetir', pendiente: actuales.has(l.id) ? 'Próxima' : 'Pendiente' }[l.estado];
     const sub = l.track === 'teorica' ? 'Clase teórica' : l.track === 'simulador' ? 'Adiestrador sintético de vuelo' : (l.etapa || '');
     let n = 0;
-    return `<article class="hoja"><div class="membrete"><span>Flight Center · Syllabus PPA – VFR controlado</span><span>${esc(a.nombre)} ${esc(a.apellido)}</span></div>
+    return `<article class="hoja"><div class="membrete"><span>Flight Center · Syllabus ${esc(data.corto)}</span><span>${esc(a.nombre)} ${esc(a.apellido)}</span></div>
       <span class="sello-libro ${l.estado === 'pendiente' ? 'pendiente' : l.estado}">${estadoTxt}</span>
-      <h2 class="leccion">${esc(l.id)}${l.opcional ? ' <small style="font-size:16px;font-weight:500">(opcional)</small>' : ''}</h2>
+      <h2 class="leccion">${esc(codLeccion(l.id))}${l.opcional ? ' <small style="font-size:16px;font-weight:500">(opcional)</small>' : ''}</h2>
       <div class="titulo-leccion">${esc(l.titulo)}</div>
       <div class="etapa">${esc(sub)}</div>
-      <div class="ficha-leccion">${l.modalidad ? `<span><b>Modalidad:</b> ${esc(l.modalidad.replace(/\s*\(.*$/, ''))}</span>` : ''}${l.horas ? `<span><b>Duración estimada:</b> ${fmtHoras(l.horas)} hs</span>` : ''}<span><b>Intentos:</b> ${its.length}</span></div>
+      <div class="ficha-leccion">${l.modalidad ? `<span><b>Modalidad:</b> ${esc(pca ? l.modalidad : l.modalidad.replace(/\s*\(.*$/, ''))}</span>` : ''}${l.horas ? `<span><b>Duración estimada:</b> ${fmtHoras(l.horas)} hs</span>` : ''}<span><b>Intentos:</b> ${its.length}</span></div>
       ${l.contenidos ? `<h4>Contenidos</h4><ul class="lista">${l.contenidos.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       ${l.objetivos?.length ? `<h4>Objetivos de la lección</h4><ul class="lista">${l.objetivos.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       ${l.estudiar?.length ? `<h4>Temas a traer estudiados</h4><ul class="lista">${l.estudiar.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
       <h4>Planilla de calificación</h4>
       <div class="planilla-wrap"><table class="planilla"><thead><tr><th>Maniobra / procedimiento</th>${Array.from({ length: cols }, (_, i) => `<th>${its[i] ? fmtDM(its[i].fecha) : i + 1}</th>`).join('')}</tr></thead><tbody>
         ${l.secciones.map((s, si) => `<tr class="sec"><td colspan="${cols + 1}">${esc(s.titulo)}</td></tr>${s.items.map((it, ii) => { n++; const k = `${si}.${ii}`;
-          return `<tr><td>${esc(it)}</td>${Array.from({ length: cols }, (_, i) => { const v = its[i]?.notas[k]; return `<td class="n ${v || ''}">${v || ''}</td>`; }).join('')}</tr>`; }).join('')}`).join('')}
+          return `<tr><td>${esc(it)}</td>${Array.from({ length: cols }, (_, i) => { const v = its[i]?.notas[k]; return `<td class="n ${claseNota(v)}">${v || ''}</td>`; }).join('')}</tr>`; }).join('')}`).join('')}
       </tbody></table></div>
-      <div class="leyenda"><span><b>MB</b> Muy bien</span><span><b>B</b> Bien</span><span><b>R</b> Regular</span><span>Se aprueba cuando todas las maniobras (${n}) del último intento están en Bien o Muy bien.</span></div>
+      ${l.standards?.length ? `<h4>Estándares</h4><ul class="lista">${l.standards.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : ''}
+      <div class="leyenda">${data.escala.map((e) => `<span><b>${e}</b> ${NOTA[e]}</span>`).join('')}<span>Se aprueba cuando todas las maniobras (${n}) del último intento están en ${data.ok.join(' o ')}.</span></div>
       ${its.length ? `<div class="observaciones-libro"><h4>Registro de intentos</h4>${its.map((x, i) => `<div class="obs"><small>Intento ${i + 1} · ${esc(fmtCorta(x.fecha))} · ${esc(x.instructor)}${x.horas ? ` · ${fmtHoras(x.horas)} hs` : ''}</small>${esc(x.observaciones || 'Sin observaciones.')}</div>`).join('')}</div>` : ''}
       ${pie()}</article>`;
   }
@@ -326,26 +338,26 @@ function filaPendiente(f, i) {
   const d = parseISO(f.fecha); const tel = telLimpio(f.piloto_telefono);
   return `<div class="vuelo anim" style="--i:${i}">
     <div class="vuelo-fecha"><small>${d.toLocaleDateString('es-AR', { weekday: 'short' }).replace('.', '')}</small><strong>${d.getDate()}</strong><small>${d.toLocaleDateString('es-AR', { month: 'short' }).replace('.', '')}</small></div>
-    <div class="vuelo-info"><strong>${esc(f.piloto)}</strong> <span class="badge">${f.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</span> ${badgeTipo(f.tipo)} ${f.leccion_sugerida ? `<span class="badge warn">${esc(f.leccion_sugerida)}</span>` : ''} ${badgeLlegada(f)}
+    <div class="vuelo-info"><strong>${esc(f.piloto)}</strong> <span class="badge">${esc(tipoCorto(f.piloto_rol, f.piloto_rango))}</span> ${badgeTipo(f.tipo)} ${f.leccion_sugerida ? `<span class="badge warn">${esc(codLeccion(f.leccion_sugerida))}</span>` : ''} ${badgeLlegada(f)}
       <div class="meta"><span class="mono">${rango(f.bloque)}</span><span><span class="mono">${esc(f.recurso)}</span> · ${esc(f.modelo)}</span></div>
       <div class="contacto">${tel ? `<a href="tel:${esc(tel)}">${ICON.tel} ${esc(f.piloto_telefono)}</a><a href="https://wa.me/${esc(tel.replace('+', ''))}" target="_blank" rel="noopener">${ICON.wa} WhatsApp</a>` : ''}
         <a href="mailto:${esc(f.piloto_email)}">${ICON.mail} ${esc(f.piloto_email)}</a></div></div>
     <div class="vuelo-acc"><button class="btn sec sm" data-piloto="${f.piloto_id}">Ficha</button>
-      ${f.piloto_rol === 'alumno' ? `<button class="btn sec sm" data-syl="${f.piloto_id}" data-lec="${esc(f.leccion_sugerida || '')}">Syllabus</button>` : ''}
+      ${f.piloto_programa ? `<button class="btn sec sm" data-syl="${f.piloto_id}" data-lec="${esc(f.leccion_sugerida || '')}">Syllabus</button>` : ''}
       <button class="btn ok sm" data-completar="${f.id}">Cerrar ${f.tipo === 'vuelo' ? 'vuelo' : 'turno'}</button>${turnoEmpezo(f) && !f.llegada ? `<button class="btn warn-btn sm" data-ausente="${f.id}">Marcar ausente</button>` : ''}<button class="btn danger sm" data-cancelar-i="${f.id}">Cancelar</button></div></div>`;
 }
 
 function completarReserva(f, despues) {
-  const esAlumno = f.piloto_rol === 'alumno';
-  const lecs = Store.TRACKS[f.tipo];
-  let lec = f.leccion_sugerida || lecs[0].id;
+  const P = Store.PROGRAMAS[f.piloto_programa] || null; const esAlumno = !!P;
+  const lecs = P ? P.tracks[f.tipo] || [] : [];
+  let lec = f.leccion_sugerida || lecs[0]?.id;
   const notas = {};
   const m = modal(`<div class="modal-head"><div><h3>Cerrar ${f.tipo === 'vuelo' ? 'vuelo' : 'turno de simulador'}</h3><div class="muted">${esc(f.piloto)} · ${esc(fmtFecha(f.fecha))} · ${rango(f.bloque)} · ${esc(f.recurso)}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
     <div class="modal-body" style="display:grid;gap:14px">
       <div class="form-grid"><label class="campo">Horas ${f.tipo === 'vuelo' ? 'de vuelo' : 'de simulador'}<input id="c-horas" type="number" min="0.1" max="4" step="0.1" value="${f.tipo === 'vuelo' ? '1.5' : '1.0'}"></label>
-      ${esAlumno ? `<label class="campo">Lección del syllabus<select id="c-lec">${lecs.map((l) => `<option value="${l.id}" ${l.id === lec ? 'selected' : ''}>${l.id} · ${esc(l.titulo)}</option>`).join('')}</select></label>` : ''}</div>
+      ${esAlumno ? `<label class="campo">Lección del syllabus<select id="c-lec">${lecs.map((l) => `<option value="${l.id}" ${l.id === lec ? 'selected' : ''}>${codLeccion(l.id)} · ${esc(l.titulo)}</option>`).join('')}</select></label>` : ''}</div>
       ${esAlumno ? `<div><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><strong>Calificá cada maniobra</strong>
-        <span class="flujo"><button class="btn sec sm" data-todas="MB">Todo MB</button><button class="btn sec sm" data-todas="B">Todo B</button></span></div>
+        <span class="flujo">${(P ? P.ok : []).map((x) => `<button class="btn sec sm" data-todas="${x}">Todo ${x}</button>`).join('')}</span></div>
         <div id="c-tabla" style="max-height:46vh;overflow:auto;margin-top:8px"></div><div id="c-res"></div></div>` : ''}
       <label class="campo">Observaciones <span class="op">(el ${esAlumno ? 'alumno' : 'piloto'} las ve en su historial)</span><textarea id="c-obs" placeholder="Desempeño, temas a reforzar, recomendaciones…"></textarea></label>
     </div>
@@ -353,12 +365,12 @@ function completarReserva(f, despues) {
   const tabla = () => {
     const l = Store.LECCIONES[lec];
     $('#c-tabla', m.el).innerHTML = `<table class="calif">${l.secciones.map((s, si) => `<tr class="sec"><td colspan="2">${esc(s.titulo)}</td></tr>${s.items.map((it, ii) => { const k = `${si}.${ii}`;
-      return `<tr><td>${esc(it)}</td><td style="text-align:right;white-space:nowrap"><span class="notas" data-k="${k}">${['MB', 'B', 'R'].map((n) => `<button type="button" data-v="${n}" class="${notas[k] === n ? 'on' : ''}" title="${NOTA[n]}">${n}</button>`).join('')}</span></td></tr>`; }).join('')}`).join('')}</table>`;
-    $$('.notas button', m.el).forEach((b) => b.onclick = () => { const k = b.parentElement.dataset.k; notas[k] = notas[k] === b.dataset.v ? undefined : b.dataset.v; tabla(); });
-    const keys = Store.itemKeys(l); const hechas = keys.filter((k) => notas[k]).length; const reg = keys.filter((k) => notas[k] === 'R').length;
-    $('#c-res', m.el).innerHTML = reg ? `<div class="resultado no">${reg} maniobra(s) en Regular: el alumno repite ${esc(l.id)} en el próximo vuelo.</div>`
+      return `<tr><td>${esc(it)}</td><td style="text-align:right;white-space:nowrap"><span class="notas" data-k="${k}">${P.escala.map((n) => `<button type="button" data-v="${claseNota(n)}" data-nota="${n}" class="${notas[k] === n ? 'on' : ''}" title="${NOTA[n]}">${n}</button>`).join('')}</span></td></tr>`; }).join('')}`).join('')}</table>`;
+    $$('.notas button', m.el).forEach((b) => b.onclick = () => { const k = b.parentElement.dataset.k; notas[k] = notas[k] === b.dataset.nota ? undefined : b.dataset.nota; tabla(); });
+    const keys = Store.itemKeys(l); const hechas = keys.filter((k) => notas[k]).length; const reg = keys.filter((k) => notas[k] && !P.ok.includes(notas[k])).length;
+    $('#c-res', m.el).innerHTML = reg ? `<div class="resultado no">${reg} maniobra(s) en ${P.escala.filter((x) => !P.ok.includes(x)).join(' o ')}: el alumno repite ${esc(codLeccion(l.id))} en el próximo vuelo.</div>`
       : hechas < keys.length ? `<div class="resultado inc">Calificadas ${hechas} de ${keys.length}. Si quedan sin calificar, la lección no se aprueba.</div>`
-      : `<div class="resultado ok">Todo en Bien o Muy bien: ${esc(l.id)} queda aprobada y el alumno avanza a la siguiente.</div>`;
+      : `<div class="resultado ok">Todo en ${P.ok.join(' o ')}: ${esc(codLeccion(l.id))} queda aprobada y el alumno avanza a la siguiente.</div>`;
   };
   if (esAlumno) {
     tabla();
@@ -368,7 +380,7 @@ function completarReserva(f, despues) {
   $('#c-ok', m.el).onclick = async () => {
     const res = await hacer(async () => await Store.completarReserva(f.id, { horas: $('#c-horas', m.el).value, observaciones: $('#c-obs', m.el).value, leccion: lec, notas }) ?? true);
     if (res === undefined) return;
-    toast(res === true ? 'Vuelo cerrado' : res.estado === 'aprobada' ? `${res.leccion} aprobada ✓` : `${res.leccion}: el alumno debe repetirla`, 'ok');
+    toast(res === true ? 'Vuelo cerrado' : res.estado === 'aprobada' ? `${codLeccion(res.leccion)} aprobada ✓` : `${codLeccion(res.leccion)}: el alumno debe repetirla`, 'ok');
     m.cerrar(); despues();
   };
 }
@@ -378,8 +390,8 @@ VISTAS.alumnos = async function vistaAlumnos(v) {
   const l = await Store.misAlumnos();
   v.innerHTML = hero('Mis alumnos', 'Solo ves el syllabus de los alumnos con los que volás o tenés vuelos programados.') + `<div class="card anim" style="--i:1">
     ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Alumno</th><th>Vuelo</th><th>Simulador</th><th>Teoría</th><th>Vuelos conmigo</th><th></th></tr></thead><tbody>
-      ${l.map((a) => { const c = (x) => x ? `<span class="badge ${x.estado === 'repetir' ? 'warn' : ''}">${esc(x.id)}${x.estado === 'repetir' ? ' · repetir' : ''}</span>` : '<span class="badge ok">Completo</span>';
-        return `<tr><td><strong>${esc(a.nombre)} ${esc(a.apellido)}</strong><div class="muted">${esc(a.telefono)}</div></td><td>${c(a.vuelo)}</td><td>${c(a.simulador)}</td><td>${c(a.teorica)}</td>
+      ${l.map((a) => { const c = (x, t) => (a.programa === 'pca' && t === 'teorica') ? '<span class="muted">—</span>' : x ? `<span class="badge ${x.estado === 'repetir' ? 'warn' : ''}">${esc(codLeccion(x.id))}${x.estado === 'repetir' ? ' · repetir' : ''}</span>` : '<span class="badge ok">Completo</span>';
+        return `<tr><td><strong>${esc(a.nombre)} ${esc(a.apellido)}</strong> <span class="badge gris">${esc(tipoCorto(a.rol, a.rango))}</span><div class="muted">${esc(a.telefono)}</div></td><td>${c(a.vuelo, 'vuelo')}</td><td>${c(a.simulador, 'simulador')}</td><td>${c(a.teorica, 'teorica')}</td>
           <td class="mono">${a.vuelos_conmigo}</td><td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-piloto="${a.id}">Ficha</button> <button class="btn sm" data-syl="${a.id}" data-lec="${esc(a.vuelo?.id || '')}">${ICON.libro} Syllabus</button></td></tr>`; }).join('')}
     </tbody></table></div>` : vacio('Todavía no tenés alumnos asignados en vuelos.')}</div>`;
   $$('[data-piloto]', v).forEach((b) => b.onclick = async () => await fichaPiloto(b.dataset.piloto));
@@ -593,7 +605,7 @@ VISTAS.todas = async function vistaTodas(v, filtros = state.filtrosRes || { desd
       <label class="campo">Estado<select id="fe"><option value="">Todos</option>${['pendiente', 'completado', 'ausente', 'cancelado'].map((e) => `<option ${filtros.estado === e ? 'selected' : ''}>${e}</option>`).join('')}</select></label></div>
       ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Horario</th><th>Tipo</th><th>Piloto</th><th>Instructor</th><th>Equipo</th><th>Estado</th><th></th></tr></thead><tbody>
         ${l.map((r) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(r.fecha))}</td><td class="mono">${rango(r.bloque)}</td><td>${badgeTipo(r.tipo)}</td>
-          <td><a href="#" data-piloto="${r.piloto_id}">${esc(r.piloto)}</a><div class="muted">${r.piloto_rol === 'ppa' ? 'PPA' : 'Alumno'}</div></td><td>${esc(r.instructor || '—')}</td>
+          <td><a href="#" data-piloto="${r.piloto_id}">${esc(r.piloto)}</a><div class="muted">${esc(tipoCorto(r.piloto_rol, r.piloto_rango))}</div></td><td>${esc(r.instructor || '—')}</td>
           <td class="mono">${esc(r.recurso)}</td><td>${badgeEstado(r)}</td><td style="white-space:nowrap">${r.estado === 'pendiente' && turnoEmpezo(r) && !r.llegada ? `<button class="btn warn-btn sm" data-aus="${r.id}">Ausente</button> ` : ''}${r.estado === 'pendiente' ? `<button class="btn danger sm" data-c="${r.id}">Cancelar</button>` : ''}${r.estado === 'ausente' ? `<button class="btn sec sm" data-desaus="${r.id}">Deshacer ausencia</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div>` : vacio('No hay reservas con esos filtros.')}</div>`;
   const leer = async () => await VISTAS.todas(v, { desde: $('#fd', v).value, hasta: $('#fh', v).value, tipo: $('#ft', v).value, estado: $('#fe', v).value });
@@ -615,7 +627,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
       ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
-        <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.rol === 'alumno' ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
+        <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.programa ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
       </tbody></table></div></div>`;
   $('#fr', v).onchange = async (e) => await VISTAS.usuarios(v, e.target.value, $('#fq', v).value);
   $('#fq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(async () => { await VISTAS.usuarios(v, rol, e.target.value); const i = $('#fq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
@@ -624,8 +636,8 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
   $$('[data-syl]', v).forEach((b) => b.onclick = async () => await abrirLibro(Number(b.dataset.syl)));
 };
 const ROL_INFO = {
-  alumno: ['Alumno piloto', 'Reserva vuelos de a un bloque por día, simulador y clases teóricas. Tiene su syllabus.'],
-  ppa: ['Piloto privado (PPA)', 'Reserva vuelos de varios bloques, elige avión y destino, y también simulador.'],
+  alumno: ['Alumno Piloto Privado', 'Reserva vuelos de a un bloque por día, simulador y clases teóricas. Tiene el syllabus PPA.'],
+  ppa: ['Piloto o alumno avanzado', 'Piloto Privado, Piloto Comercial, Alumno a Piloto Comercial o Alumno a Instructor de vuelo. Reserva varios bloques y elige avión y destino.'],
   instructor: ['Instructor de vuelo', 'Vuela en los horarios que le asignes, califica el syllabus y reporta fallas.'],
   mecanico: ['Mecánico', 'Revisa los libros de novedades y habilita o saca de servicio aviones y simuladores.'],
   admin: ['Administración', 'Acceso completo: usuarios, instructores, clases, reservas y flota.'],
@@ -651,8 +663,8 @@ async function editarUsuario(u, despues, rolElegido) {
       ${c('direccion', 'Dirección', 'text', '', 'full')} ${c('dni', 'DNI')} ${c('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
       ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)}
-      <label class="campo" data-roles="admin instructor"><span id="u-rango-lbl">Rango</span><select id="u-rango" name="rango"></select></label>
-      <p class="muted full" data-roles="admin instructor" id="u-rango-desc" style="margin:-6px 0 0;font-size:13px"></p>
+      <label class="campo" data-roles="admin instructor ppa"><span id="u-rango-lbl">Rango</span><select id="u-rango" name="rango"></select></label>
+      <p class="muted full" data-roles="admin instructor ppa" id="u-rango-desc" style="margin:-6px 0 0;font-size:13px"></p>
       <label class="campo" data-roles="alumno ppa"><span>Moneda del estado de cuenta</span><select id="u-moneda" name="moneda">
         <option value="" ${u ? '' : 'selected'} disabled>Elegí la moneda</option>
         <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
@@ -682,13 +694,13 @@ async function editarUsuario(u, despues, rolElegido) {
   const opcionesRango = () => {
     const r = $('#u-rol', m.el).value; const lista = RANGOS[r]; if (!lista) return;
     const actual = u && u.rol === r ? u.rango : '';
-    $('#u-rango-lbl', m.el).textContent = r === 'instructor' ? 'Tipo de instructor' : 'Rango';
-    $('#u-rango', m.el).innerHTML = `<option value="" ${actual ? '' : 'selected'} disabled>${r === 'instructor' ? 'Elegí qué puede dar' : 'Elegí el rango'}</option>` +
+    $('#u-rango-lbl', m.el).textContent = r === 'instructor' ? 'Tipo de instructor' : r === 'ppa' ? 'Tipo de piloto' : 'Rango';
+    $('#u-rango', m.el).innerHTML = `<option value="" ${actual ? '' : 'selected'} disabled>${r === 'instructor' ? 'Elegí qué puede dar' : r === 'ppa' ? 'Elegí el tipo de piloto' : 'Elegí el rango'}</option>` +
       Object.entries(lista).map(([k, [t]]) => `<option value="${k}" ${actual === k ? 'selected' : ''} ${r === 'admin' && k === 'contabilidad' && !esContable() ? 'disabled' : ''}>${t}</option>`).join('');
     descRango();
   };
   const descRango = () => { const r = $('#u-rol', m.el).value; const k = $('#u-rango', m.el).value;
-    $('#u-rango-desc', m.el).textContent = k && RANGOS[r]?.[k] ? RANGOS[r][k][1] : r === 'instructor' ? 'Define para qué se lo puede reservar: vuelo, simulador, teoría o combinaciones.' : 'Contabilidad tiene acceso total. Programador ve y maneja todo menos la contabilidad.'; };
+    $('#u-rango-desc', m.el).textContent = k && RANGOS[r]?.[k] ? RANGOS[r][k][1] : r === 'instructor' ? 'Define para qué se lo puede reservar: vuelo, simulador, teoría o combinaciones.' : r === 'ppa' ? 'Todos reservan como piloto. El Alumno a Piloto Comercial además tiene el syllabus PCA.' : 'Contabilidad tiene acceso total. Programador ve y maneja todo menos la contabilidad.'; };
   $('#u-rango', m.el).onchange = descRango; opcionesRango();
   $('#u-rol', m.el).onchange = () => { ajustar(); ajustarTutor(); opcionesRango(); }; ajustar();
   $('#u-ok', m.el).onclick = async () => {

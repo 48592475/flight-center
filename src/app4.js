@@ -84,7 +84,7 @@ VISTAS.cuentas = async function vistaCuentas(v, q = '') {
       <p class="muted" style="margin:12px 0 0">${textoCotizacion(cot)}${t.tc ? ` · hora de vuelo ${usd(t.vuelo / t.tc)}` : ''}</p></div>
     <div class="card anim" style="--i:5"><div class="filtro"><input id="cq" placeholder="Buscar alumno o piloto" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table class="movs"><thead><tr><th>Nombre</th><th>Tipo</th><th class="num">Cargado</th><th class="num">Pagado</th><th class="num">Saldo</th><th class="num">Horas pack</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong></td><td><span class="badge">${u.rol === 'ppa' ? 'PPA' : 'Alumno'}</span></td>
+      ${l.map((u) => `<tr><td><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong></td><td><span class="badge">${esc(tipoCorto(u.rol, u.rango))}</span></td>
         ${(() => { const enUsd = u.moneda === 'USD'; const f = enUsd ? usd : pesos; const sal = enUsd ? u.saldo_usd : u.saldo;
           return `<td class="num">${f(enUsd ? u.cargos_usd : u.cargos)}</td><td class="num pago">${f(enUsd ? u.pagos_usd : u.pagos)}</td>
         <td class="num">${enUsd ? '<span class="badge gris">USD</span> ' : ''}${sal > 0.009 ? `<span class="badge warn">${f(sal)}</span>` : sal < -0.009 ? `<span class="badge ok">${f(-sal)} a favor</span>` : '<span class="badge ok">Al día</span>'}</td>`; })()}

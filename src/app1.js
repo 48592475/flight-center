@@ -59,16 +59,22 @@ function pantallaFoto(u) {
   $('#fp-ok').onclick = async () => { const r = await hacer(async () => await Store.subirFoto({ data: foto }), '¡Listo! Foto guardada'); if (r) { state.user = r; await renderApp(); } };
   $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
 }
-const ROLES = { alumno: 'Alumno piloto', ppa: 'Piloto privado · PPA', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
+const ROLES = { alumno: 'Alumno Piloto Privado', ppa: 'Piloto', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
 const RANGOS_INST = { vuelo: ['Instructor de vuelo', 'Solo se lo puede reservar para vuelos.'], teoria: ['Instructor de teoría', 'Solo dicta clases teóricas.'],
   simulador: ['Instructor de simulador', 'Solo se lo puede reservar para simulador.'], teoria_simulador: ['Instructor de teoría y simulador', 'Clases teóricas y simulador.'],
   vuelo_teoria: ['Instructor de vuelo y teoría', 'Vuelos y clases teóricas.'], vuelo_simulador: ['Instructor de vuelo y simulador', 'Vuelos y simulador.'],
   todo: ['Instructor de todo', 'Vuelos, simulador y clases teóricas.'] };
-const RANGOS = { instructor: RANGOS_INST, admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
-const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : u.rol === 'instructor' && u.rango ? RANGOS_INST[u.rango]?.[0] || ROLES.instructor : ROLES[u.rol]);
+const RANGOS_PILOTO = { privado: ['Piloto Privado', 'Reserva varios bloques, elige avión y destino según sus habilitaciones.', 'PPA'],
+  alumno_comercial: ['Alumno a Piloto Comercial', 'Reserva como piloto y tiene el syllabus del curso de Piloto Comercial (PCA c/HVI).', 'Alumno PCA'],
+  comercial: ['Piloto Comercial', 'Igual que el Piloto Privado: varios bloques, elige avión y destino.', 'PCA'],
+  alumno_instructor: ['Alumno a Instructor de vuelo', 'Reserva como piloto. Por ahora sin syllabus.', 'Alumno IV'] };
+const tipoCorto = (rol, rango) => (rol === 'alumno' ? 'Alumno PPA' : rol === 'ppa' ? RANGOS_PILOTO[rango || 'privado']?.[2] || 'Piloto' : ROLES[rol] || '');
+const RANGOS = { ppa: RANGOS_PILOTO, instructor: RANGOS_INST, admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
+const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : u.rol === 'instructor' && u.rango ? RANGOS_INST[u.rango]?.[0] || ROLES.instructor : u.rol === 'ppa' ? RANGOS_PILOTO[u.rango || 'privado']?.[0] || ROLES.ppa : ROLES[u.rol]);
 const esContable = () => state.user?.rol === 'admin' && (state.user.rango || 'contabilidad') === 'contabilidad';
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
-const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular' };
+const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular', 'S+': 'Supera el estándar', S: 'Estándar', 'S-': 'Debajo del estándar', N: 'No estándar' };
+const claseNota = (v) => ({ 'S+': 'Sp', 'S-': 'Sm' }[v] || v || '');
 const codigoReserva = (id, p = 'FC') => `${p}-${String(id).padStart(5, '0')}`;
 const telLimpio = (t) => String(t || '').replace(/[^\d+]/g, '');
 const lunesDe = (d = new Date()) => { const x = new Date(d); const wd = (x.getDay() + 6) % 7; x.setDate(x.getDate() - wd); return isoLocal(x); };
@@ -173,7 +179,7 @@ function renderLogin() {
 
 const TABS = {
   alumno: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
-  ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   instructor: [['agenda', 'Mi agenda'], ['alumnos', 'Mis alumnos'], ['clases', 'Clases teóricas'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   mecanico: [['mantenimiento', 'Libros de novedades'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
@@ -191,7 +197,7 @@ async function renderApp() {
   if (!conCampus) state.portal = 'reservas';
   if (!state.portal) { try { state.portal = sessionStorage.getItem('fc-portal'); } catch { /* sin storage */ } }
   if (!state.portal) return renderPortal(u);
-  const tabs = (state.portal === 'campus' ? TABS_CAMPUS : TABS)[u.rol].filter(([k]) => k !== 'cuentas' || esContable());
+  const tabs = (state.portal === 'campus' ? TABS_CAMPUS : TABS)[u.rol].filter(([k]) => (k !== 'cuentas' || esContable()) && (k !== 'syllabus' || u.programa));
   if (!state.tab || !tabs.some(([k]) => k === state.tab)) state.tab = tabs[0][0];
   app.innerHTML = `<header class="topbar"><div class="topbar-inner">
       ${logo(state.portal === 'campus' ? 'Campus' : nombreRol(u))}
@@ -208,7 +214,7 @@ async function renderApp() {
 async function irA(tab) { state.tab = tab; await renderApp(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
 
 function hero(titulo, texto, extra = '') {
-  return `<section class="hero anim"><span class="badge">${esc(ROLES[state.user.rol])}</span>
+  return `<section class="hero anim"><span class="badge">${esc(nombreRol(state.user))}</span>
     <h2>${titulo}</h2><p>${texto}</p>${extra}</section>`;
 }
 const badgeEstado = (r) => r.estado === 'completado' ? `<span class="badge ok">Completado${r.horas ? ` · ${fmtHoras(r.horas)} h` : ''}</span>`
@@ -239,12 +245,12 @@ VISTAS.reservar = async function vistaReservar(v, tipo = state.tipoReserva || 'v
 };
 
 async function avisoLeccion(track) {
-  if (state.user.rol !== 'alumno') return '';
+  if (!state.user.programa) return '';
   const l = await Store.leccionActual(state.user.id, track);
   if (!l) return `<div class="aviso anim"><div><strong>Completaste todas las lecciones de ${track === 'vuelo' ? 'vuelo' : 'simulador'}.</strong></div></div>`;
   const estudiar = (l.estudiar || []).slice(0, 6);
   return `<div class="aviso ${l.estado === 'repetir' ? 'warn' : ''} anim" style="--i:2">
-    <div class="proxima"><div class="codigo">${esc(l.id)}</div><div>
+    <div class="proxima"><div class="codigo">${esc(codLeccion(l.id))}</div><div>
       <strong>${l.estado === 'repetir' ? 'Tenés que repetir esta lección' : 'Tu próxima lección'}: <span class="cap">${esc(l.titulo)}</span></strong>
       ${l.estado === 'repetir' ? `<span>En el último intento quedaron ${l.regulares.length} maniobra(s) en Regular. Hasta aprobarlas no se pasa a la siguiente.</span>` : ''}
       ${estudiar.length ? `<div class="muted" style="margin-top:4px">Traé estudiado: ${estudiar.map(esc).join(' · ')}</div>` : ''}
@@ -372,7 +378,7 @@ function paseDeReservas(reservas) {
   const lec = r.estado === 'pendiente' ? r.leccion_sugerida || null : r.leccion;
   return { llegada: r.llegada || null, reservaId: r.id, tipo: r.tipo, codigo: codigoReserva(r.id, r.tipo === 'simulador' ? 'SIM' : 'FC'), destino: r.tipo === 'simulador' ? 'SIM' : (r.destino || 'MOR'), local: r.tipo === 'vuelo' && (r.destino || 'MOR') === 'MOR',
     salida: bl[0], regreso: bl.at(-1) + 2, horario: contiguo ? `${hh(bl[0])} – ${hh(bl.at(-1) + 2)}` : bl.map(rango).join(', '),
-    piloto: r.piloto, clase: r.piloto_rol === 'ppa' ? 'PPA' : 'ALUMNO', fecha: r.fecha, recursoLbl: r.tipo === 'simulador' ? 'Simulador' : 'Aeronave', recurso: r.recurso,
+    piloto: r.piloto, clase: tipoCorto(r.piloto_rol, r.piloto_rango).toUpperCase(), fecha: r.fecha, recursoLbl: r.tipo === 'simulador' ? 'Simulador' : 'Aeronave', recurso: r.recurso,
     extraLbl: lec ? 'Lección' : 'Modelo', extra: lec || r.modelo, instructor: r.instructor || 'Sin instructor', bloques: `${bl.length} × 2 hs`, estado: r.estado };
 }
 function paseDeClase(k) {
@@ -509,6 +515,6 @@ VISTAS.horas = async function vistaHoras(v) {
 };
 
 VISTAS.syllabus = async (v) => {
-  v.innerHTML = hero('Mi syllabus', 'Tu libro de instrucción del curso PPA con habilitación VFR controlado. Lo completa tu instructor después de cada vuelo, simulador o clase.') + '<div id="libro"></div>';
+  v.innerHTML = hero('Mi syllabus', `Tu libro de instrucción del curso ${state.user.programa === 'pca' ? 'de Piloto Comercial de Avión con habilitación de vuelo por instrumentos (PCA c/HVI)' : 'PPA con habilitación VFR controlado'}. Lo completa tu instructor después de cada ${state.user.programa === 'pca' ? 'vuelo o simulador' : 'vuelo, simulador o clase'}.`) + '<div id="libro"></div>';
   await libroSyllabus($('#libro', v), state.user.id);
 };

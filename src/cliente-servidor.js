@@ -4,7 +4,11 @@ const Store = (() => {
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const local = {
     BLOQUES: [8, 10, 12, 14, 16],
-    LECCIONES: Object.fromEntries([...SYLLABUS.teorica, ...SYLLABUS.vuelo, ...SYLLABUS.simulador].map((l) => [l.id, l])),
+    LECCIONES: Object.fromEntries([...SYLLABUS.teorica, ...SYLLABUS.vuelo, ...SYLLABUS.simulador, ...SYLLABUS_PCA.vuelo, ...SYLLABUS_PCA.simulador].map((l) => [l.id, l])),
+    PROGRAMAS: {
+      ppa: { nombre: 'Piloto Privado de Avión con habilitación VFR controlado', corto: 'PPA – VFR controlado', tracks: { teorica: SYLLABUS.teorica, vuelo: SYLLABUS.vuelo, simulador: SYLLABUS.simulador }, reglas: SYLLABUS.reglas, escala: ['MB', 'B', 'R'], ok: ['MB', 'B'] },
+      pca: { nombre: SYLLABUS_PCA.nombre, corto: 'PCA c/HVI', tracks: { vuelo: SYLLABUS_PCA.vuelo, simulador: SYLLABUS_PCA.simulador }, reglas: SYLLABUS_PCA.reglas, escala: ['S+', 'S', 'S-', 'N'], ok: ['S+', 'S'] },
+    },
     TRACKS: { teorica: SYLLABUS.teorica, vuelo: SYLLABUS.vuelo, simulador: SYLLABUS.simulador },
     itemKeys: (l) => l.secciones.flatMap((s, si) => s.items.map((_, ii) => `${si}.${ii}`)),
     OPR: 'OPR/TWR.SRL',

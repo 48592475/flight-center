@@ -230,3 +230,5 @@
 .notas button[data-v="S"].on { background: var(--b); color: #fff; border-color: var(--b); }
 .notas button[data-v="Sm"].on { background: var(--r); color: #fff; border-color: var(--r); }
 .notas button[data-v="N"].on { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+.turno-bloq:has(input:checked) { background: #fdecec; border-color: #f2b8b8; color: #9b2c2c; }

@@ -245,6 +245,7 @@ async function fichaPiloto(id) {
         <div><small>DNI</small><span>${esc(p.dni || '—')}</span></div><div><small>Fecha de nacimiento</small><span>${p.fecha_nacimiento ? esc(fmtCorta(p.fecha_nacimiento)) : '—'}</span></div>
         <div style="grid-column:1/-1"><small>Dirección</small><span>${esc(p.direccion || '—')}</span></div>
         <div><small>Nacionalidad</small><span>${esc(p.nacionalidad || 'Sin cargar')}</span></div>
+        <div><small>Turnos</small><span>${p.turnos?.modo === 'personalizado' ? `Bloqueados: ${p.turnos.bloqueados.map(rango).join(', ')}` : 'Todos habilitados'}</span></div>
         <div><small>Contacto de emergencia</small><span>${esc(p.contacto_emergencia || '—')}</span></div><div><small>N° de licencia</small><span>${esc(p.licencia_nro || '—')}</span></div>
         ${p.tutor_nombre ? `<div style="grid-column:1/-1" class="tutor-ficha"><small>Tutor · contacto de emergencia</small><span><b>${esc(p.tutor_nombre)}</b> (${esc(p.tutor_parentesco || '')}) ·
           <a href="tel:${esc(String(p.tutor_telefono).replace(/[^\d+]/g, ''))}">${esc(p.tutor_telefono)}</a>${p.tutor_email ? ` · <a href="mailto:${esc(p.tutor_email)}">${esc(p.tutor_email)}</a>` : ''}</span></div>` : ''}
@@ -624,7 +625,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <input id="fq" placeholder="Buscar por nombre o email" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>Teléfono</th><th>CMA</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
+      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}${u.turnos?.modo === 'personalizado' ? '<div><span class="badge gris">Turnos personalizados</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.programa ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
@@ -670,6 +671,16 @@ async function editarUsuario(u, despues, rolElegido) {
         <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
       ${bloqueTutor('u', u)}
       <label class="campo full">${u ? 'Nueva contraseña <span class="op">(dejar vacío para no cambiarla)</span>' : 'Contraseña inicial <span class="op">(se la pasás al usuario para que ingrese)</span>'}<input id="u-password" type="text" name="password" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
+      <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Turnos que puede reservar</legend>
+        <div class="flujo">
+          <label class="marca"><input type="radio" name="turnos_modo" value="todos" ${u?.turnos?.modo !== 'personalizado' ? 'checked' : ''}> Todos los turnos habilitados</label>
+          <label class="marca"><input type="radio" name="turnos_modo" value="personalizado" ${u?.turnos?.modo === 'personalizado' ? 'checked' : ''}> Personalizado</label>
+        </div>
+        <div id="u-turnos" ${u?.turnos?.modo === 'personalizado' ? '' : 'hidden'} style="margin-top:12px">
+          <small class="lbl">Marcá los turnos que NO puede reservar (le van a figurar como reservados todos los días)</small>
+          <div class="marcas" style="margin-top:8px">${Store.BLOQUES.map((b) => `<label class="marca turno-bloq"><input type="checkbox" value="${b}" ${u?.turnos?.bloqueados?.includes(b) ? 'checked' : ''}> ${rango(b)}</label>`).join('')}</div>
+        </div>
+      </fieldset>
       <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Habilitaciones</legend>
         <div class="marcas">
           <label class="marca"><input type="checkbox" id="h-solo" ${u?.hab?.solo ? 'checked' : ''}> Vuelo solo (reservar sin instructor)</label>
@@ -690,6 +701,7 @@ async function editarUsuario(u, despues, rolElegido) {
     
   };
   const ajustarTutor = activarTutor($('#f-u', m.el), () => $('#u-rol', m.el).value);
+  $$('input[name=turnos_modo]', m.el).forEach((r) => r.onchange = () => { $('#u-turnos', m.el).hidden = $('input[name=turnos_modo]:checked', m.el).value !== 'personalizado'; });
   // el rango depende del tipo de usuario: administración (contabilidad / programador) o instructor (qué actividades da)
   const opcionesRango = () => {
     const r = $('#u-rol', m.el).value; const lista = RANGOS[r]; if (!lista) return;
@@ -709,6 +721,7 @@ async function editarUsuario(u, despues, rolElegido) {
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if ($('[data-tutor]', m.el).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
     d.nacionalidad = $('#u-nacionalidad', m.el).value; d.moneda = $('#u-moneda', m.el).value; d.rango = $('#u-rango', m.el).value;
+    if (['alumno', 'ppa'].includes(d.rol || u?.rol)) d.turnos_bloqueados = $$('#u-turnos input:checked', m.el).map((x) => Number(x.value)); else delete d.turnos_modo;
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
     const guardado = await hacer(async () => {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);

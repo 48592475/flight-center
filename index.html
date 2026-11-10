@@ -944,6 +944,8 @@ table.planilla { width: 100%; border-collapse: collapse; font-size: 13.5px; back
 .notas button[data-v="Sm"].on { background: var(--r); color: #fff; border-color: var(--r); }
 .notas button[data-v="N"].on { background: var(--danger); color: #fff; border-color: var(--danger); }
 
+.turno-bloq:has(input:checked) { background: #fdecec; border-color: #f2b8b8; color: #9b2c2c; }
+
 </style>
 </head>
 <body>
@@ -1011,7 +1013,7 @@ function crearStore(opts = {}) {
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { rango: 'vuelo_teoria', dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { rango: 'teoria_simulador', telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
-    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
+    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { turnos: { modo: 'personalizado', bloqueados: [10, 12] }, moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
     const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { rango: 'privado', dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
     const agus = U('ppa', 'Agustín', 'Molina', 'comercial@flightcenter.com', { rango: 'alumno_comercial', dni: '40555666', fecha_nacimiento: '1998-09-12', direccion: 'Av. Rivadavia 18000, Morón', telefono: '+54 9 11 5555-3004', contacto_emergencia: 'Laura Molina +54 9 11 5555-4004', licencia_nro: 'PPA-30122', vencimiento_cma: '2027-06-30', horas_previas: 62 });
     void admin;
@@ -1183,6 +1185,7 @@ function crearStore(opts = {}) {
     for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
     for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     if (d.tarifas && d.tarifas.ausencia == null) d.tarifas.ausencia = 100;
+    for (const u of d.usuarios || []) if (!u.turnos && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina') u.turnos = { modo: 'personalizado', bloqueados: [10, 12] };
     for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
@@ -1262,13 +1265,14 @@ function crearStore(opts = {}) {
   const exigirContable = () => { const u = exigir('admin'); if (rangoDe(u) !== 'contabilidad') fail('Tu rango (programador) no tiene acceso a la contabilidad.'); return u; };
   const nombre = (u) => (u ? `${u.nombre} ${u.apellido}` : '');
   // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
-  const BLOQUES_EXTRANJEROS = [8, 14, 16];
-  const bloquesPermitidos = (u) => u && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina' ? BLOQUES_EXTRANJEROS : null;
+  // turnos habilitados de cada alumno o piloto: todos, o personalizados (la administración bloquea algunos y le figuran como reservados)
+  const turnosDe = (u) => (u?.turnos?.modo === 'personalizado' && u.turnos.bloqueados?.length ? u.turnos : { modo: 'todos', bloqueados: [] });
+  const bloquesPermitidos = (u) => (['alumno', 'ppa'].includes(u?.rol) && turnosDe(u).modo === 'personalizado' ? BLOQUES.filter((b) => !turnosDe(u).bloqueados.includes(b)) : null);
   // foto de perfil: obligatoria para todos menos la administración
   const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -1355,7 +1359,7 @@ function crearStore(opts = {}) {
       for (const u of db.usuarios) {
         if (!u.activo || !['alumno', 'ppa'].includes(u.rol) || u.id === r.piloto_id || u.id === quien?.id) continue;
         if (u.notif && u.notif.liberados === false) continue;
-        const permitidos = bloquesPermitidos(u); // un alumno extranjero solo se entera de los bloques que puede reservar
+        const permitidos = bloquesPermitidos(u); // quien tiene turnos bloqueados solo se entera de los que puede reservar
         if (permitidos && !bloques.some((b) => permitidos.includes(b))) continue;
         notificar(u, 'turno_liberado', datos);
       }
@@ -1400,6 +1404,13 @@ function crearStore(opts = {}) {
       if (me.rol === 'admin') {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
         if (['ARS', 'USD'].includes(datos.moneda)) u.moneda = datos.moneda;
+        if (datos.turnos_modo === 'todos') u.turnos = { modo: 'todos', bloqueados: [] };
+        else if (datos.turnos_modo === 'personalizado') {
+          const bl = [...new Set((Array.isArray(datos.turnos_bloqueados) ? datos.turnos_bloqueados : String(datos.turnos_bloqueados || '').split(',')).map(Number).filter((b) => BLOQUES.includes(b)))].sort((a, b) => a - b);
+          if (!bl.length) fail('Con turnos personalizados, marcá al menos un turno bloqueado (o elegí "Todos los turnos habilitados")');
+          if (bl.length === BLOQUES.length) fail('No se pueden bloquear todos los turnos: dejá al menos uno habilitado');
+          u.turnos = { modo: 'personalizado', bloqueados: bl };
+        }
         const rolNuevo = datos.rol && u.id !== me.id ? datos.rol : u.rol;
         if (RANGOS[rolNuevo]?.includes(datos.rango) && (u.id !== me.id || rolNuevo !== 'admin')) u.rango = datos.rango;
         if (!RANGOS[rolNuevo]?.includes(u.rango)) delete u.rango;
@@ -5406,6 +5417,7 @@ async function fichaPiloto(id) {
         <div><small>DNI</small><span>${esc(p.dni || '—')}</span></div><div><small>Fecha de nacimiento</small><span>${p.fecha_nacimiento ? esc(fmtCorta(p.fecha_nacimiento)) : '—'}</span></div>
         <div style="grid-column:1/-1"><small>Dirección</small><span>${esc(p.direccion || '—')}</span></div>
         <div><small>Nacionalidad</small><span>${esc(p.nacionalidad || 'Sin cargar')}</span></div>
+        <div><small>Turnos</small><span>${p.turnos?.modo === 'personalizado' ? `Bloqueados: ${p.turnos.bloqueados.map(rango).join(', ')}` : 'Todos habilitados'}</span></div>
         <div><small>Contacto de emergencia</small><span>${esc(p.contacto_emergencia || '—')}</span></div><div><small>N° de licencia</small><span>${esc(p.licencia_nro || '—')}</span></div>
         ${p.tutor_nombre ? `<div style="grid-column:1/-1" class="tutor-ficha"><small>Tutor · contacto de emergencia</small><span><b>${esc(p.tutor_nombre)}</b> (${esc(p.tutor_parentesco || '')}) ·
           <a href="tel:${esc(String(p.tutor_telefono).replace(/[^\d+]/g, ''))}">${esc(p.tutor_telefono)}</a>${p.tutor_email ? ` · <a href="mailto:${esc(p.tutor_email)}">${esc(p.tutor_email)}</a>` : ''}</span></div>` : ''}
@@ -5785,7 +5797,7 @@ VISTAS.usuarios = async function vistaUsuarios(v, rol = state.filtroRol || '', q
     <div class="card anim" style="--i:1"><div class="filtro"><select id="fr" aria-label="Tipo de usuario"><option value="">Todos los tipos</option>${Object.entries(ROLES).map(([k, t]) => `<option value="${k}" ${rol === k ? 'selected' : ''}>${t}</option>`).join('')}</select>
       <input id="fq" placeholder="Buscar por nombre o email" value="${esc(q)}" aria-label="Buscar"></div>
       <div class="tabla-wrap"><table><thead><tr><th>Nombre</th><th>Tipo</th><th>Email</th><th>Teléfono</th><th>CMA</th><th>Estado</th><th></th></tr></thead><tbody>
-      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
+      ${l.map((u) => `<tr><td><div style="display:flex;gap:10px;align-items:center">${avatarDe(u, 34)}<div><strong>${esc(u.nombre)} ${esc(u.apellido)}</strong>${u.falta_foto ? '<div><span class="badge warn">Sin foto</span></div>' : ''}${u.turnos?.modo === 'personalizado' ? '<div><span class="badge gris">Turnos personalizados</span></div>' : ''}</div></div></td><td><span class="badge">${esc(nombreRol(u))}</span></td><td>${esc(u.email)}</td><td>${esc(u.telefono || '—')}</td>
         <td>${u.vencimiento_cma ? `${esc(fmtCorta(u.vencimiento_cma))}${u.vencimiento_cma < isoLocal(new Date()) ? ' <span class="badge danger">Vencido</span>' : ''}` : '—'}</td>
         <td>${u.activo ? '<span class="badge ok">Activo</span>' : '<span class="badge gris">Inactivo</span>'}</td>
         <td style="text-align:right;white-space:nowrap"><button class="btn sec sm" data-e="${u.id}">Editar</button>${u.programa ? ` <button class="btn sm" data-syl="${u.id}">Syllabus</button>` : ''}</td></tr>`).join('')}
@@ -5831,6 +5843,16 @@ async function editarUsuario(u, despues, rolElegido) {
         <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
       ${bloqueTutor('u', u)}
       <label class="campo full">${u ? 'Nueva contraseña <span class="op">(dejar vacío para no cambiarla)</span>' : 'Contraseña inicial <span class="op">(se la pasás al usuario para que ingrese)</span>'}<input id="u-password" type="text" name="password" autocomplete="off" placeholder="mínimo 6 caracteres"></label>
+      <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Turnos que puede reservar</legend>
+        <div class="flujo">
+          <label class="marca"><input type="radio" name="turnos_modo" value="todos" ${u?.turnos?.modo !== 'personalizado' ? 'checked' : ''}> Todos los turnos habilitados</label>
+          <label class="marca"><input type="radio" name="turnos_modo" value="personalizado" ${u?.turnos?.modo === 'personalizado' ? 'checked' : ''}> Personalizado</label>
+        </div>
+        <div id="u-turnos" ${u?.turnos?.modo === 'personalizado' ? '' : 'hidden'} style="margin-top:12px">
+          <small class="lbl">Marcá los turnos que NO puede reservar (le van a figurar como reservados todos los días)</small>
+          <div class="marcas" style="margin-top:8px">${Store.BLOQUES.map((b) => `<label class="marca turno-bloq"><input type="checkbox" value="${b}" ${u?.turnos?.bloqueados?.includes(b) ? 'checked' : ''}> ${rango(b)}</label>`).join('')}</div>
+        </div>
+      </fieldset>
       <fieldset class="hab-caja full" data-roles="alumno ppa"><legend>Habilitaciones</legend>
         <div class="marcas">
           <label class="marca"><input type="checkbox" id="h-solo" ${u?.hab?.solo ? 'checked' : ''}> Vuelo solo (reservar sin instructor)</label>
@@ -5851,6 +5873,7 @@ async function editarUsuario(u, despues, rolElegido) {
     
   };
   const ajustarTutor = activarTutor($('#f-u', m.el), () => $('#u-rol', m.el).value);
+  $$('input[name=turnos_modo]', m.el).forEach((r) => r.onchange = () => { $('#u-turnos', m.el).hidden = $('input[name=turnos_modo]:checked', m.el).value !== 'personalizado'; });
   // el rango depende del tipo de usuario: administración (contabilidad / programador) o instructor (qué actividades da)
   const opcionesRango = () => {
     const r = $('#u-rol', m.el).value; const lista = RANGOS[r]; if (!lista) return;
@@ -5870,6 +5893,7 @@ async function editarUsuario(u, despues, rolElegido) {
     for (const el of $$('[data-roles][hidden] input', m.el)) d[el.name] = el.name === 'horas_previas' ? 0 : '';
     if ($('[data-tutor]', m.el).hidden) for (const k of ['tutor_nombre', 'tutor_parentesco', 'tutor_telefono', 'tutor_email']) d[k] = '';
     d.nacionalidad = $('#u-nacionalidad', m.el).value; d.moneda = $('#u-moneda', m.el).value; d.rango = $('#u-rango', m.el).value;
+    if (['alumno', 'ppa'].includes(d.rol || u?.rol)) d.turnos_bloqueados = $$('#u-turnos input:checked', m.el).map((x) => Number(x.value)); else delete d.turnos_modo;
     if (u) { if (!yoMismo) d.activo = d.activo === '1'; else delete d.activo; }
     const guardado = await hacer(async () => {
       const r = u ? await Store.guardarPerfil(d, u.id) : await Store.crearUsuario(d);

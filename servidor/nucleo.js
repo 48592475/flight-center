@@ -55,7 +55,7 @@ function crearStore(opts = {}) {
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { rango: 'vuelo_teoria', dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { rango: 'teoria_simulador', telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
     const juan = U('alumno', 'Juan', 'Pérez', 'alumno@flightcenter.com', { dni: '45123456', fecha_nacimiento: '2008-06-20', direccion: 'Mitre 789, San Isidro', telefono: '+54 9 11 5555-3001', contacto_emergencia: 'Ana Pérez (madre) +54 9 11 5555-4001', vencimiento_cma: '2027-03-01' });
-    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
+    const vale = U('alumno', 'Valentina', 'Ruiz', 'valentina@flightcenter.com', { turnos: { modo: 'personalizado', bloqueados: [10, 12] }, moneda: 'USD', nacionalidad: 'Uruguay', tutor_nombre: 'Marcos Ruiz', tutor_parentesco: 'Padre', tutor_telefono: '+598 99 123 456', tutor_email: 'marcos.ruiz@example.com', dni: '44222111', fecha_nacimiento: '2002-02-14', direccion: 'Rivadavia 15000, Haedo', telefono: '+54 9 11 5555-3003', contacto_emergencia: 'Marcos Ruiz +54 9 11 5555-4003', vencimiento_cma: dia(20) });
     const lucia = U('ppa', 'Lucía', 'Fernández', 'ppa@flightcenter.com', { rango: 'privado', dni: '38999888', fecha_nacimiento: '1995-11-04', direccion: 'Sarmiento 321, Vicente López', telefono: '+54 9 11 5555-3002', contacto_emergencia: 'Diego Fernández +54 9 11 5555-4002', licencia_nro: 'PPA-77812', vencimiento_cma: '2026-12-20', horas_previas: 58, hab: { solo: true, sim_solo: true, travesia: true, aeronaves: null } });
     const agus = U('ppa', 'Agustín', 'Molina', 'comercial@flightcenter.com', { rango: 'alumno_comercial', dni: '40555666', fecha_nacimiento: '1998-09-12', direccion: 'Av. Rivadavia 18000, Morón', telefono: '+54 9 11 5555-3004', contacto_emergencia: 'Laura Molina +54 9 11 5555-4004', licencia_nro: 'PPA-30122', vencimiento_cma: '2027-06-30', horas_previas: 62 });
     void admin;
@@ -227,6 +227,7 @@ function crearStore(opts = {}) {
     for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
     for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     if (d.tarifas && d.tarifas.ausencia == null) d.tarifas.ausencia = 100;
+    for (const u of d.usuarios || []) if (!u.turnos && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina') u.turnos = { modo: 'personalizado', bloqueados: [10, 12] };
     for (const x of [...d.materiales, ...d.tps]) { if (/^FL /.test(x.leccion)) x.leccion = 'VUELO'; if (/^SL /.test(x.leccion)) x.leccion = 'SIMULADOR'; }
     for (const k of ['mat', 'tp', 'en', 'ar']) if (!d.seq[k]) d.seq[k] = 0;
     for (const u of d.usuarios) if (['alumno', 'ppa'].includes(u.rol) && !u.hab) u.hab = HAB_VACIA();
@@ -306,13 +307,14 @@ function crearStore(opts = {}) {
   const exigirContable = () => { const u = exigir('admin'); if (rangoDe(u) !== 'contabilidad') fail('Tu rango (programador) no tiene acceso a la contabilidad.'); return u; };
   const nombre = (u) => (u ? `${u.nombre} ${u.apellido}` : '');
   // alumnos extranjeros: solo pueden reservar 08-10, 14-16 y 16-18; el resto les figura reservado
-  const BLOQUES_EXTRANJEROS = [8, 14, 16];
-  const bloquesPermitidos = (u) => u && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina' ? BLOQUES_EXTRANJEROS : null;
+  // turnos habilitados de cada alumno o piloto: todos, o personalizados (la administración bloquea algunos y le figuran como reservados)
+  const turnosDe = (u) => (u?.turnos?.modo === 'personalizado' && u.turnos.bloqueados?.length ? u.turnos : { modo: 'todos', bloqueados: [] });
+  const bloquesPermitidos = (u) => (['alumno', 'ppa'].includes(u?.rol) && turnosDe(u).modo === 'personalizado' ? BLOQUES.filter((b) => !turnosDe(u).bloqueados.includes(b)) : null);
   // foto de perfil: obligatoria para todos menos la administración
   const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -399,7 +401,7 @@ function crearStore(opts = {}) {
       for (const u of db.usuarios) {
         if (!u.activo || !['alumno', 'ppa'].includes(u.rol) || u.id === r.piloto_id || u.id === quien?.id) continue;
         if (u.notif && u.notif.liberados === false) continue;
-        const permitidos = bloquesPermitidos(u); // un alumno extranjero solo se entera de los bloques que puede reservar
+        const permitidos = bloquesPermitidos(u); // quien tiene turnos bloqueados solo se entera de los que puede reservar
         if (permitidos && !bloques.some((b) => permitidos.includes(b))) continue;
         notificar(u, 'turno_liberado', datos);
       }
@@ -444,6 +446,13 @@ function crearStore(opts = {}) {
       if (me.rol === 'admin') {
         if ('horas_previas' in datos) u.horas_previas = Math.max(0, Number(datos.horas_previas) || 0);
         if (['ARS', 'USD'].includes(datos.moneda)) u.moneda = datos.moneda;
+        if (datos.turnos_modo === 'todos') u.turnos = { modo: 'todos', bloqueados: [] };
+        else if (datos.turnos_modo === 'personalizado') {
+          const bl = [...new Set((Array.isArray(datos.turnos_bloqueados) ? datos.turnos_bloqueados : String(datos.turnos_bloqueados || '').split(',')).map(Number).filter((b) => BLOQUES.includes(b)))].sort((a, b) => a - b);
+          if (!bl.length) fail('Con turnos personalizados, marcá al menos un turno bloqueado (o elegí "Todos los turnos habilitados")');
+          if (bl.length === BLOQUES.length) fail('No se pueden bloquear todos los turnos: dejá al menos uno habilitado');
+          u.turnos = { modo: 'personalizado', bloqueados: bl };
+        }
         const rolNuevo = datos.rol && u.id !== me.id ? datos.rol : u.rol;
         if (RANGOS[rolNuevo]?.includes(datos.rango) && (u.id !== me.id || rolNuevo !== 'admin')) u.rango = datos.rango;
         if (!RANGOS[rolNuevo]?.includes(u.rango)) delete u.rango;

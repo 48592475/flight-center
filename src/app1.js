@@ -60,8 +60,12 @@ function pantallaFoto(u) {
   $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
 }
 const ROLES = { alumno: 'Alumno piloto', ppa: 'Piloto privado · PPA', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
-const RANGOS = { admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
-const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : ROLES[u.rol]);
+const RANGOS_INST = { vuelo: ['Instructor de vuelo', 'Solo se lo puede reservar para vuelos.'], teoria: ['Instructor de teoría', 'Solo dicta clases teóricas.'],
+  simulador: ['Instructor de simulador', 'Solo se lo puede reservar para simulador.'], teoria_simulador: ['Instructor de teoría y simulador', 'Clases teóricas y simulador.'],
+  vuelo_teoria: ['Instructor de vuelo y teoría', 'Vuelos y clases teóricas.'], vuelo_simulador: ['Instructor de vuelo y simulador', 'Vuelos y simulador.'],
+  todo: ['Instructor de todo', 'Vuelos, simulador y clases teóricas.'] };
+const RANGOS = { instructor: RANGOS_INST, admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
+const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : u.rol === 'instructor' && u.rango ? RANGOS_INST[u.rango]?.[0] || ROLES.instructor : ROLES[u.rol]);
 const esContable = () => state.user?.rol === 'admin' && (state.user.rango || 'contabilidad') === 'contabilidad';
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
 const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular' };
@@ -249,7 +253,7 @@ async function avisoLeccion(track) {
 
 async function reservarTurno(c, tipo) {
   const u = state.user; const esPPA = u.rol === 'ppa'; const esSim = tipo === 'simulador';
-  const instructores = await Store.instructores();
+  const instructores = (await Store.instructores()).filter((i) => !i.actividades || i.actividades.includes(tipo));
   const recursos = await Store.recursos(esSim ? 'simulador' : 'avion');
   const eligeRecurso = esPPA || esSim;
   const hab = u.hab || {};

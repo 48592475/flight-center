@@ -46,7 +46,7 @@ function crearStore(opts = {}) {
     };
     const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { rango: 'contabilidad', telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
     U('admin', 'Nicolás', 'Vega', 'programador@flightcenter.com', { rango: 'programador', telefono: '+54 9 11 5555-0002', direccion: 'Aeródromo de Morón, Haedo' });
-    const mec = U('mecanico', 'Carlos', 'Medina', 'mecanico@flightcenter.com', { telefono: '+54 9 11 5555-0002', licencia_nro: 'MMA-2231', direccion: 'Castelar, Buenos Aires' });
+    const mec = U('mecanico', 'Carlos', 'Medina', 'mecanico@flightcenter.com', { rango: 'jefe', telefono: '+54 9 11 5555-0002', licencia_nro: 'MMA-2231', direccion: 'Castelar, Buenos Aires' });
     const martin = U('instructor', 'Martín', 'Gómez', 'instructor@flightcenter.com', { rango: 'todo', dni: '25111222', fecha_nacimiento: '1980-03-12', direccion: 'Av. Libertador 1200, San Fernando', telefono: '+54 9 11 5555-1001', contacto_emergencia: 'Laura Gómez +54 9 11 5555-2001', licencia_nro: 'INV-4521', vencimiento_cma: '2027-05-30', horas_previas: 3250 });
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { rango: 'vuelo_teoria', dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
     const diego = U('instructor', 'Diego', 'Ortiz', 'diego@flightcenter.com', { rango: 'teoria_simulador', telefono: '+54 9 11 5555-1003', licencia_nro: 'INV-6120', vencimiento_cma: '2027-08-10', horas_previas: 960 });
@@ -292,9 +292,10 @@ function crearStore(opts = {}) {
   // rangos dentro de cada tipo de usuario (por ahora, administración)
   const ACT_INST = { vuelo: ['vuelo'], teoria: ['teorica'], simulador: ['simulador'], teoria_simulador: ['teorica', 'simulador'],
     vuelo_teoria: ['vuelo', 'teorica'], vuelo_simulador: ['vuelo', 'simulador'], todo: ['vuelo', 'simulador', 'teorica'] };
-  const RANGOS = { admin: ['contabilidad', 'programador'], instructor: Object.keys(ACT_INST), ppa: ['privado', 'alumno_comercial', 'comercial', 'alumno_instructor'] };
+  const RANGOS = { admin: ['contabilidad', 'programador'], instructor: Object.keys(ACT_INST), ppa: ['privado', 'alumno_comercial', 'comercial', 'alumno_instructor'], mecanico: ['jefe', 'tecnico', 'mecanico'] };
   const rangoDe = (u) => (u.rol === 'admin' ? (u.rango || 'contabilidad') : u.rol === 'instructor' ? (RANGOS.instructor.includes(u.rango) ? u.rango : 'todo')
-    : u.rol === 'ppa' ? (RANGOS.ppa.includes(u.rango) ? u.rango : 'privado') : null);
+    : u.rol === 'ppa' ? (RANGOS.ppa.includes(u.rango) ? u.rango : 'privado')
+    : u.rol === 'mecanico' ? (RANGOS.mecanico.includes(u.rango) ? u.rango : 'mecanico') : null);
   // syllabus de cada uno: alumno → PPA; alumno a piloto comercial → PCA; el resto no tiene
   const programaDe = (u) => (u?.rol === 'alumno' ? 'ppa' : u?.rol === 'ppa' && rangoDe(u) === 'alumno_comercial' ? 'pca' : null);
   // qué actividades puede dar cada instructor según su tipo (vuelo, simulador, teórica)
@@ -310,7 +311,7 @@ function crearStore(opts = {}) {
   const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
-  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
+  const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa', 'mecanico'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
   const activas = () => db.reservas.filter((r) => r.estado !== 'cancelado');
   const clasesActivas = () => db.clases.filter((c) => c.estado !== 'cancelada');
   const ord = (a, b) => (a.fecha + hh(a.bloque)).localeCompare(b.fecha + hh(b.bloque));
@@ -812,6 +813,7 @@ function crearStore(opts = {}) {
       if (datos.rol === 'admin' && !RANGOS.admin.includes(datos.rango)) fail('Elegí el rango del administrador (contabilidad o programador)');
       if (datos.rol === 'instructor' && !RANGOS.instructor.includes(datos.rango)) fail('Elegí el tipo de instructor (vuelo, teoría, simulador o sus combinaciones)');
       if (datos.rol === 'ppa' && !RANGOS.ppa.includes(datos.rango)) fail('Elegí el tipo de piloto');
+      if (datos.rol === 'mecanico' && !RANGOS.mecanico.includes(datos.rango)) fail('Elegí el tipo de mecánico');
       if (!String(datos.nacionalidad || '').trim()) fail('Elegí la nacionalidad');
       if (!String(datos.password || '').trim() || String(datos.password).length < 6) fail('La contraseña inicial debe tener al menos 6 caracteres');
       const u = { id: ++db.seq.u, rol: datos.rol, activo: true, nombre: '', apellido: '', email: '', password: hashPass(datos.password), docs: {}, horas_previas: 0 };

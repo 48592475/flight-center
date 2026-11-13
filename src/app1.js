@@ -69,8 +69,9 @@ const RANGOS_PILOTO = { privado: ['Piloto Privado', 'Reserva varios bloques, eli
   comercial: ['Piloto Comercial', 'Igual que el Piloto Privado: varios bloques, elige avión y destino.', 'PCA'],
   alumno_instructor: ['Alumno a Instructor de vuelo', 'Reserva como piloto. Por ahora sin syllabus.', 'Alumno IV'] };
 const tipoCorto = (rol, rango) => (rol === 'alumno' ? 'Alumno PPA' : rol === 'ppa' ? RANGOS_PILOTO[rango || 'privado']?.[2] || 'Piloto' : ROLES[rol] || '');
-const RANGOS = { ppa: RANGOS_PILOTO, instructor: RANGOS_INST, admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
-const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : u.rol === 'instructor' && u.rango ? RANGOS_INST[u.rango]?.[0] || ROLES.instructor : u.rol === 'ppa' ? RANGOS_PILOTO[u.rango || 'privado']?.[0] || ROLES.ppa : ROLES[u.rol]);
+const RANGOS_MEC = { jefe: ['Jefe de mecánicos', 'Responsable del área de mantenimiento.'], tecnico: ['Técnico de mecánicos', 'Técnico del área de mantenimiento.'], mecanico: ['Mecánico', 'Mecánico del área de mantenimiento.'] };
+const RANGOS = { mecanico: RANGOS_MEC, ppa: RANGOS_PILOTO, instructor: RANGOS_INST, admin: { contabilidad: ['Contabilidad', 'Acceso total, incluida la contabilidad: estados de cuenta, pagos, packs, tarifas y cotización.'], programador: ['Programador', 'Ve y maneja todo menos la contabilidad (estados de cuenta, pagos y tarifas).'] } };
+const nombreRol = (u) => (u.rol === 'admin' && u.rango ? `${ROLES.admin} · ${RANGOS.admin[u.rango]?.[0] || u.rango}` : u.rol === 'instructor' && u.rango ? RANGOS_INST[u.rango]?.[0] || ROLES.instructor : u.rol === 'ppa' ? RANGOS_PILOTO[u.rango || 'privado']?.[0] || ROLES.ppa : u.rol === 'mecanico' ? RANGOS_MEC[u.rango || 'mecanico']?.[0] || ROLES.mecanico : ROLES[u.rol]);
 const esContable = () => state.user?.rol === 'admin' && (state.user.rango || 'contabilidad') === 'contabilidad';
 const TIPO_RES = { vuelo: 'Vuelo', simulador: 'Simulador', teorica: 'Clase teórica' };
 const NOTA = { MB: 'Muy bien', B: 'Bien', R: 'Regular', 'S+': 'Supera el estándar', S: 'Estándar', 'S-': 'Debajo del estándar', N: 'No estándar' };

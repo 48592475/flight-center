@@ -651,7 +651,7 @@ const ROL_INFO = {
   alumno: ['Alumno Piloto Privado', 'Reserva vuelos de a un bloque por día, simulador y clases teóricas. Tiene el syllabus PPA.'],
   ppa: ['Piloto o alumno avanzado', 'Piloto Privado, Piloto Comercial, Alumno a Piloto Comercial o Alumno a Instructor de vuelo. Reserva varios bloques y elige avión y destino.'],
   instructor: ['Instructor de vuelo', 'Vuela en los horarios que le asignes, califica el syllabus y reporta fallas.'],
-  mecanico: ['Mecánico', 'Revisa los libros de novedades y habilita o saca de servicio aviones y simuladores.'],
+  mecanico: ['Mantenimiento', 'Jefe de mecánicos, técnico o mecánico: revisa los libros de novedades y habilita o saca de servicio aviones y simuladores.'],
   admin: ['Administración', 'Acceso completo: usuarios, instructores, clases, reservas y flota.'],
 };
 const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, admin: 'ADM' };
@@ -675,8 +675,8 @@ async function editarUsuario(u, despues, rolElegido) {
       ${c('direccion', 'Dirección', 'text', '', 'full')} ${c('dni', 'DNI')} ${c('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       ${c('licencia_nro', '<span id="u-lic-lbl">N° de licencia</span>', 'text', 'alumno ppa instructor mecanico')} ${c('vencimiento_cma', 'Vencimiento del CMA', 'date', 'alumno ppa instructor')}
       ${c('horas_previas', 'Horas de vuelo previas', 'number', 'alumno ppa instructor')} ${selectNacionalidad('u-nacionalidad', u?.nacionalidad)}
-      <label class="campo" data-roles="admin instructor ppa"><span id="u-rango-lbl">Rango</span><select id="u-rango" name="rango"></select></label>
-      <p class="muted full" data-roles="admin instructor ppa" id="u-rango-desc" style="margin:-6px 0 0;font-size:13px"></p>
+      <label class="campo" data-roles="admin instructor ppa mecanico"><span id="u-rango-lbl">Rango</span><select id="u-rango" name="rango"></select></label>
+      <p class="muted full" data-roles="admin instructor ppa mecanico" id="u-rango-desc" style="margin:-6px 0 0;font-size:13px"></p>
       <label class="campo" data-roles="alumno ppa"><span>Moneda del estado de cuenta</span><select id="u-moneda" name="moneda">
         <option value="" ${u ? '' : 'selected'} disabled>Elegí la moneda</option>
         <option value="ARS" ${u && (u.moneda || 'ARS') === 'ARS' ? 'selected' : ''}>Pesos argentinos (ARS)</option><option value="USD" ${u?.moneda === 'USD' ? 'selected' : ''}>Dólares (USD)</option></select></label> ${c('contacto_emergencia', 'Contacto de emergencia', 'text', '', 'full')}
@@ -717,13 +717,13 @@ async function editarUsuario(u, despues, rolElegido) {
   const opcionesRango = () => {
     const r = $('#u-rol', m.el).value; const lista = RANGOS[r]; if (!lista) return;
     const actual = u && u.rol === r ? u.rango : '';
-    $('#u-rango-lbl', m.el).textContent = r === 'instructor' ? 'Tipo de instructor' : r === 'ppa' ? 'Tipo de piloto' : 'Rango';
-    $('#u-rango', m.el).innerHTML = `<option value="" ${actual ? '' : 'selected'} disabled>${r === 'instructor' ? 'Elegí qué puede dar' : r === 'ppa' ? 'Elegí el tipo de piloto' : 'Elegí el rango'}</option>` +
+    $('#u-rango-lbl', m.el).textContent = r === 'instructor' ? 'Tipo de instructor' : r === 'ppa' ? 'Tipo de piloto' : r === 'mecanico' ? 'Tipo de mecánico' : 'Rango';
+    $('#u-rango', m.el).innerHTML = `<option value="" ${actual ? '' : 'selected'} disabled>${r === 'instructor' ? 'Elegí qué puede dar' : r === 'ppa' ? 'Elegí el tipo de piloto' : r === 'mecanico' ? 'Elegí el tipo de mecánico' : 'Elegí el rango'}</option>` +
       Object.entries(lista).map(([k, [t]]) => `<option value="${k}" ${actual === k ? 'selected' : ''} ${r === 'admin' && k === 'contabilidad' && !esContable() ? 'disabled' : ''}>${t}</option>`).join('');
     descRango();
   };
   const descRango = () => { const r = $('#u-rol', m.el).value; const k = $('#u-rango', m.el).value;
-    $('#u-rango-desc', m.el).textContent = k && RANGOS[r]?.[k] ? RANGOS[r][k][1] : r === 'instructor' ? 'Define para qué se lo puede reservar: vuelo, simulador, teoría o combinaciones.' : r === 'ppa' ? 'Todos reservan como piloto. El Alumno a Piloto Comercial además tiene el syllabus PCA.' : 'Contabilidad tiene acceso total. Programador ve y maneja todo menos la contabilidad.'; };
+    $('#u-rango-desc', m.el).textContent = k && RANGOS[r]?.[k] ? RANGOS[r][k][1] : r === 'instructor' ? 'Define para qué se lo puede reservar: vuelo, simulador, teoría o combinaciones.' : r === 'ppa' ? 'Todos reservan como piloto. El Alumno a Piloto Comercial además tiene el syllabus PCA.' : r === 'mecanico' ? 'Jefe de mecánicos, técnico de mecánicos o mecánico.' : 'Contabilidad tiene acceso total. Programador ve y maneja todo menos la contabilidad.'; };
   $('#u-rango', m.el).onchange = descRango; opcionesRango();
   $('#u-rol', m.el).onchange = () => { ajustar(); ajustarTutor(); opcionesRango(); }; ajustar();
   $('#u-ok', m.el).onclick = async () => {

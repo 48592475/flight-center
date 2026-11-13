@@ -50,6 +50,7 @@ function crearStore(opts = {}) {
     };
     const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { rango: 'contabilidad', telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
     U('admin', 'Nicolás', 'Vega', 'programador@flightcenter.com', { rango: 'programador', telefono: '+54 9 11 5555-0002', direccion: 'Aeródromo de Morón, Haedo' });
+    const panolero = U('panol', 'Ramón', 'Acosta', 'panol@flightcenter.com', { telefono: '+54 9 11 5555-0003', direccion: 'Aeródromo de Morón, Haedo' });
     const mec = U('mecanico', 'Carlos', 'Medina', 'mecanico@flightcenter.com', { rango: 'jefe', telefono: '+54 9 11 5555-0002', licencia_nro: 'MMA-2231', direccion: 'Castelar, Buenos Aires' });
     const martin = U('instructor', 'Martín', 'Gómez', 'instructor@flightcenter.com', { rango: 'todo', dni: '25111222', fecha_nacimiento: '1980-03-12', direccion: 'Av. Libertador 1200, San Fernando', telefono: '+54 9 11 5555-1001', contacto_emergencia: 'Laura Gómez +54 9 11 5555-2001', licencia_nro: 'INV-4521', vencimiento_cma: '2027-05-30', horas_previas: 3250 });
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { rango: 'vuelo_teoria', dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
@@ -138,6 +139,21 @@ function crearStore(opts = {}) {
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
     if (!db.config) db.config = configInicial();
     db.config.cotizacion = { venta: 1455, compra: 1405, casa: 'oficial', fecha: ahora(), fuente: 'valor de ejemplo' };
+    // pañol de ejemplo
+    db.panol_items = []; db.panol_prestamos = []; db.panol_mov = []; db.seq.pi = 0; db.seq.pp = 0; db.seq.pm = 0;
+    const art = (nombre, categoria, cantidad, ubicacion, extra = {}) => { db.panol_items.push({ id: ++db.seq.pi, nombre, categoria, cantidad, ubicacion, minimo: 0, unidad: '', prestable: true, notas: '', ...extra }); return db.seq.pi; };
+    const auris = art('Auriculares David Clark H10-13.4', 'Equipo de vuelo', 8, 'Armario 1', { minimo: 4 });
+    art('Chaleco salvavidas', 'Seguridad', 6, 'Armario 1');
+    art('Kneeboard', 'Equipo de vuelo', 10, 'Armario 1');
+    const linterna = art('Linterna LED de cabina', 'Equipo de vuelo', 5, 'Armario 2', { minimo: 2 });
+    art('Llave de torque 3/8"', 'Herramientas', 1, 'Tablero de herramientas', { notas: 'Calibrada en 2026' });
+    art('Barra de remolque Cessna', 'Herramientas', 2, 'Hangar');
+    art('Aceite AeroShell W100 (1 cuarto)', 'Insumos', 18, 'Depósito', { minimo: 12, unidad: 'unidades', prestable: false });
+    art('Filtro de aceite Champion CH48110', 'Repuestos', 3, 'Depósito', { minimo: 4, prestable: false });
+    art('Bujía REM40E', 'Repuestos', 16, 'Depósito', { minimo: 8, prestable: false });
+    db.panol_prestamos.push({ id: ++db.seq.pp, item_id: auris, usuario_id: juan, cantidad: 1, fecha: dia(0) + ' 09:40', devolucion: dia(0), devuelto: null, notas: 'Vuelo de las 10', por: panolero });
+    db.panol_prestamos.push({ id: ++db.seq.pp, item_id: linterna, usuario_id: martin, cantidad: 1, fecha: dia(-5) + ' 18:10', devolucion: dia(-3), devuelto: null, notas: 'Vuelo nocturno', por: panolero });
+    db.panol_mov.push({ id: ++db.seq.pm, item_id: 7, cantidad: -2, motivo: 'Cambio de aceite LV-FCA', fecha: dia(-4) + ' 11:00', por: mec });
     // asistencia de instructores de ejemplo
     db.asistencia_inst = []; db.seq.ai = 0;
     const asis = (inst, dias, hora, primer) => { const [h, m] = hora.split(':').map(Number); const mins = h * 60 + m - primer * 60;
@@ -187,8 +203,8 @@ function crearStore(opts = {}) {
       movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
       usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
         password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
-      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [] };
-    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0 });
+      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [], panol_items: [], panol_prestamos: [], panol_mov: [] };
+    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0, pi: 0, pp: 0, pm: 0 });
     const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
     R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
     R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
@@ -224,7 +240,8 @@ function crearStore(opts = {}) {
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
-    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
+    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas', 'panol_items', 'panol_prestamos', 'panol_mov']) if (!d[k]) d[k] = [];
+    for (const k of ['pi', 'pp', 'pm']) if (!d.seq[k]) d.seq[k] = 0;
     for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     if (d.tarifas && d.tarifas.ausencia == null) d.tarifas.ausencia = 100;
     for (const u of d.usuarios || []) if (!u.turnos && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina') u.turnos = { modo: 'personalizado', bloqueados: [10, 12] };
@@ -312,7 +329,7 @@ function crearStore(opts = {}) {
   const turnosDe = (u) => (u?.turnos?.modo === 'personalizado' && u.turnos.bloqueados?.length ? u.turnos : { modo: 'todos', bloqueados: [] });
   const bloquesPermitidos = (u) => (['alumno', 'ppa'].includes(u?.rol) && turnosDe(u).modo === 'personalizado' ? BLOQUES.filter((b) => !turnosDe(u).bloqueados.includes(b)) : null);
   // foto de perfil: obligatoria para todos menos la administración
-  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
+  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico', 'panol'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
   const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa', 'mecanico'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
@@ -812,7 +829,7 @@ function crearStore(opts = {}) {
     usuarios(rol) { exigir('admin'); return db.usuarios.filter((u) => !rol || u.rol === rol).map(pub); },
     crearUsuario(datos) {
       exigir('admin');
-      if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
+      if (!['alumno', 'ppa', 'instructor', 'mecanico', 'panol', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
       if (['alumno', 'ppa'].includes(datos.rol) && !['ARS', 'USD'].includes(datos.moneda)) fail('Elegí la moneda del estado de cuenta (pesos o dólares)');
       if (datos.rol === 'admin' && !RANGOS.admin.includes(datos.rango)) fail('Elegí el rango del administrador (contabilidad o programador)');
       if (datos.rol === 'instructor' && !RANGOS.instructor.includes(datos.rango)) fail('Elegí el tipo de instructor (vuelo, teoría, simulador o sus combinaciones)');
@@ -1280,6 +1297,63 @@ function crearStore(opts = {}) {
     if (anterior) borrarArchivo(anterior);
     guardar(); return pub(u);
   };
+  // ---------- pañol: inventario y préstamos ----------
+  const PANOL = ['panol', 'admin'];
+  const prestadoDe = (itemId) => db.panol_prestamos.filter((p) => p.item_id === itemId && !p.devuelto).reduce((s, p) => s + p.cantidad, 0);
+  const cant = (v) => Math.round(Number(String(v ?? '').replace(',', '.')) * 100) / 100;
+  const itemPub = (i) => { const prestado = prestadoDe(i.id); const disponible = cant(i.cantidad - prestado); return { ...i, prestado, disponible, bajo_minimo: i.minimo > 0 && disponible < i.minimo }; };
+  const prestamoPub = (p) => { const u = usuario(p.usuario_id); const it = db.panol_items.find((i) => i.id === p.item_id);
+    return { ...p, articulo: it?.nombre || 'Artículo borrado', persona: u ? nombre(u) : 'Usuario eliminado', persona_tel: u?.telefono || '', persona_foto: fotoUrl(u), vencido: !p.devuelto && p.devolucion < hoy() }; };
+  api.panolItems = () => { exigir(...PANOL); return db.panol_items.map(itemPub).sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre)); };
+  api.panolResumen = () => {
+    exigir(...PANOL); const items = db.panol_items.map(itemPub);
+    return { articulos: items.length, prestadas: items.reduce((s, i) => s + i.prestado, 0), bajo_minimo: items.filter((i) => i.bajo_minimo).length,
+      vencidos: db.panol_prestamos.filter((p) => !p.devuelto && p.devolucion < hoy()).length,
+      movimientos: db.panol_mov.slice(-12).reverse().map((m) => ({ ...m, articulo: db.panol_items.find((i) => i.id === m.item_id)?.nombre || 'Artículo borrado', por: nombre(usuario(m.por)) || '' })) };
+  };
+  api.panolGuardarItem = (d) => {
+    const me = exigir(...PANOL);
+    const n = String(d.nombre || '').trim(); if (n.length < 2) fail('Escribí el nombre del artículo');
+    const minimo = cant(d.minimo || 0); if (!(minimo >= 0)) fail('Revisá el stock mínimo');
+    let it = d.id ? db.panol_items.find((i) => i.id === Number(d.id)) : null;
+    if (!it) {
+      const c = cant(d.cantidad); if (!(c >= 0)) fail('Revisá la cantidad inicial');
+      it = { id: ++db.seq.pi, cantidad: c }; db.panol_items.push(it);
+      if (c > 0) db.panol_mov.push({ id: ++db.seq.pm, item_id: it.id, cantidad: c, motivo: 'Alta en el inventario', fecha: ahora(), por: me.id });
+    }
+    Object.assign(it, { nombre: n.slice(0, 120), categoria: String(d.categoria || 'Otros').slice(0, 40), ubicacion: String(d.ubicacion || '').trim().slice(0, 80), unidad: String(d.unidad || '').trim().slice(0, 30),
+      minimo, prestable: d.prestable !== false && d.prestable !== 'false', notas: String(d.notas || '').trim().slice(0, 300) });
+    guardar(); return itemPub(it);
+  };
+  api.panolBorrarItem = (id) => {
+    exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(id)); if (!it) fail('El artículo ya no existe');
+    if (prestadoDe(it.id)) fail('No se puede borrar: hay unidades prestadas. Registrá primero la devolución.');
+    db.panol_items = db.panol_items.filter((i) => i !== it); guardar();
+  };
+  api.panolAjustar = (id, { cantidad, motivo }) => {
+    const me = exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(id)); if (!it) fail('El artículo ya no existe');
+    const c = cant(cantidad); if (!c) fail('Indicá la cantidad');
+    if (!String(motivo || '').trim()) fail('Escribí el motivo del movimiento');
+    if (it.cantidad + c < prestadoDe(it.id)) fail('No alcanza el stock: parte de las unidades están prestadas');
+    it.cantidad = cant(it.cantidad + c);
+    db.panol_mov.push({ id: ++db.seq.pm, item_id: it.id, cantidad: c, motivo: String(motivo).trim().slice(0, 200), fecha: ahora(), por: me.id });
+    guardar(); return itemPub(it);
+  };
+  api.panolPersonas = () => { exigir(...PANOL); return db.usuarios.filter((u) => u.activo).map(pub).sort((a, b) => a.apellido.localeCompare(b.apellido)); };
+  api.panolPrestar = ({ item_id, usuario_id, cantidad, devolucion, notas }) => {
+    const me = exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(item_id)); if (!it) fail('Elegí el artículo');
+    if (!it.prestable) fail('Este artículo es un insumo y no se presta: registrá un egreso de stock.');
+    const u = usuario(usuario_id); if (!u || !u.activo) fail('Elegí a quién se lo prestás');
+    const c = cant(cantidad || 1); if (!(c > 0)) fail('Revisá la cantidad');
+    if (c > itemPub(it).disponible) fail(`Solo hay ${itemPub(it).disponible} disponible(s)`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(devolucion || ''))) fail('Elegí la fecha de devolución');
+    if (devolucion < hoy()) fail('La devolución no puede ser en el pasado');
+    const p = { id: ++db.seq.pp, item_id: it.id, usuario_id: u.id, cantidad: c, fecha: ahora(), devolucion, devuelto: null, notas: String(notas || '').trim().slice(0, 200), por: me.id };
+    db.panol_prestamos.push(p); guardar(); return prestamoPub(p);
+  };
+  api.panolDevolver = (id) => { exigir(...PANOL); const p = db.panol_prestamos.find((x) => x.id === Number(id)); if (!p) fail('Préstamo no encontrado'); if (p.devuelto) fail('Ya estaba devuelto'); p.devuelto = ahora(); guardar(); };
+  api.panolPrestamos = ({ abiertos } = {}) => { exigir(...PANOL); return db.panol_prestamos.filter((p) => !abiertos || !p.devuelto).map(prestamoPub).sort((a, b) => (a.devuelto ? 1 : 0) - (b.devuelto ? 1 : 0) || a.devolucion.localeCompare(b.devolucion) || b.id - a.id); };
+  api.misPrestamos = () => { const u = yo(); return db.panol_prestamos.filter((p) => p.usuario_id === u.id && !p.devuelto).map(prestamoPub); };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { const me = exigir('admin'); const contable = rangoDe(me) === 'contabilidad'; return db.notificaciones.filter((x) => (contable || x.tipo !== 'deuda') && (!dia || x.dia === dia)).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };

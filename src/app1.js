@@ -59,7 +59,7 @@ function pantallaFoto(u) {
   $('#fp-ok').onclick = async () => { const r = await hacer(async () => await Store.subirFoto({ data: foto }), '¡Listo! Foto guardada'); if (r) { state.user = r; await renderApp(); } };
   $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
 }
-const ROLES = { alumno: 'Alumno Piloto Privado', ppa: 'Piloto', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
+const ROLES = { alumno: 'Alumno Piloto Privado', ppa: 'Piloto', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', panol: 'Encargado de pañol', admin: 'Administración' };
 const RANGOS_INST = { vuelo: ['Instructor de vuelo', 'Solo se lo puede reservar para vuelos.'], teoria: ['Instructor de teoría', 'Solo dicta clases teóricas.'],
   simulador: ['Instructor de simulador', 'Solo se lo puede reservar para simulador.'], teoria_simulador: ['Instructor de teoría y simulador', 'Clases teóricas y simulador.'],
   vuelo_teoria: ['Instructor de vuelo y teoría', 'Vuelos y clases teóricas.'], vuelo_simulador: ['Instructor de vuelo y simulador', 'Vuelos y simulador.'],
@@ -148,7 +148,7 @@ async function render() { if (!state.user) return renderLogin(); await renderApp
 function renderLogin() {
   const nubes = Array.from({ length: 7 }, (_, i) => { const w = 120 + Math.random() * 160;
     return `<div class="cloud" style="width:${w}px;height:${w * 0.32}px;top:${8 + i * 12}%;animation-duration:${38 + Math.random() * 40}s;animation-delay:-${Math.random() * 60}s"></div>`; }).join('');
-  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Administración', 'admin@flightcenter.com'], ['Programador', 'programador@flightcenter.com']];
+  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Pañol', 'panol@flightcenter.com'], ['Administración', 'admin@flightcenter.com'], ['Programador', 'programador@flightcenter.com']];
   app.innerHTML = `<section class="login">${nubes}
     <div class="plane-fly">${ICON.avion.replace('<svg', '<svg style="transform:rotate(80deg)"')}</div>
     <div class="login-card">
@@ -183,7 +183,8 @@ const TABS = {
   ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   instructor: [['agenda', 'Mi agenda'], ['alumnos', 'Mis alumnos'], ['clases', 'Clases teóricas'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   mecanico: [['mantenimiento', 'Libros de novedades'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
-  admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  panol: [['panol', 'Inventario'], ['prestamos', 'Préstamos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['panol', 'Pañol'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
 };
 const VISTAS = {};
 
@@ -194,7 +195,7 @@ async function renderApp() {
   try { state.tc = (await Store.cotizacion())?.venta || null; } catch { state.tc = null; }
   if (u.falta_foto) return pantallaFoto(u);
   // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
-  const conCampus = u.rol !== 'mecanico';
+  const conCampus = !['mecanico', 'panol'].includes(u.rol);
   if (!conCampus) state.portal = 'reservas';
   if (!state.portal) { try { state.portal = sessionStorage.getItem('fc-portal'); } catch { /* sin storage */ } }
   if (!state.portal) return renderPortal(u);

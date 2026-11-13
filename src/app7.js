@@ -248,7 +248,7 @@ async function verEntregas(t, despues) {
 
 
 // ---------- foro de consultas ----------
-const ROL_FORO = { alumno: 'Alumno', ppa: 'Piloto', instructor: 'Instructor', admin: 'Administración' };
+const ROL_FORO = { panol: 'Pañol', alumno: 'Alumno', ppa: 'Piloto', instructor: 'Instructor', admin: 'Administración' };
 const textoPost = (t) => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
 const cuando = (f) => { const d = f.slice(0, 10); const h = isoLocal(new Date()); return d === h ? `hoy ${f.slice(11, 16)}` : fmtCorta(d); };
 function filaTema(t, i) {

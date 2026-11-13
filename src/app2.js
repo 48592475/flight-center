@@ -152,6 +152,7 @@ VISTAS.perfil = async function vistaPerfil(v) {
     ppa: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia PPA', 'Licencia vigente', false], ['autorizacion', 'Autorización de menor', 'Solo para menores de 18 años', true]],
     instructor: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia de instructor', 'Licencia vigente', false]],
     mecanico: [['licencia', 'Licencia de mecánico', 'Habilitación vigente', false]],
+    panol: [],
     admin: [],
   }[u.rol];
   const campo = (n, l, t = 'text', extra = '') => `<label class="campo ${extra}">${l}<input id="pf-${n}" type="${t}" name="${n}" value="${esc(u[n] || '')}"></label>`;
@@ -163,7 +164,7 @@ VISTAS.perfil = async function vistaPerfil(v) {
       <form id="f-perfil" class="form-grid">
         ${campo('nombre', 'Nombre completo')} ${campo('apellido', 'Apellido')} ${campo('email', 'Email', 'email')} ${campo('telefono', 'Teléfono', 'tel')}
         ${campo('direccion', 'Dirección', 'text', 'full')} ${campo('dni', 'DNI')} ${campo('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
-        ${u.rol !== 'admin' ? `${campo('licencia_nro', 'N° de licencia <span class="op">(si corresponde)</span>')} ${u.rol !== 'mecanico' ? campo('vencimiento_cma', 'Vencimiento del CMA', 'date') : ''}` : ''}
+        ${!['admin', 'panol'].includes(u.rol) ? `${campo('licencia_nro', 'N° de licencia <span class="op">(si corresponde)</span>')} ${u.rol !== 'mecanico' ? campo('vencimiento_cma', 'Vencimiento del CMA', 'date') : ''}` : ''}
         ${selectNacionalidad('pf-nacionalidad', u.nacionalidad)}
         ${campo('contacto_emergencia', 'Contacto de emergencia <span class="op">(nombre y teléfono)</span>', 'text', 'full')}
         ${bloqueTutor('pf', u)}
@@ -652,9 +653,10 @@ const ROL_INFO = {
   ppa: ['Piloto o alumno avanzado', 'Piloto Privado, Piloto Comercial, Alumno a Piloto Comercial o Alumno a Instructor de vuelo. Reserva varios bloques y elige avión y destino.'],
   instructor: ['Instructor de vuelo', 'Vuela en los horarios que le asignes, califica el syllabus y reporta fallas.'],
   mecanico: ['Mantenimiento', 'Jefe de mecánicos, técnico o mecánico: revisa los libros de novedades y habilita o saca de servicio aviones y simuladores.'],
+  panol: ['Encargado de pañol', 'Maneja el inventario de herramientas, equipo, repuestos e insumos, y los préstamos a alumnos, pilotos, instructores y mecánicos.'],
   admin: ['Administración', 'Acceso completo: usuarios, instructores, clases, reservas y flota.'],
 };
-const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, admin: 'ADM' };
+const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, panol: 'PÑ', admin: 'ADM' };
 async function editarUsuario(u, despues, rolElegido) {
   if (!u && !rolElegido) {
     const m = modal(`<div class="modal-head"><div><h3>Nuevo usuario</h3><div class="muted">¿Qué tipo de usuario vas a crear?</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>

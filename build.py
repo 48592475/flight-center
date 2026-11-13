@@ -7,7 +7,7 @@ import os
 R = os.path.dirname(os.path.abspath(__file__))
 src = lambda f: open(os.path.join(R, 'src', f), encoding='utf-8').read()
 CSS = src('base.css') + src('extra.css') + src('extra3.css')
-APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app7.js', 'app6.js']
+APP = ['qrcode.js', 'app1.js', 'app2.js', 'app3.js', 'app4.js', 'app5.js', 'app7.js', 'app8.js', 'app6.js']
 
 def pagina(cliente, store=True):
     js = '\n'.join(src(f) for f in ['logos.js', 'syllabus.js', 'syllabus_pca.js'] + (['store.js'] if store else []) + [cliente, 'avisos-contenido.js'] + APP)

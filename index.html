@@ -1011,6 +1011,7 @@ function crearStore(opts = {}) {
     };
     const admin = U('admin', 'Gabriela', 'Torres', 'admin@flightcenter.com', { rango: 'contabilidad', telefono: '+54 9 11 5555-0001', direccion: 'Aeródromo de Morón, Hangar 3' });
     U('admin', 'Nicolás', 'Vega', 'programador@flightcenter.com', { rango: 'programador', telefono: '+54 9 11 5555-0002', direccion: 'Aeródromo de Morón, Haedo' });
+    const panolero = U('panol', 'Ramón', 'Acosta', 'panol@flightcenter.com', { telefono: '+54 9 11 5555-0003', direccion: 'Aeródromo de Morón, Haedo' });
     const mec = U('mecanico', 'Carlos', 'Medina', 'mecanico@flightcenter.com', { rango: 'jefe', telefono: '+54 9 11 5555-0002', licencia_nro: 'MMA-2231', direccion: 'Castelar, Buenos Aires' });
     const martin = U('instructor', 'Martín', 'Gómez', 'instructor@flightcenter.com', { rango: 'todo', dni: '25111222', fecha_nacimiento: '1980-03-12', direccion: 'Av. Libertador 1200, San Fernando', telefono: '+54 9 11 5555-1001', contacto_emergencia: 'Laura Gómez +54 9 11 5555-2001', licencia_nro: 'INV-4521', vencimiento_cma: '2027-05-30', horas_previas: 3250 });
     const sofia = U('instructor', 'Sofía', 'Ramírez', 'sofia@flightcenter.com', { rango: 'vuelo_teoria', dni: '30222333', fecha_nacimiento: '1987-08-02', direccion: 'Calle Belgrano 455, Tigre', telefono: '+54 9 11 5555-1002', contacto_emergencia: 'Pablo Ramírez +54 9 11 5555-2002', licencia_nro: 'INV-5873', vencimiento_cma: '2027-01-15', horas_previas: 1840 });
@@ -1099,6 +1100,21 @@ function crearStore(opts = {}) {
     tp('TEO 5', 'TP 2 · Espacios aéreos', 'Dibujá el espacio aéreo alrededor de Morón y marcá los límites de la ATZ y de la TMA Baires. Indicá frecuencias y altitudes.', dia(10), diego);
     if (!db.config) db.config = configInicial();
     db.config.cotizacion = { venta: 1455, compra: 1405, casa: 'oficial', fecha: ahora(), fuente: 'valor de ejemplo' };
+    // pañol de ejemplo
+    db.panol_items = []; db.panol_prestamos = []; db.panol_mov = []; db.seq.pi = 0; db.seq.pp = 0; db.seq.pm = 0;
+    const art = (nombre, categoria, cantidad, ubicacion, extra = {}) => { db.panol_items.push({ id: ++db.seq.pi, nombre, categoria, cantidad, ubicacion, minimo: 0, unidad: '', prestable: true, notas: '', ...extra }); return db.seq.pi; };
+    const auris = art('Auriculares David Clark H10-13.4', 'Equipo de vuelo', 8, 'Armario 1', { minimo: 4 });
+    art('Chaleco salvavidas', 'Seguridad', 6, 'Armario 1');
+    art('Kneeboard', 'Equipo de vuelo', 10, 'Armario 1');
+    const linterna = art('Linterna LED de cabina', 'Equipo de vuelo', 5, 'Armario 2', { minimo: 2 });
+    art('Llave de torque 3/8"', 'Herramientas', 1, 'Tablero de herramientas', { notas: 'Calibrada en 2026' });
+    art('Barra de remolque Cessna', 'Herramientas', 2, 'Hangar');
+    art('Aceite AeroShell W100 (1 cuarto)', 'Insumos', 18, 'Depósito', { minimo: 12, unidad: 'unidades', prestable: false });
+    art('Filtro de aceite Champion CH48110', 'Repuestos', 3, 'Depósito', { minimo: 4, prestable: false });
+    art('Bujía REM40E', 'Repuestos', 16, 'Depósito', { minimo: 8, prestable: false });
+    db.panol_prestamos.push({ id: ++db.seq.pp, item_id: auris, usuario_id: juan, cantidad: 1, fecha: dia(0) + ' 09:40', devolucion: dia(0), devuelto: null, notas: 'Vuelo de las 10', por: panolero });
+    db.panol_prestamos.push({ id: ++db.seq.pp, item_id: linterna, usuario_id: martin, cantidad: 1, fecha: dia(-5) + ' 18:10', devolucion: dia(-3), devuelto: null, notas: 'Vuelo nocturno', por: panolero });
+    db.panol_mov.push({ id: ++db.seq.pm, item_id: 7, cantidad: -2, motivo: 'Cambio de aceite LV-FCA', fecha: dia(-4) + ' 11:00', por: mec });
     // asistencia de instructores de ejemplo
     db.asistencia_inst = []; db.seq.ai = 0;
     const asis = (inst, dias, hora, primer) => { const [h, m] = hora.split(':').map(Number); const mins = h * 60 + m - primer * 60;
@@ -1148,8 +1164,8 @@ function crearStore(opts = {}) {
       movimientos: [], notificaciones: [], planes: [], meteo: null, tarifas: { ...TARIFAS_INICIALES },
       usuarios: [{ id: 1, rol: 'admin', activo: true, nombre: a.nombre || 'Administración', apellido: a.apellido || 'Flight Center', email: a.email || 'admin@flightcenter.com',
         password: hashPass(a.password || 'cambiar123'), dni: '', fecha_nacimiento: '', direccion: '', telefono: '', contacto_emergencia: '', licencia_nro: '', vencimiento_cma: '', horas_previas: 0, docs: {} }],
-      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [] };
-    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0 });
+      recursos: [], materiales: [], tps: [], entregas: [], archivos: [], foro_temas: [], foro_respuestas: [], panol_items: [], panol_prestamos: [], panol_mov: [] };
+    Object.assign(db.seq, { mat: 0, tp: 0, en: 0, ar: 0, ft: 0, fr: 0, pi: 0, pp: 0, pm: 0 });
     const R = (tipo, nombre, modelo) => db.recursos.push({ id: ++db.seq.rec, tipo, nombre, modelo, estado: 'operativa', ...(tipo === 'avion' ? datosModelo(modelo) : {}) });
     R('avion', 'LV-FCA', 'Cessna 152'); R('avion', 'LV-FCB', 'Cessna 172 Skyhawk'); R('avion', 'LV-FCC', 'Piper PA-28 Warrior'); R('avion', 'LV-FCD', 'Cessna 152');
     R('simulador', 'Frasca', 'Frasca 141'); R('simulador', 'Simu 1', 'Simulador de procedimientos');
@@ -1185,7 +1201,8 @@ function crearStore(opts = {}) {
   const habDe = (u) => ({ ...HAB_VACIA(), ...(u.hab || {}) });
   // migración de datos guardados por versiones anteriores de la demo
   function migrar(d) {
-    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas']) if (!d[k]) d[k] = [];
+    for (const k of ['materiales', 'tps', 'entregas', 'archivos', 'foro_temas', 'foro_respuestas', 'panol_items', 'panol_prestamos', 'panol_mov']) if (!d[k]) d[k] = [];
+    for (const k of ['pi', 'pp', 'pm']) if (!d.seq[k]) d.seq[k] = 0;
     for (const k of ['ft', 'fr']) if (!d.seq[k]) d.seq[k] = 0;
     if (d.tarifas && d.tarifas.ausencia == null) d.tarifas.ausencia = 100;
     for (const u of d.usuarios || []) if (!u.turnos && u.rol === 'alumno' && u.nacionalidad && u.nacionalidad !== 'Argentina') u.turnos = { modo: 'personalizado', bloqueados: [10, 12] };
@@ -1273,7 +1290,7 @@ function crearStore(opts = {}) {
   const turnosDe = (u) => (u?.turnos?.modo === 'personalizado' && u.turnos.bloqueados?.length ? u.turnos : { modo: 'todos', bloqueados: [] });
   const bloquesPermitidos = (u) => (['alumno', 'ppa'].includes(u?.rol) && turnosDe(u).modo === 'personalizado' ? BLOQUES.filter((b) => !turnosDe(u).bloqueados.includes(b)) : null);
   // foto de perfil: obligatoria para todos menos la administración
-  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico'];
+  const FOTO_OBLIGATORIA = ['alumno', 'ppa', 'instructor', 'mecanico', 'panol'];
   const fotoUrl = (u) => { if (!u?.foto) return null; if (opts.archivos) return `/api/archivo/${u.foto}`; return db.archivos.find((a) => a.id === u.foto)?.data || null; };
   const faltaFoto = (u) => FOTO_OBLIGATORIA.includes(u.rol) && !u.foto;
   const pub = (u) => { if (!u) return null; const { password, docs, ...r } = u; r.foto_url = fotoUrl(u); r.falta_foto = faltaFoto(u); if (['admin', 'instructor', 'ppa', 'mecanico'].includes(u.rol)) r.rango = rangoDe(u); r.programa = programaDe(u); if (['alumno', 'ppa'].includes(u.rol)) r.turnos = turnosDe(u); if (u.rol === 'instructor') r.actividades = ACT_INST[rangoDe(u)]; if (['alumno', 'ppa'].includes(u.rol)) r.hab = habDe(u); return { ...r, docs: Object.fromEntries(Object.entries(docs).map(([k, v]) => [k, { nombre: v.nombre, tam: v.tam, fecha: v.fecha }])) }; };
@@ -1773,7 +1790,7 @@ function crearStore(opts = {}) {
     usuarios(rol) { exigir('admin'); return db.usuarios.filter((u) => !rol || u.rol === rol).map(pub); },
     crearUsuario(datos) {
       exigir('admin');
-      if (!['alumno', 'ppa', 'instructor', 'mecanico', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
+      if (!['alumno', 'ppa', 'instructor', 'mecanico', 'panol', 'admin'].includes(datos.rol)) fail('Elegí el tipo de usuario');
       if (['alumno', 'ppa'].includes(datos.rol) && !['ARS', 'USD'].includes(datos.moneda)) fail('Elegí la moneda del estado de cuenta (pesos o dólares)');
       if (datos.rol === 'admin' && !RANGOS.admin.includes(datos.rango)) fail('Elegí el rango del administrador (contabilidad o programador)');
       if (datos.rol === 'instructor' && !RANGOS.instructor.includes(datos.rango)) fail('Elegí el tipo de instructor (vuelo, teoría, simulador o sus combinaciones)');
@@ -2241,6 +2258,63 @@ function crearStore(opts = {}) {
     if (anterior) borrarArchivo(anterior);
     guardar(); return pub(u);
   };
+  // ---------- pañol: inventario y préstamos ----------
+  const PANOL = ['panol', 'admin'];
+  const prestadoDe = (itemId) => db.panol_prestamos.filter((p) => p.item_id === itemId && !p.devuelto).reduce((s, p) => s + p.cantidad, 0);
+  const cant = (v) => Math.round(Number(String(v ?? '').replace(',', '.')) * 100) / 100;
+  const itemPub = (i) => { const prestado = prestadoDe(i.id); const disponible = cant(i.cantidad - prestado); return { ...i, prestado, disponible, bajo_minimo: i.minimo > 0 && disponible < i.minimo }; };
+  const prestamoPub = (p) => { const u = usuario(p.usuario_id); const it = db.panol_items.find((i) => i.id === p.item_id);
+    return { ...p, articulo: it?.nombre || 'Artículo borrado', persona: u ? nombre(u) : 'Usuario eliminado', persona_tel: u?.telefono || '', persona_foto: fotoUrl(u), vencido: !p.devuelto && p.devolucion < hoy() }; };
+  api.panolItems = () => { exigir(...PANOL); return db.panol_items.map(itemPub).sort((a, b) => a.categoria.localeCompare(b.categoria) || a.nombre.localeCompare(b.nombre)); };
+  api.panolResumen = () => {
+    exigir(...PANOL); const items = db.panol_items.map(itemPub);
+    return { articulos: items.length, prestadas: items.reduce((s, i) => s + i.prestado, 0), bajo_minimo: items.filter((i) => i.bajo_minimo).length,
+      vencidos: db.panol_prestamos.filter((p) => !p.devuelto && p.devolucion < hoy()).length,
+      movimientos: db.panol_mov.slice(-12).reverse().map((m) => ({ ...m, articulo: db.panol_items.find((i) => i.id === m.item_id)?.nombre || 'Artículo borrado', por: nombre(usuario(m.por)) || '' })) };
+  };
+  api.panolGuardarItem = (d) => {
+    const me = exigir(...PANOL);
+    const n = String(d.nombre || '').trim(); if (n.length < 2) fail('Escribí el nombre del artículo');
+    const minimo = cant(d.minimo || 0); if (!(minimo >= 0)) fail('Revisá el stock mínimo');
+    let it = d.id ? db.panol_items.find((i) => i.id === Number(d.id)) : null;
+    if (!it) {
+      const c = cant(d.cantidad); if (!(c >= 0)) fail('Revisá la cantidad inicial');
+      it = { id: ++db.seq.pi, cantidad: c }; db.panol_items.push(it);
+      if (c > 0) db.panol_mov.push({ id: ++db.seq.pm, item_id: it.id, cantidad: c, motivo: 'Alta en el inventario', fecha: ahora(), por: me.id });
+    }
+    Object.assign(it, { nombre: n.slice(0, 120), categoria: String(d.categoria || 'Otros').slice(0, 40), ubicacion: String(d.ubicacion || '').trim().slice(0, 80), unidad: String(d.unidad || '').trim().slice(0, 30),
+      minimo, prestable: d.prestable !== false && d.prestable !== 'false', notas: String(d.notas || '').trim().slice(0, 300) });
+    guardar(); return itemPub(it);
+  };
+  api.panolBorrarItem = (id) => {
+    exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(id)); if (!it) fail('El artículo ya no existe');
+    if (prestadoDe(it.id)) fail('No se puede borrar: hay unidades prestadas. Registrá primero la devolución.');
+    db.panol_items = db.panol_items.filter((i) => i !== it); guardar();
+  };
+  api.panolAjustar = (id, { cantidad, motivo }) => {
+    const me = exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(id)); if (!it) fail('El artículo ya no existe');
+    const c = cant(cantidad); if (!c) fail('Indicá la cantidad');
+    if (!String(motivo || '').trim()) fail('Escribí el motivo del movimiento');
+    if (it.cantidad + c < prestadoDe(it.id)) fail('No alcanza el stock: parte de las unidades están prestadas');
+    it.cantidad = cant(it.cantidad + c);
+    db.panol_mov.push({ id: ++db.seq.pm, item_id: it.id, cantidad: c, motivo: String(motivo).trim().slice(0, 200), fecha: ahora(), por: me.id });
+    guardar(); return itemPub(it);
+  };
+  api.panolPersonas = () => { exigir(...PANOL); return db.usuarios.filter((u) => u.activo).map(pub).sort((a, b) => a.apellido.localeCompare(b.apellido)); };
+  api.panolPrestar = ({ item_id, usuario_id, cantidad, devolucion, notas }) => {
+    const me = exigir(...PANOL); const it = db.panol_items.find((i) => i.id === Number(item_id)); if (!it) fail('Elegí el artículo');
+    if (!it.prestable) fail('Este artículo es un insumo y no se presta: registrá un egreso de stock.');
+    const u = usuario(usuario_id); if (!u || !u.activo) fail('Elegí a quién se lo prestás');
+    const c = cant(cantidad || 1); if (!(c > 0)) fail('Revisá la cantidad');
+    if (c > itemPub(it).disponible) fail(`Solo hay ${itemPub(it).disponible} disponible(s)`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(devolucion || ''))) fail('Elegí la fecha de devolución');
+    if (devolucion < hoy()) fail('La devolución no puede ser en el pasado');
+    const p = { id: ++db.seq.pp, item_id: it.id, usuario_id: u.id, cantidad: c, fecha: ahora(), devolucion, devuelto: null, notas: String(notas || '').trim().slice(0, 200), por: me.id };
+    db.panol_prestamos.push(p); guardar(); return prestamoPub(p);
+  };
+  api.panolDevolver = (id) => { exigir(...PANOL); const p = db.panol_prestamos.find((x) => x.id === Number(id)); if (!p) fail('Préstamo no encontrado'); if (p.devuelto) fail('Ya estaba devuelto'); p.devuelto = ahora(); guardar(); };
+  api.panolPrestamos = ({ abiertos } = {}) => { exigir(...PANOL); return db.panol_prestamos.filter((p) => !abiertos || !p.devuelto).map(prestamoPub).sort((a, b) => (a.devuelto ? 1 : 0) - (b.devuelto ? 1 : 0) || a.devolucion.localeCompare(b.devolucion) || b.id - a.id); };
+  api.misPrestamos = () => { const u = yo(); return db.panol_prestamos.filter((p) => p.usuario_id === u.id && !p.devuelto).map(prestamoPub); };
   api.misNotificaciones = () => { const u = yo(); return db.notificaciones.filter((x) => x.usuario_id === u.id).sort((a, b) => b.id - a.id); };
   api.notificaciones = ({ dia } = {}) => { const me = exigir('admin'); const contable = rangoDe(me) === 'contabilidad'; return db.notificaciones.filter((x) => (contable || x.tipo !== 'deuda') && (!dia || x.dia === dia)).sort((a, b) => b.id - a.id); };
   api.ultimasDeReserva = () => { const u = yo(); const l = db.notificaciones.filter((x) => x.usuario_id === u.id && ['reserva', 'clase'].includes(x.tipo)); const ult = l.at(-1); return ult ? l.filter((x) => x.fecha === ult.fecha && x.tipo === ult.tipo) : []; };
@@ -4730,7 +4804,7 @@ function pantallaFoto(u) {
   $('#fp-ok').onclick = async () => { const r = await hacer(async () => await Store.subirFoto({ data: foto }), '¡Listo! Foto guardada'); if (r) { state.user = r; await renderApp(); } };
   $('#logout').onclick = async () => { await Store.logout(); state.user = null; state.portal = null; try { sessionStorage.removeItem('fc-portal'); } catch { /* sin storage */ } render(); };
 }
-const ROLES = { alumno: 'Alumno Piloto Privado', ppa: 'Piloto', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', admin: 'Administración' };
+const ROLES = { alumno: 'Alumno Piloto Privado', ppa: 'Piloto', instructor: 'Instructor de vuelo', mecanico: 'Mecánico', panol: 'Encargado de pañol', admin: 'Administración' };
 const RANGOS_INST = { vuelo: ['Instructor de vuelo', 'Solo se lo puede reservar para vuelos.'], teoria: ['Instructor de teoría', 'Solo dicta clases teóricas.'],
   simulador: ['Instructor de simulador', 'Solo se lo puede reservar para simulador.'], teoria_simulador: ['Instructor de teoría y simulador', 'Clases teóricas y simulador.'],
   vuelo_teoria: ['Instructor de vuelo y teoría', 'Vuelos y clases teóricas.'], vuelo_simulador: ['Instructor de vuelo y simulador', 'Vuelos y simulador.'],
@@ -4819,7 +4893,7 @@ async function render() { if (!state.user) return renderLogin(); await renderApp
 function renderLogin() {
   const nubes = Array.from({ length: 7 }, (_, i) => { const w = 120 + Math.random() * 160;
     return `<div class="cloud" style="width:${w}px;height:${w * 0.32}px;top:${8 + i * 12}%;animation-duration:${38 + Math.random() * 40}s;animation-delay:-${Math.random() * 60}s"></div>`; }).join('');
-  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Administración', 'admin@flightcenter.com'], ['Programador', 'programador@flightcenter.com']];
+  const demo = [['Alumno', 'alumno@flightcenter.com'], ['Piloto PPA', 'ppa@flightcenter.com'], ['Instructor', 'instructor@flightcenter.com'], ['Mecánico', 'mecanico@flightcenter.com'], ['Pañol', 'panol@flightcenter.com'], ['Administración', 'admin@flightcenter.com'], ['Programador', 'programador@flightcenter.com']];
   app.innerHTML = `<section class="login">${nubes}
     <div class="plane-fly">${ICON.avion.replace('<svg', '<svg style="transform:rotate(80deg)"')}</div>
     <div class="login-card">
@@ -4854,7 +4928,8 @@ const TABS = {
   ppa: [['reservar', 'Reservar'], ['reservas', 'Mis reservas'], ['syllabus', 'Mi syllabus'], ['horas', 'Mis horas'], ['cuenta', 'Estado de cuenta'], ['avisos', 'Avisos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   instructor: [['agenda', 'Mi agenda'], ['alumnos', 'Mis alumnos'], ['clases', 'Clases teóricas'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
   mecanico: [['mantenimiento', 'Libros de novedades'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
-  admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  panol: [['panol', 'Inventario'], ['prestamos', 'Préstamos'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
+  admin: [['panel', 'Panel'], ['dispo', 'Instructores'], ['clases', 'Clases teóricas'], ['todas', 'Reservas'], ['cuentas', 'Cuentas'], ['avisos', 'Avisos'], ['usuarios', 'Usuarios'], ['flota', 'Flota'], ['panol', 'Pañol'], ['meteo', 'Meteo y NOTAM'], ['perfil', 'Mi perfil']],
 };
 const VISTAS = {};
 
@@ -4865,7 +4940,7 @@ async function renderApp() {
   try { state.tc = (await Store.cotizacion())?.venta || null; } catch { state.tc = null; }
   if (u.falta_foto) return pantallaFoto(u);
   // al entrar se elige: campus o sistema de reservas (el mecánico va directo a reservas)
-  const conCampus = u.rol !== 'mecanico';
+  const conCampus = !['mecanico', 'panol'].includes(u.rol);
   if (!conCampus) state.portal = 'reservas';
   if (!state.portal) { try { state.portal = sessionStorage.getItem('fc-portal'); } catch { /* sin storage */ } }
   if (!state.portal) return renderPortal(u);
@@ -5345,6 +5420,7 @@ VISTAS.perfil = async function vistaPerfil(v) {
     ppa: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia PPA', 'Licencia vigente', false], ['autorizacion', 'Autorización de menor', 'Solo para menores de 18 años', true]],
     instructor: [['cma', 'CMA', 'Certificado Médico Aeronáutico', false], ['licencia', 'Licencia de instructor', 'Licencia vigente', false]],
     mecanico: [['licencia', 'Licencia de mecánico', 'Habilitación vigente', false]],
+    panol: [],
     admin: [],
   }[u.rol];
   const campo = (n, l, t = 'text', extra = '') => `<label class="campo ${extra}">${l}<input id="pf-${n}" type="${t}" name="${n}" value="${esc(u[n] || '')}"></label>`;
@@ -5356,7 +5432,7 @@ VISTAS.perfil = async function vistaPerfil(v) {
       <form id="f-perfil" class="form-grid">
         ${campo('nombre', 'Nombre completo')} ${campo('apellido', 'Apellido')} ${campo('email', 'Email', 'email')} ${campo('telefono', 'Teléfono', 'tel')}
         ${campo('direccion', 'Dirección', 'text', 'full')} ${campo('dni', 'DNI')} ${campo('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
-        ${u.rol !== 'admin' ? `${campo('licencia_nro', 'N° de licencia <span class="op">(si corresponde)</span>')} ${u.rol !== 'mecanico' ? campo('vencimiento_cma', 'Vencimiento del CMA', 'date') : ''}` : ''}
+        ${!['admin', 'panol'].includes(u.rol) ? `${campo('licencia_nro', 'N° de licencia <span class="op">(si corresponde)</span>')} ${u.rol !== 'mecanico' ? campo('vencimiento_cma', 'Vencimiento del CMA', 'date') : ''}` : ''}
         ${selectNacionalidad('pf-nacionalidad', u.nacionalidad)}
         ${campo('contacto_emergencia', 'Contacto de emergencia <span class="op">(nombre y teléfono)</span>', 'text', 'full')}
         ${bloqueTutor('pf', u)}
@@ -5845,9 +5921,10 @@ const ROL_INFO = {
   ppa: ['Piloto o alumno avanzado', 'Piloto Privado, Piloto Comercial, Alumno a Piloto Comercial o Alumno a Instructor de vuelo. Reserva varios bloques y elige avión y destino.'],
   instructor: ['Instructor de vuelo', 'Vuela en los horarios que le asignes, califica el syllabus y reporta fallas.'],
   mecanico: ['Mantenimiento', 'Jefe de mecánicos, técnico o mecánico: revisa los libros de novedades y habilita o saca de servicio aviones y simuladores.'],
+  panol: ['Encargado de pañol', 'Maneja el inventario de herramientas, equipo, repuestos e insumos, y los préstamos a alumnos, pilotos, instructores y mecánicos.'],
   admin: ['Administración', 'Acceso completo: usuarios, instructores, clases, reservas y flota.'],
 };
-const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, admin: 'ADM' };
+const ROL_ICO = { alumno: 'AL', ppa: 'PPA', instructor: 'IV', mecanico: ICON.llave, panol: 'PÑ', admin: 'ADM' };
 async function editarUsuario(u, despues, rolElegido) {
   if (!u && !rolElegido) {
     const m = modal(`<div class="modal-head"><div><h3>Nuevo usuario</h3><div class="muted">¿Qué tipo de usuario vas a crear?</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
@@ -6677,7 +6754,7 @@ async function verEntregas(t, despues) {
 
 
 // ---------- foro de consultas ----------
-const ROL_FORO = { alumno: 'Alumno', ppa: 'Piloto', instructor: 'Instructor', admin: 'Administración' };
+const ROL_FORO = { panol: 'Pañol', alumno: 'Alumno', ppa: 'Piloto', instructor: 'Instructor', admin: 'Administración' };
 const textoPost = (t) => esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>').replace(/\n/g, '<br>');
 const cuando = (f) => { const d = f.slice(0, 10); const h = isoLocal(new Date()); return d === h ? `hoy ${f.slice(11, 16)}` : fmtCorta(d); };
 function filaTema(t, i) {
@@ -6767,6 +6844,132 @@ async function verTemaForo(v, id) {
     if (!(await confirmar(tipo === 'tema' ? 'Borrar consulta' : 'Borrar respuesta', tipo === 'tema' ? 'Se borra la consulta con todas sus respuestas.' : 'La respuesta se borra para todos.', 'Borrar'))) return;
     if (await hacer(async () => { await Store.foroBorrar(tipo, pid); return true; }, 'Borrado')) { if (tipo === 'tema') { state.foroTema = null; VISTAS['c-foro'](v); } else re(); }
   });
+}
+
+/* Flight Center · interfaz (parte 8: pañol — inventario y préstamos) */
+
+const CATEGORIAS_PANOL = ['Herramientas', 'Equipo de vuelo', 'Seguridad', 'Repuestos', 'Insumos', 'Otros'];
+const fmtCant = (n) => String(n).replace('.', ',');
+
+VISTAS.panol = async function vistaPanol(v, filtro = state.filtroPanol || { q: '', cat: '' }) {
+  state.filtroPanol = filtro;
+  const [items, r] = await Promise.all([Store.panolItems(), Store.panolResumen()]);
+  const l = items.filter((i) => (!filtro.cat || i.categoria === filtro.cat) && (!filtro.q || `${i.nombre} ${i.ubicacion} ${i.notas}`.toLowerCase().includes(filtro.q.toLowerCase())));
+  v.innerHTML = hero('Pañol', 'Inventario de herramientas, equipo, repuestos e insumos de la escuela, con lo que está prestado y lo que queda disponible.',
+    '<div style="margin-top:14px" class="flujo"><button class="btn sec" id="nuevo-item">+ Nuevo artículo</button><button class="btn sec" id="nuevo-prest">+ Prestar</button></div>') + `
+    <div class="stats">${stat('Artículos', r.articulos, { dest: true, i: 1 })}${stat('Unidades prestadas', r.prestadas, { i: 2 })}${stat('Bajo stock mínimo', r.bajo_minimo, { i: 3 })}${stat('Préstamos vencidos', r.vencidos, { i: 4 })}</div>
+    <div class="card anim" style="--i:5">
+      <div class="filtro"><input id="pq" placeholder="Buscar artículo o ubicación" value="${esc(filtro.q)}" aria-label="Buscar">
+        <select id="pc" aria-label="Categoría"><option value="">Todas las categorías</option>${CATEGORIAS_PANOL.map((c) => `<option ${filtro.cat === c ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+      ${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Artículo</th><th>Categoría</th><th>Ubicación</th><th class="num">Stock</th><th class="num">Prestado</th><th class="num">Disponible</th><th></th></tr></thead><tbody>
+        ${l.map((i) => `<tr><td><strong>${esc(i.nombre)}</strong>${i.notas ? `<div class="muted" style="font-size:12.5px">${esc(i.notas)}</div>` : ''}</td><td><span class="badge gris">${esc(i.categoria)}</span></td>
+          <td>${esc(i.ubicacion || '—')}</td><td class="num">${fmtCant(i.cantidad)}${i.unidad ? ` <small class="muted">${esc(i.unidad)}</small>` : ''}</td><td class="num">${i.prestado ? fmtCant(i.prestado) : '—'}</td>
+          <td class="num">${i.bajo_minimo ? `<span class="badge warn" title="Mínimo ${fmtCant(i.minimo)}">${fmtCant(i.disponible)} · reponer</span>` : `<span class="badge ok">${fmtCant(i.disponible)}</span>`}</td>
+          <td style="text-align:right;white-space:nowrap">${i.prestable ? `<button class="btn sm" data-prest="${i.id}" ${i.disponible > 0 ? '' : 'disabled'}>Prestar</button> ` : ''}<button class="btn sec sm" data-aj="${i.id}">Stock</button> <button class="btn sec sm" data-ed="${i.id}">Editar</button></td></tr>`).join('')}
+      </tbody></table></div>` : vacio(items.length ? 'No hay artículos con esos filtros.' : 'Todavía no hay artículos cargados. Empezá con "+ Nuevo artículo".')}
+    </div>
+    <div class="card anim" style="--i:6"><div class="card-head"><h3>Últimos movimientos de stock</h3></div>
+      ${r.movimientos.length ? `<div class="tabla-wrap"><table><thead><tr><th>Fecha</th><th>Artículo</th><th class="num">Cantidad</th><th>Motivo</th><th>Registró</th></tr></thead><tbody>
+        ${r.movimientos.map((m) => `<tr><td style="white-space:nowrap">${esc(fmtCorta(m.fecha.slice(0, 10)))}</td><td>${esc(m.articulo)}</td><td class="num ${m.cantidad > 0 ? 'pago' : ''}">${m.cantidad > 0 ? '+' : ''}${fmtCant(m.cantidad)}</td><td>${esc(m.motivo)}</td><td>${esc(m.por)}</td></tr>`).join('')}
+      </tbody></table></div>` : vacio('Sin movimientos todavía.')}</div>`;
+  animarNumeros(v);
+  const re = async () => await VISTAS.panol(v, state.filtroPanol);
+  $('#pq', v).oninput = (e) => { clearTimeout(state.tq); state.tq = setTimeout(async () => { await VISTAS.panol(v, { ...filtro, q: e.target.value }); const i = $('#pq', v); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 250); };
+  $('#pc', v).onchange = async (e) => await VISTAS.panol(v, { ...filtro, cat: e.target.value });
+  $('#nuevo-item', v).onclick = () => formArticulo(null, re);
+  $('#nuevo-prest', v).onclick = () => formPrestamo(null, re);
+  $$('[data-ed]', v).forEach((b) => b.onclick = () => formArticulo(items.find((i) => i.id == b.dataset.ed), re));
+  $$('[data-aj]', v).forEach((b) => b.onclick = () => ajustarStock(items.find((i) => i.id == b.dataset.aj), re));
+  $$('[data-prest]', v).forEach((b) => b.onclick = () => formPrestamo(Number(b.dataset.prest), re));
+};
+
+function formArticulo(it, despues) {
+  const m = modal(`<div class="modal-head"><h3>${it ? 'Editar artículo' : 'Nuevo artículo'}</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" id="f-art">
+      <label class="campo full">Nombre<input id="ar-nom" name="nombre" value="${esc(it?.nombre || '')}" placeholder="Ej: Auriculares David Clark H10-13.4"></label>
+      <label class="campo">Categoría<select id="ar-cat" name="categoria">${CATEGORIAS_PANOL.map((c) => `<option ${(it?.categoria || 'Herramientas') === c ? 'selected' : ''}>${c}</option>`).join('')}</select></label>
+      <label class="campo">Ubicación<input id="ar-ubi" name="ubicacion" value="${esc(it?.ubicacion || '')}" placeholder="Ej: Estante A2"></label>
+      ${it ? '' : '<label class="campo">Cantidad inicial<input id="ar-cant" name="cantidad" inputmode="decimal" value="1"></label>'}
+      <label class="campo">Unidad <span class="op">(opcional)</span><input id="ar-uni" name="unidad" value="${esc(it?.unidad || '')}" placeholder="Ej: litros, unidades"></label>
+      <label class="campo">Stock mínimo <span class="op">(avisa cuando hay que reponer)</span><input id="ar-min" name="minimo" inputmode="decimal" value="${it?.minimo ?? 0}"></label>
+      <label class="marca full"><input type="checkbox" id="ar-prest" ${it ? (it.prestable ? 'checked' : '') : 'checked'}> Se presta (herramientas y equipo). Desmarcalo para insumos que se consumen.</label>
+      <label class="campo full">Notas <span class="op">(opcional)</span><input id="ar-notas" name="notas" value="${esc(it?.notas || '')}" placeholder="Ej: N° de serie, estado, proveedor"></label>
+    </form><div class="modal-foot">${it ? '<button class="btn danger" id="ar-borrar" style="margin-right:auto">Borrar</button>' : ''}<button class="btn sec" data-cerrar>Volver</button><button class="btn" id="ar-ok">Guardar</button></div>`);
+  $('#ar-ok', m.el).onclick = async () => {
+    const d = { ...Object.fromEntries(new FormData($('#f-art', m.el))), prestable: $('#ar-prest', m.el).checked, id: it?.id };
+    if (await hacer(async () => { await Store.panolGuardarItem(d); return true; }, it ? 'Artículo actualizado' : 'Artículo agregado')) { m.cerrar(); despues(); }
+  };
+  const bo = $('#ar-borrar', m.el); if (bo) bo.onclick = async () => {
+    m.cerrar(); if (!(await confirmar('Borrar artículo', `Se borra "${it.nombre}" del inventario.`, 'Borrar'))) return;
+    if (await hacer(async () => { await Store.panolBorrarItem(it.id); return true; }, 'Artículo borrado')) despues();
+  };
+}
+
+function ajustarStock(it, despues) {
+  const m = modal(`<div class="modal-head"><div><h3>Stock · ${esc(it.nombre)}</h3><div class="muted">Hay ${fmtCant(it.cantidad)}${it.unidad ? ` ${esc(it.unidad)}` : ''} · prestado ${fmtCant(it.prestado)}</div></div><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" id="f-aj">
+      <label class="campo">Movimiento<select id="aj-tipo"><option value="1">Ingreso (compra, devolución de proveedor)</option><option value="-1">Egreso (uso, rotura, pérdida)</option></select></label>
+      <label class="campo">Cantidad<input id="aj-cant" inputmode="decimal" value="1"></label>
+      <label class="campo full">Motivo<input id="aj-mot" placeholder="Ej: compra a proveedor, cambio de aceite LV-FCA"></label>
+    </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="aj-ok">Registrar</button></div>`);
+  $('#aj-ok', m.el).onclick = async () => {
+    const c = Number(String($('#aj-cant', m.el).value).replace(',', '.')) * Number($('#aj-tipo', m.el).value);
+    if (await hacer(async () => { await Store.panolAjustar(it.id, { cantidad: c, motivo: $('#aj-mot', m.el).value }); return true; }, 'Stock actualizado')) { m.cerrar(); despues(); }
+  };
+}
+
+async function formPrestamo(itemId, despues) {
+  const [items, personas] = await Promise.all([Store.panolItems(), Store.panolPersonas()]);
+  const prestables = items.filter((i) => i.prestable && i.disponible > 0);
+  if (!prestables.length) return toast('No hay artículos disponibles para prestar.', 'error');
+  const hoyS = isoLocal(new Date());
+  const m = modal(`<div class="modal-head"><h3>Nuevo préstamo</h3><button class="x" data-cerrar aria-label="Cerrar">×</button></div>
+    <form class="modal-body form-grid" id="f-pr">
+      <label class="campo full">Artículo<select id="pr-item" name="item_id">${prestables.map((i) => `<option value="${i.id}" ${i.id === itemId ? 'selected' : ''}>${esc(i.nombre)} · ${fmtCant(i.disponible)} disponible(s)</option>`).join('')}</select></label>
+      <label class="campo full">¿A quién?<input id="pr-buscar" placeholder="Buscar persona" autocomplete="off"></label>
+      <div class="lista-alumnos full" id="pr-personas">${personas.map((p) => `<label class="marca" data-nombre="${esc(`${p.nombre} ${p.apellido}`.toLowerCase())}"><input type="radio" name="usuario_id" value="${p.id}"> ${esc(p.nombre)} ${esc(p.apellido)} <small class="muted">${esc(nombreRol(p))}</small></label>`).join('')}</div>
+      <label class="campo">Cantidad<input id="pr-cant" name="cantidad" inputmode="decimal" value="1"></label>
+      <label class="campo">Devolución prevista<input id="pr-dev" type="date" name="devolucion" value="${hoyS}" min="${hoyS}"></label>
+      <label class="campo full">Notas <span class="op">(opcional)</span><input id="pr-notas" name="notas" placeholder="Ej: para el vuelo de las 10 en LV-FCA"></label>
+    </form><div class="modal-foot"><button class="btn sec" data-cerrar>Volver</button><button class="btn" id="pr-ok">Registrar préstamo</button></div>`, { ancho: true });
+  $('#pr-buscar', m.el).oninput = (e) => { const q = e.target.value.toLowerCase(); $$('#pr-personas label', m.el).forEach((l) => { l.hidden = q && !l.dataset.nombre.includes(q); }); };
+  $('#pr-ok', m.el).onclick = async () => {
+    const d = Object.fromEntries(new FormData($('#f-pr', m.el)));
+    if (await hacer(async () => { await Store.panolPrestar(d); return true; }, 'Préstamo registrado')) { m.cerrar(); despues(); }
+  };
+}
+
+VISTAS.prestamos = async function vistaPrestamos(v, modo = state.modoPrest || 'abiertos') {
+  state.modoPrest = modo;
+  const l = await Store.panolPrestamos({ abiertos: modo === 'abiertos' });
+  v.innerHTML = hero('Préstamos', 'Quién tiene cada herramienta o equipo, desde cuándo y cuándo lo tiene que devolver.',
+    '<div style="margin-top:14px"><button class="btn sec" id="nuevo-prest">+ Nuevo préstamo</button></div>') + `
+    <div class="segmento anim" style="--i:1;margin-bottom:18px"><button class="${modo === 'abiertos' ? 'on' : ''}" data-m="abiertos">Sin devolver</button><button class="${modo === 'todos' ? 'on' : ''}" data-m="todos">Historial</button></div>
+    <div class="card anim" style="--i:2">${l.length ? `<div class="tabla-wrap"><table><thead><tr><th>Artículo</th><th>Persona</th><th class="num">Cant.</th><th>Desde</th><th>Devolución</th><th>Estado</th><th></th></tr></thead><tbody>
+      ${l.map((p) => `<tr><td><strong>${esc(p.articulo)}</strong>${p.notas ? `<div class="muted" style="font-size:12.5px">${esc(p.notas)}</div>` : ''}</td>
+        <td><div style="display:flex;gap:8px;align-items:center">${avatarDe({ nombre: p.persona.split(' ')[0], apellido: p.persona.split(' ').slice(-1)[0] }, 30, p.persona_foto)}<div>${esc(p.persona)}<div class="muted" style="font-size:12px">${esc(p.persona_tel || '')}</div></div></div></td>
+        <td class="num">${fmtCant(p.cantidad)}</td><td style="white-space:nowrap">${esc(fmtCorta(p.fecha.slice(0, 10)))}</td><td style="white-space:nowrap">${esc(fmtCorta(p.devolucion))}</td>
+        <td>${p.devuelto ? `<span class="badge ok">Devuelto ${esc(fmtCorta(p.devuelto.slice(0, 10)))}</span>` : p.vencido ? '<span class="badge danger">Vencido</span>' : '<span class="badge warn">Prestado</span>'}</td>
+        <td style="text-align:right">${p.devuelto ? '' : `<button class="btn ok sm" data-dev="${p.id}">Devolvió</button>`}</td></tr>`).join('')}
+    </tbody></table></div>` : vacio(modo === 'abiertos' ? 'No hay nada prestado en este momento.' : 'Todavía no hubo préstamos.')}</div>`;
+  const re = async () => await VISTAS.prestamos(v, modo);
+  $$('[data-m]', v).forEach((b) => b.onclick = async () => await VISTAS.prestamos(v, b.dataset.m));
+  $('#nuevo-prest', v).onclick = () => formPrestamo(null, re);
+  $$('[data-dev]', v).forEach((b) => b.onclick = async () => { if (await hacer(async () => { await Store.panolDevolver(Number(b.dataset.dev)); return true; }, 'Devolución registrada')) await re(); });
+};
+
+// en el perfil de cada persona: lo que tiene prestado del pañol
+{
+  const perfil = VISTAS.perfil;
+  VISTAS.perfil = async function (v) {
+    await perfil(v);
+    const l = await Store.misPrestamos().catch(() => []);
+    if (!l.length) return;
+    const card = document.createElement('div'); card.className = 'card anim';
+    card.innerHTML = `<div class="card-head"><h3>Préstamos del pañol</h3><span class="muted">Lo que tenés en tu poder</span></div>
+      ${l.map((p) => `<div class="agenda-fila"><span><b>${esc(p.articulo)}</b> × ${fmtCant(p.cantidad)}</span><span>devolver el ${esc(fmtCorta(p.devolucion))} ${p.vencido ? '<span class="badge danger">Vencido</span>' : ''}</span></div>`).join('')}`;
+    v.append(card);
+  };
 }
 
 /* Flight Center · interfaz (parte 6: asistencia con QR) */
